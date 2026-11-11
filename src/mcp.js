@@ -377,8 +377,10 @@ export function createMcpManager({ ctx, settings, credentials, version, logger }
 			return draft
 		})
 		await stop(id)
-		if (enabled) void connect(row)
-		else statuses.set(id, emptyStatus())
+		if (enabled) {
+			statuses.set(id, { ...emptyStatus(), state: 'connecting' })
+			void connect(row)
+		} else statuses.set(id, emptyStatus())
 		return publicStatus(row)
 	}
 
@@ -418,8 +420,10 @@ export function createMcpManager({ ctx, settings, credentials, version, logger }
 		})
 		const next = findServer(id)
 		await stop(id)
-		if (enabled) void connect(next)
-		else statuses.set(id, emptyStatus())
+		if (enabled) {
+			statuses.set(id, { ...emptyStatus(), state: 'connecting' })
+			void connect(next)
+		} else statuses.set(id, emptyStatus())
 		return publicStatus(next)
 	}
 
@@ -434,8 +438,9 @@ export function createMcpManager({ ctx, settings, credentials, version, logger }
 		const server = findServer(id)
 		if (server === undefined) throw new Error('MCP 服务不存在')
 		if (!server.enabled) throw new Error('请先启用这个 MCP 服务')
+		statuses.set(id, { ...emptyStatus(), state: 'connecting' })
 		void connect(server)
-		return { ...publicStatus(server), state: 'connecting' }
+		return publicStatus(server)
 	}
 
 	/**

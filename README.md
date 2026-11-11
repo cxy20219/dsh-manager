@@ -8,6 +8,11 @@ agent's capabilities are usually assembled from: **skills** and **MCP servers**.
   (`<category>/<skill>/SKILL.md`). Categories and single skills can be switched
   off; a disabled category never enters the agent's skill catalog. Bodies are
   still loaded on demand, so a catalog entry costs its name and description only.
+- **目录核对** — the skills tab also reports what the agent's registry actually
+  offers, merged across every provider (`ctx.skills.list`). Top-level skills and
+  bundled providers therefore show up in the totals, and a skill the manager
+  considers active but the registry does not list is called out as shadowed or
+  missing instead of silently counting as loaded.
 - **MCP** — add, edit, enable, disable, remove and reconnect local stdio MCP
   servers. Discovered tools register on `ctx.tools` as
   `mcp__<server>__<tool>`, with the same naming contract the shipped MCP bridge
@@ -85,6 +90,10 @@ plugin never rewrites the profile patch.
 ## Limits
 
 - Skill discovery is one category level; deeper nesting is ignored.
+- The catalog check covers global providers only: project-level skill roots need
+  a workspace, so they never appear in the panel's totals.
+- A scan is reused for up to a second to keep the overview cheap; a watcher
+  event, a switch, or **重新扫描** drops it immediately.
 - MCP transport is stdio only; Streamable HTTP is not implemented.
 - Servers configured with the shipped `@deepseek-ai/dsh-mcp-client` rows are
   not imported. This panel manages its own stdio list, so the two don't
@@ -109,5 +118,5 @@ Source map:
 | `src/mcp-client.js` | dependency-free stdio MCP client and tool-name contract |
 | `src/mcp.js` | server rows, connections, tool registration, credential-backed env |
 | `src/settings.js` | atomic manager settings store |
-| `src/remote.js` | panel endpoints |
+| `src/remote.js` | panel endpoints and the merged agent-catalog view |
 | `client.js` | sidebar entry and the management page |

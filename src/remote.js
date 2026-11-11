@@ -8,6 +8,8 @@
  * @module dsh-manager/remote
  */
 
+import { PROVIDER_NAME } from './skills.js'
+
 /** The endpoints the panel may call. */
 export const ENDPOINTS = [
 	'overview',
@@ -25,20 +27,70 @@ export const ENDPOINTS = [
 /**
  * Build the endpoint handler.
  *
- * @param {{settings: object, skills: object, mcp: object, version: string, dataDir: string}} deps - Services the endpoints use.
+ * @param {{skills: object, mcp: object, version: string, dataDir: string, registry?: object}} deps - Services the endpoints use.
  * @returns {(endpoint: string, payload: unknown) => Promise<object>} The handler.
  */
-export function createManagerHandler({ settings, skills, mcp, version, dataDir }) {
+export function createManagerHandler({ skills, mcp, version, dataDir, registry }) {
+	/**
+	 * The catalog the agent is actually offered, projected against this scan.
+	 *
+	 * The registry merges every provider, so this is also how a skill from a
+	 * higher-priority provider that shadows one of ours becomes visible. The
+	 * lookup has no workspace, so project-level skills are out of scope.
+	 *
+	 * @param {object} snapshot - The manager's own scanned skills.
+	 * @returns {Promise<object>} The catalog view.
+	 */
+	async function catalogOf(snapshot) {
+		const empty = { total: 0, visible: 0, managed: 0, external: [], missing: [], unavailable: false, error: '' }
+		if (registry === undefined || typeof registry.list !== 'function') return { ...empty, unavailable: true }
+		try {
+			const summaries = await registry.list({})
+			let managed = 0
+			let visible = 0
+			const external = []
+			const present = new Set()
+			for (const summary of summaries) {
+				present.add(summary.name)
+				if (summary.provider === PROVIDER_NAME) managed += 1
+				else external.push(summary.name)
+				if (summary.invocation?.modelInvocable !== false) visible += 1
+			}
+			const missing = []
+			for (const category of snapshot.categories) {
+				for (const skill of category.skills) {
+					if (skill.enabled && !present.has(skill.name)) missing.push(skill.name)
+				}
+			}
+			return {
+				total: summaries.length,
+				visible,
+				managed,
+				external: external.sort(),
+				missing: missing.sort(),
+				unavailable: false,
+				error: '',
+			}
+		} catch (error) {
+			return {
+				...empty,
+				error: error instanceof Error ? error.message : String(error),
+			}
+		}
+	}
+
 	/**
 	 * The full panel state.
 	 *
 	 * @returns {Promise<object>} The overview.
 	 */
 	async function overview() {
+		const snapshot = await skills.snapshot()
 		return {
 			version,
 			dataDir,
-			skills: await skills.snapshot(),
+			skills: snapshot,
+			catalog: await catalogOf(snapshot),
 			mcp: mcp.describe(),
 		}
 	}
@@ -50,7 +102,7 @@ export function createManagerHandler({ settings, skills, mcp, version, dataDir }
 					return { ok: true, value: await overview() }
 				}
 				case 'skills-refresh': {
-					await skills.refresh()
+					skills.refresh()
 					return { ok: true, value: await overview() }
 				}
 				case 'skill-toggle': {

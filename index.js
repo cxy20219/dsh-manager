@@ -119,7 +119,7 @@ export async function apply(ctx, config) {
 	await ready
 	mcp.start()
 
-	const handler = createManagerHandler({ settings, skills, mcp, version, dataDir })
+	const handler = createManagerHandler({ skills, mcp, version, dataDir, registry: ctx.skills })
 	/** Everything that has to be undone when the plugin unloads. */
 	const disposers = []
 	ctx.effect(() => () => {

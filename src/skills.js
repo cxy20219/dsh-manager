@@ -31,6 +31,16 @@ export const SKILL_RANK = 550
 /** How long to wait for filesystem events before invalidating the catalog. */
 const WATCH_DEBOUNCE_MS = 250
 
+/**
+ * How long one scan is reused.
+ *
+ * The panel reads the overview after every toggle, and the registry calls
+ * `list()` once per request; all of those want the same tree. A watcher event,
+ * a switch, or an explicit rescan clears the cache immediately, so the TTL only
+ * covers repeated reads of an unchanged tree.
+ */
+const SCAN_TTL_MS = 1000
+
 /** Category names may contain letters, numbers, dots, dashes and underscores. */
 const CATEGORY_NAME = /^[\p{L}\p{N}][\p{L}\p{N}._-]{0,63}$/u
 
@@ -45,6 +55,8 @@ export function createSkillsManager({ ctx, settings, ready, logger, defaultRoot 
 	let control
 	let disposed = false
 	let watchTimer
+	/** Last completed scan, reused until it expires or something invalidates it. */
+	let scanCache
 
 	/**
 	 * Expand `~` and keep only absolute roots.
@@ -88,12 +100,24 @@ export function createSkillsManager({ ctx, settings, ready, logger, defaultRoot 
 	}
 
 	/**
-	 * Scan every root into categories of parsed skills.
+	 * Scan every root into categories of parsed skills, reusing a fresh result.
 	 *
 	 * @returns {Promise<object>} The scan result.
 	 */
 	async function scan() {
 		await ready
+		if (scanCache !== undefined && Date.now() - scanCache.at < SCAN_TTL_MS) return scanCache.value
+		const value = await scanFresh()
+		scanCache = { at: Date.now(), value }
+		return value
+	}
+
+	/**
+	 * Read every root from disk.
+	 *
+	 * @returns {Promise<object>} The scan result.
+	 */
+	async function scanFresh() {
 		const rootReports = []
 		const categories = []
 		for (const root of roots()) {
@@ -306,6 +330,7 @@ export function createSkillsManager({ ctx, settings, ready, logger, defaultRoot 
 	 * @returns {void}
 	 */
 	function invalidate() {
+		scanCache = undefined
 		control?.invalidate()
 	}
 
@@ -339,14 +364,12 @@ export function createSkillsManager({ ctx, settings, ready, logger, defaultRoot 
 	}
 
 	/**
-	 * Rescan and tell the registry the catalog changed.
+	 * Drop the cached scan so the next read sees the tree as it is now.
 	 *
-	 * @returns {Promise<object>} The fresh snapshot.
+	 * @returns {void}
 	 */
-	async function refresh() {
-		const snapshotValue = await snapshot()
+	function refresh() {
 		invalidate()
-		return snapshotValue
 	}
 
 	/**

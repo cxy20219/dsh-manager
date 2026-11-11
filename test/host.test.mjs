@@ -31,12 +31,20 @@ test('the Host half serves skills, toggles categories, and stores MCP rows', asy
 	const routes = []
 	const effects = []
 	let provider
+	/** What the merged registry offers; the test changes it to simulate a shadow. */
+	let catalogEntries = [
+		{ name: 'demo-skill', description: '演示技能', provider: 'manager', invocation: { modelInvocable: true, userInvocable: true } },
+		{ name: 'builtin-skill', description: '内置技能', provider: 'filesystem', invocation: { modelInvocable: true, userInvocable: true } },
+	]
 	const ctx = {
 		logger: { info() {}, warn() {} },
 		skills: {
 			registerProvider(create) {
 				provider = create({ signal: new AbortController().signal, invalidate() {} })
 				return () => {}
+			},
+			async list() {
+				return catalogEntries
 			},
 		},
 		get(name) {
@@ -71,6 +79,23 @@ test('the Host half serves skills, toggles categories, and stores MCP rows', asy
 		assert.equal(overview.value.skills.categories[0].name, 'dev')
 		assert.equal(overview.value.mcp.available, false)
 		assert.deepEqual(overview.value.mcp.servers, [])
+		assert.equal(overview.value.catalog.total, 2)
+		assert.equal(overview.value.catalog.managed, 1)
+		assert.equal(overview.value.catalog.visible, 2)
+		assert.deepEqual(overview.value.catalog.external, ['builtin-skill'])
+		assert.deepEqual(overview.value.catalog.missing, [])
+
+		// A higher-priority provider wins the name: the manager's copy is active
+		// in its own scan but never reaches the agent, so the panel must say so.
+		catalogEntries = [
+			{ name: 'builtin-skill', description: '内置技能', provider: 'filesystem', invocation: { modelInvocable: true, userInvocable: true } },
+		]
+		const shadowed = await post(routes, 'overview')
+		assert.deepEqual(shadowed.value.catalog.missing, ['demo-skill'])
+		catalogEntries = [
+			{ name: 'demo-skill', description: '演示技能', provider: 'manager', invocation: { modelInvocable: true, userInvocable: true } },
+			{ name: 'builtin-skill', description: '内置技能', provider: 'filesystem', invocation: { modelInvocable: true, userInvocable: true } },
+		]
 
 		const listed = await provider.list({})
 		assert.deepEqual(listed.map((entry) => entry.name), ['demo-skill'])

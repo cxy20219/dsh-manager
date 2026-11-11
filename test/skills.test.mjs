@@ -118,6 +118,25 @@ test('marks later same-name skills as conflicts and registers only the first', a
 	}
 })
 
+test('refresh drops the cached scan so an outside change is visible', async () => {
+	const root = await fixture()
+	const { skills } = manager(root)
+	try {
+		const before = await skills.snapshot()
+		assert.equal(before.totals.skills, 4)
+		await mkdir(join(root, 'paper', 'arxiv-reader'), { recursive: true })
+		await writeFile(join(root, 'paper', 'arxiv-reader', 'SKILL.md'), skill('arxiv-reader'))
+		skills.refresh()
+		const after = await skills.snapshot()
+		assert.equal(after.totals.skills, 5)
+		const paper = after.categories.find((category) => category.name === 'paper')
+		assert.deepEqual(paper.skills.map((entry) => entry.name), ['arxiv-reader'])
+	} finally {
+		skills.dispose()
+		await rm(root, { recursive: true, force: true })
+	}
+})
+
 test('creates a skill skeleton and reads it back', async () => {
 	const root = await fixture()
 	const { skills } = manager(root)

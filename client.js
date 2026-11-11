@@ -48,6 +48,11 @@ window.__ModuleLoader__.load({
 			'skills.new': '新建技能',
 			'skills.refresh': '重新扫描',
 			'skills.count': '{categories} 个分类 · {skills} 个技能 · {enabled} 个生效',
+			'skills.catalog': 'Agent 目录 {total} 个技能（模型可见 {visible}）· 本插件 {managed} · 其他来源 {external}',
+			'skills.catalogNames': '：{names}',
+			'skills.catalogMissing': '{n} 个已启用的技能没有进入 Agent 目录：{names}。可能是同名技能被更高优先级的来源覆盖，或该来源没有列出。',
+			'skills.catalogError': '读取 Agent 目录失败：{error}',
+			'skills.catalogUnavailable': '当前 Host 没有技能注册表，无法核对 Agent 目录。',
 			'skills.roots': '扫描目录',
 			'skills.rootMissing': '目录不存在',
 			'skills.rootError': '无法读取',
@@ -141,6 +146,11 @@ window.__ModuleLoader__.load({
 			'skills.new': 'New skill',
 			'skills.refresh': 'Rescan',
 			'skills.count': '{categories} categories · {skills} skills · {enabled} active',
+			'skills.catalog': 'Agent catalog: {total} skills ({visible} model-visible) · {managed} from this manager · {external} from other providers',
+			'skills.catalogNames': ': {names}',
+			'skills.catalogMissing': '{n} active skills are missing from the agent catalog: {names}. A same-name skill from a higher-priority provider may shadow them, or that provider failed to list.',
+			'skills.catalogError': 'Could not read the agent catalog: {error}',
+			'skills.catalogUnavailable': 'This Host has no skill registry, so the agent catalog cannot be checked.',
 			'skills.roots': 'Scanned roots',
 			'skills.rootMissing': 'Directory missing',
 			'skills.rootError': 'Unreadable',
@@ -256,6 +266,7 @@ window.__ModuleLoader__.load({
 			'.mgrFieldHint{font-size:11.5px;color:var(--dsw-alias-label-tertiary);line-height:1.55}',
 			'.mgrStats{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:12px;font-size:12px;color:var(--dsw-alias-label-tertiary)}',
 			'.mgrStats b{font-weight:600;color:var(--dsw-alias-label-secondary)}',
+			'.mgrCatalog{margin:-4px 0 12px}',
 			'.mgrRootPath{font-family:var(--dsw-font-mono,ui-monospace,SFMono-Regular,Menlo,monospace);font-size:11.5px;color:var(--dsw-alias-label-tertiary)}',
 			'.mgrWarn{display:flex;align-items:flex-start;gap:8px;padding:9px 12px;margin-bottom:12px;border:1px solid var(--dsw-alias-border-l2);border-left:3px solid var(--dsw-alias-state-warn-primary);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-1);font-size:12px;color:var(--dsw-alias-label-secondary);line-height:1.6}',
 			'.mgrErrorBox{display:flex;align-items:flex-start;gap:8px;padding:9px 12px;margin-bottom:12px;border:1px solid var(--dsw-alias-border-l2);border-left:3px solid var(--dsw-alias-state-error-primary);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-1);font-size:12px;color:var(--dsw-alias-state-error-primary);line-height:1.6;word-break:break-word}',
@@ -381,6 +392,19 @@ window.__ModuleLoader__.load({
 			return out.join(' ');
 		}
 
+		/**
+		 * Join a name list, keeping the line short.
+		 *
+		 * @param {string[]} names - Names.
+		 * @param {number} [max] - How many names to spell out.
+		 * @returns {string} The list.
+		 */
+		function nameList(names, max) {
+			var limit = max || 6;
+			if (names.length <= limit) return names.join(', ');
+			return names.slice(0, limit).join(', ') + ' … +' + (names.length - limit);
+		}
+
 		//#endregion
 
 		//#region primitives
@@ -454,10 +478,8 @@ window.__ModuleLoader__.load({
 				}
 				document.addEventListener('keydown', onKeyDown);
 				var node = panelRef.current;
-				if (node !== null) {
-					var target = node.querySelector('input, textarea, select, button');
-					if (target !== null) target.focus();
-				}
+				var target = node === null ? null : node.querySelector('.mgrModalBody input, .mgrModalBody textarea, .mgrModalBody select, .mgrModalBody button');
+				if (target !== null) target.focus();
 				return function () {
 					document.removeEventListener('keydown', onKeyDown);
 				};
@@ -512,6 +534,23 @@ window.__ModuleLoader__.load({
 		function SkillsSection(props) {
 			var t = props.t;
 			var skills = props.skills;
+			var catalog = props.catalog;
+			var catalogText = '';
+			if (catalog !== undefined) {
+				if (catalog.error !== '') {
+					catalogText = t('skills.catalogError', { error: catalog.error });
+				} else if (catalog.unavailable === true) {
+					catalogText = t('skills.catalogUnavailable');
+				} else {
+					catalogText = t('skills.catalog', {
+						total: catalog.total,
+						visible: catalog.visible,
+						managed: catalog.managed,
+						external: catalog.external.length,
+					});
+					if (catalog.external.length > 0) catalogText += t('skills.catalogNames', { names: nameList(catalog.external) });
+				}
+			}
 			var needle = props.query.trim().toLowerCase();
 			var categories = [];
 			for (var index = 0; index < skills.categories.length; index += 1) {
@@ -550,6 +589,9 @@ window.__ModuleLoader__.load({
 					})),
 					h('span', { className: 'mgrSpacer' }),
 					h('span', { className: 'mgrRootPath' }, skills.roots.map(function (root) { return root.path; }).join(' · '))),
+				catalogText === '' ? null : h('div', { className: 'mgrHint mgrCatalog' }, catalogText),
+				catalog === undefined || catalog.missing.length === 0 ? null : h('div', { className: 'mgrWarn' },
+					h('span', null, t('skills.catalogMissing', { n: catalog.missing.length, names: nameList(catalog.missing) }))),
 				missingRoots.length === 0 ? null : h('div', { className: 'mgrWarn' },
 					h('span', null, t('skills.roots') + '：' + missingRoots.map(function (root) {
 						return root.path + (root.error ? '（' + t('skills.rootError') + '：' + root.error + '）' : '（' + t('skills.rootMissing') + '）');
@@ -1206,6 +1248,7 @@ window.__ModuleLoader__.load({
 							? h(SkillsSection, {
 								t: t,
 								skills: data.skills,
+								catalog: data.catalog,
 								query: query,
 								setQuery: setQuery,
 								openCats: openCats,
