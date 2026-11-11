@@ -24,7 +24,7 @@
 
 import { execFile } from 'node:child_process'
 import { X509Certificate, createHash } from 'node:crypto'
-import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { chmod, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { networkInterfaces } from 'node:os'
 import { join } from 'node:path'
 import http from 'node:http'
@@ -239,6 +239,10 @@ export async function ensureCertificate({ dir, address, logger }) {
 	} catch (error) {
 		throw new Error(`openssl 生成证书失败：${error instanceof Error ? error.message : String(error)}`)
 	}
+	// openssl writes the key with the ambient umask; the private key stays
+	// owner-only.
+	await chmod(keyPath, 0o600).catch(() => {})
+	await chmod(certPath, 0o644).catch(() => {})
 	const [key, cert] = await Promise.all([readFile(keyPath, 'utf8'), readFile(certPath, 'utf8')])
 	const certificate = new X509Certificate(cert)
 	logger?.info?.(`dsh-manager: 已为 ${address} 生成自签证书，${certificate.validTo} 到期`)
