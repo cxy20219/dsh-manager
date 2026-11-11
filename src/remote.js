@@ -22,15 +22,17 @@ export const ENDPOINTS = [
 	'mcp-remove',
 	'mcp-toggle',
 	'mcp-reconnect',
+	'lan-status',
+	'lan-toggle',
 ]
 
 /**
  * Build the endpoint handler.
  *
- * @param {{skills: object, mcp: object, version: string, dataDir: string, registry?: object}} deps - Services the endpoints use.
+ * @param {{skills: object, mcp: object, lan?: object, settings?: object, version: string, dataDir: string, registry?: object}} deps - Services the endpoints use.
  * @returns {(endpoint: string, payload: unknown) => Promise<object>} The handler.
  */
-export function createManagerHandler({ skills, mcp, version, dataDir, registry }) {
+export function createManagerHandler({ skills, mcp, lan, settings, version, dataDir, registry }) {
 	/**
 	 * The catalog the agent is actually offered, projected against this scan.
 	 *
@@ -92,6 +94,7 @@ export function createManagerHandler({ skills, mcp, version, dataDir, registry }
 			skills: snapshot,
 			catalog: await catalogOf(snapshot),
 			mcp: mcp.describe(),
+			lan: lan === undefined ? { enabled: false, running: false, address: '', port: 0, upstream: '', error: '' } : lan.summary(),
 		}
 	}
 
@@ -154,6 +157,22 @@ export function createManagerHandler({ skills, mcp, version, dataDir, registry }
 				case 'mcp-reconnect': {
 					const server = await mcp.reconnect({ id: text(payload, 'id') })
 					return { ok: true, value: { server, overview: await overview() } }
+				}
+				case 'lan-status': {
+					if (lan === undefined) throw new Error('当前 Host 没有局域网访问服务')
+					return { ok: true, value: lan.status() }
+				}
+				case 'lan-toggle': {
+					if (lan === undefined) throw new Error('当前 Host 没有局域网访问服务')
+					const enabled = payload?.enabled !== false
+					if (settings !== undefined) {
+						await settings.update((draft) => {
+							draft.lan = { ...draft.lan, enabled }
+							return draft
+						})
+					}
+					const state = await lan.apply(enabled)
+					return { ok: true, value: state }
 				}
 				default: {
 					throw new Error(`未知接口：${endpoint}`)

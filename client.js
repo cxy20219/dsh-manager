@@ -28,7 +28,7 @@ window.__ModuleLoader__.load({
 
 		var zh = {
 			'panel': '管理器',
-			'subtitle': '技能分类与 MCP 服务',
+			'subtitle': '技能分类、MCP 服务与局域网访问',
 			'tab.skills': '技能',
 			'tab.mcp': 'MCP',
 			'action.refresh': '重新扫描',
@@ -122,11 +122,34 @@ window.__ModuleLoader__.load({
 			'mcp.form.required': '请填写服务名和启动命令',
 			'mcp.form.submit': '保存',
 			'error.banner': '操作失败',
+			'tab.lan': '局域网访问',
+			'lan.title': '局域网访问',
+			'lan.hint': '打开后，本机会在局域网地址上开一个加密入口。手机或平板扫码即可在浏览器里打开这个 DSH，操作与本机一致。',
+			'lan.switch': '启用局域网访问',
+			'lan.switchHint': '关闭时端口立即收回，不会再对局域网提供服务。',
+			'lan.off': '当前未开启。开启后这里会显示二维码和访问链接。',
+			'lan.starting': '正在开启…',
+			'lan.running': '已开启',
+			'lan.stopped': '已关闭',
+			'lan.qr': '扫码打开',
+			'lan.qrHint': '用手机相机或浏览器扫码打开；首次访问需要手动信任自签证书。',
+			'lan.url': '访问链接',
+			'lan.copy': '复制链接',
+			'lan.copied': '已复制',
+			'lan.address': '局域网地址',
+			'lan.upstream': '转发到',
+			'lan.certificate': '证书指纹',
+			'lan.certificateValid': '证书有效期',
+			'lan.tokenWarning': '链接里带着本机的启动令牌，等同于管理员权限，不要分享给别人。关闭开关后链接立即失效。',
+			'lan.certWarning': '证书是本机自签的，手机浏览器会提示"不安全"，选择继续访问即可。',
+			'lan.noAddress': '没有检测到局域网 IPv4 地址，请先连上局域网。',
+			'lan.error': '开启失败',
+			'lan.addresses': '检测到的地址',
 		};
 
 		var en = {
 			'panel': 'Manager',
-			'subtitle': 'Skill categories and MCP servers',
+			'subtitle': 'Skill categories, MCP servers and LAN access',
 			'tab.skills': 'Skills',
 			'tab.mcp': 'MCP',
 			'action.refresh': 'Rescan',
@@ -220,6 +243,29 @@ window.__ModuleLoader__.load({
 			'mcp.form.required': 'A server name and a command are required',
 			'mcp.form.submit': 'Save',
 			'error.banner': 'Action failed',
+			'tab.lan': 'LAN access',
+			'lan.title': 'LAN access',
+			'lan.hint': 'When on, this machine opens an encrypted door on its LAN address. A phone or tablet can scan the code and open this Harness in a browser with the same powers.',
+			'lan.switch': 'Enable LAN access',
+			'lan.switchHint': 'Turning it off closes the port at once and the LAN sees nothing.',
+			'lan.off': 'Currently off. Turn it on and the code and the link appear here.',
+			'lan.starting': 'Starting…',
+			'lan.running': 'On',
+			'lan.stopped': 'Off',
+			'lan.qr': 'Scan to open',
+			'lan.qrHint': 'Scan with a phone camera or browser; the first visit asks you to trust the self-signed certificate.',
+			'lan.url': 'Access link',
+			'lan.copy': 'Copy link',
+			'lan.copied': 'Copied',
+			'lan.address': 'LAN address',
+			'lan.upstream': 'Forwarded to',
+			'lan.certificate': 'Certificate fingerprint',
+			'lan.certificateValid': 'Certificate validity',
+			'lan.tokenWarning': 'The link carries this machine\'s launch token and therefore administrator rights. Do not share it; turning the switch off invalidates it.',
+			'lan.certWarning': 'The certificate is self-signed, so a phone browser calls the page unsafe; continue anyway.',
+			'lan.noAddress': 'No LAN IPv4 address was found; connect to a network first.',
+			'lan.error': 'Could not start',
+			'lan.addresses': 'Detected addresses',
 		};
 
 		//#endregion
@@ -333,6 +379,22 @@ window.__ModuleLoader__.load({
 			'.mgrToastError{color:var(--dsw-alias-state-error-primary);border-color:var(--dsw-alias-state-error-primary)}',
 			'.mgrToastText{white-space:pre-wrap;word-break:break-word}',
 			'.mgrToastClose{flex:none;border:0;background:transparent;color:inherit;cursor:pointer;font-size:16px;line-height:1;padding:0 2px}',
+			'.mgrLanCard{border:1px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-lg);background:var(--dsw-alias-bg-layer-1);padding:14px 16px;margin-bottom:12px}',
+			'.mgrLanRow{display:flex;align-items:center;gap:14px}',
+			'.mgrLanRowMain{flex:1;min-width:0}',
+			'.mgrLanTitle{font-size:13px;font-weight:600;color:var(--dsw-alias-label-primary)}',
+			'.mgrLanHint{margin-top:3px;font-size:11.5px;color:var(--dsw-alias-label-tertiary);line-height:1.6}',
+			'.mgrLanGrid{display:flex;gap:20px;flex-wrap:wrap;margin-top:14px}',
+			'.mgrQrBox{flex:none;display:flex;flex-direction:column;align-items:center;gap:8px}',
+			'.mgrQr{width:184px;height:184px;padding:10px;background:#fff;border:1px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-md)}',
+			'.mgrQrCaption{font-size:11.5px;color:var(--dsw-alias-label-tertiary)}',
+			'.mgrLanMain{flex:1;min-width:260px}',
+			'.mgrLanUrl{font-family:var(--dsw-font-mono,ui-monospace,SFMono-Regular,Menlo,monospace);font-size:12px;color:var(--dsw-alias-label-secondary);background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l1);border-radius:var(--dsw-radius-md);padding:8px 10px;word-break:break-all;line-height:1.6}',
+			'.mgrLanMeta{margin-top:12px;display:flex;flex-direction:column;gap:6px}',
+			'.mgrLanMetaRow{display:flex;gap:12px;font-size:12px;line-height:1.6}',
+			'.mgrLanMetaKey{flex:none;width:96px;color:var(--dsw-alias-label-tertiary)}',
+			'.mgrLanMetaValue{flex:1;min-width:0;color:var(--dsw-alias-label-secondary);word-break:break-all}',
+			'.mgrLanActions{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap}',
 		].join('\n');
 
 		//#endregion
@@ -360,7 +422,11 @@ window.__ModuleLoader__.load({
 			}
 			return fetch(API_PREFIX + '/' + endpoint, options).then(function (response) {
 				return response.json().then(function (value) {
-					var error = value !== null && typeof value === 'object' ? value.error : undefined;
+					// The error envelope is an object with a code and a message.
+					// A plain `error` string in a payload is data, not a failure.
+					var error = value !== null && typeof value === 'object' && value.error !== null && typeof value.error === 'object'
+						? value.error
+						: undefined;
 					if (!response.ok || error !== undefined) {
 						throw new Error((error && (error.message || error.code)) || ('HTTP ' + response.status));
 					}
@@ -1074,6 +1140,112 @@ window.__ModuleLoader__.load({
 
 		//#endregion
 
+		//#region lan view
+
+		/**
+		 * The QR code of the access link.
+		 *
+		 * The Host sends the module matrix as rows of `0` and `1`; the panel
+		 * draws it as plain rectangles, so no image and no markup from the
+		 * network ever reaches the page.
+		 *
+		 * @param {object} props - `rows` and `label`.
+		 * @returns {object} React node.
+		 */
+		function QrCode(props) {
+			var rows = props.rows;
+			if (!Array.isArray(rows) || rows.length === 0) return null;
+			var size = rows.length;
+			var cells = [];
+			for (var y = 0; y < size; y += 1) {
+				var row = rows[y];
+				if (typeof row !== 'string') continue;
+				for (var x = 0; x < row.length; x += 1) {
+					if (row[x] !== '1') continue;
+					cells.push(h('rect', { key: x + '-' + y, x: x, y: y, width: 1, height: 1, fill: '#000' }));
+				}
+			}
+			return h('svg', {
+				className: 'mgrQr',
+				viewBox: '0 0 ' + size + ' ' + size,
+				role: 'img',
+				'aria-label': props.label,
+				shapeRendering: 'crispEdges',
+			},
+				h('rect', { x: 0, y: 0, width: size, height: size, fill: '#fff' }),
+				cells);
+		}
+
+		/**
+		 * The LAN access panel.
+		 *
+		 * @param {object} props - `t`, `state`, `busy`, `onToggle`, `onCopy`.
+		 * @returns {object} React node.
+		 */
+		function LanSection(props) {
+			var t = props.t;
+			var state = props.state;
+			var enabled = state !== null && state.enabled === true;
+			var running = state !== null && state.running === true;
+			var certificate = state === null || state.certificate === undefined ? null : state.certificate;
+			return h('div', null,
+				h('div', { className: 'mgrLanCard' },
+					h('div', { className: 'mgrLanRow' },
+						h('div', { className: 'mgrLanRowMain' },
+							h('div', { className: 'mgrLanTitle' }, t('lan.switch')),
+							h('div', { className: 'mgrLanHint' }, t('lan.switchHint'))),
+						h(Switch, {
+							checked: enabled,
+							disabled: props.busy === true,
+							label: t('lan.switch'),
+							onChange: props.onToggle,
+						}))),
+				state !== null && state.error !== ''
+					? h('div', { className: 'mgrErrorBox' },
+						h('span', null, t('lan.error') + '：' + state.error))
+					: null,
+				running && typeof state.url === 'string' && state.url !== ''
+					? h('div', { className: 'mgrLanCard' },
+						h('div', { className: 'mgrLanGrid' },
+							h('div', { className: 'mgrQrBox' },
+								h(QrCode, { rows: state.matrix, label: t('lan.qr') }),
+								h('div', { className: 'mgrQrCaption' }, t('lan.qr'))),
+							h('div', { className: 'mgrLanMain' },
+								h('div', { className: 'mgrLanTitle' }, t('lan.url')),
+								h('div', { className: 'mgrLanUrl' }, state.url),
+								h('div', { className: 'mgrLanActions' },
+									h('button', {
+										type: 'button',
+										className: 'mgrBtn',
+										onClick: function () { props.onCopy(state.url); },
+									}, t('lan.copy'))),
+								h('div', { className: 'mgrLanMeta' },
+									h('div', { className: 'mgrLanMetaRow' },
+										h('span', { className: 'mgrLanMetaKey' }, t('lan.address')),
+										h('span', { className: 'mgrLanMetaValue' }, state.address + ':' + String(state.port))),
+									h('div', { className: 'mgrLanMetaRow' },
+										h('span', { className: 'mgrLanMetaKey' }, t('lan.upstream')),
+										h('span', { className: 'mgrLanMetaValue' }, state.upstream)),
+									certificate ? h('div', { className: 'mgrLanMetaRow' },
+										h('span', { className: 'mgrLanMetaKey' }, t('lan.certificate')),
+										h('span', { className: 'mgrLanMetaValue' }, certificate.fingerprint)) : null,
+									certificate ? h('div', { className: 'mgrLanMetaRow' },
+										h('span', { className: 'mgrLanMetaKey' }, t('lan.certificateValid')),
+										h('span', { className: 'mgrLanMetaValue' }, certificate.validTo)) : null))),
+						h('div', { className: 'mgrWarn' }, h('span', null, t('lan.certWarning'))),
+						h('div', { className: 'mgrWarn' }, h('span', null, t('lan.tokenWarning'))))
+					: h('div', { className: 'mgrLanCard' },
+						h('div', { className: 'mgrLanHint' }, t('lan.off')),
+						state !== null && Array.isArray(state.addresses) && state.addresses.length > 0
+							? h('div', { className: 'mgrLanMeta' },
+								h('div', { className: 'mgrLanMetaRow' },
+									h('span', { className: 'mgrLanMetaKey' }, t('lan.addresses')),
+									h('span', { className: 'mgrLanMetaValue' }, state.addresses.join(', '))))
+							: null));
+		}
+
+		//#endregion
+
 		//#region panel
 
 		/**
@@ -1088,6 +1260,7 @@ window.__ModuleLoader__.load({
 			var call = useCallback(function (endpoint, payload) { return callHost(ctx, endpoint, payload); }, [ctx]);
 			var [tab, setTab] = useState('skills');
 			var [data, setData] = useState(null);
+			var [lan, setLan] = useState(null);
 			var [error, setError] = useState('');
 			var [busy, setBusy] = useState(false);
 			var [toast, setToast] = useState(null);
@@ -1099,6 +1272,11 @@ window.__ModuleLoader__.load({
 			var applyOverview = useCallback(function (value) {
 				setData(value);
 				setError('');
+				// The overview carries the switch state; the full status with
+				// the link and the code arrives from `lan-status`.
+				setLan(function (current) {
+					return current === null && value !== null && value.lan !== undefined ? value.lan : current;
+				});
 			}, []);
 
 			var load = useCallback(function () {
@@ -1122,6 +1300,18 @@ window.__ModuleLoader__.load({
 				}, 4000);
 				return function () { clearInterval(timer); };
 			}, [tab, call, applyOverview]);
+
+			useEffect(function () {
+				if (tab !== 'lan') return undefined;
+				var readLan = function () {
+					return call('lan-status').then(function (value) {
+						setLan(value);
+					}).catch(function () {});
+				};
+				void readLan();
+				var timer = setInterval(readLan, 3000);
+				return function () { clearInterval(timer); };
+			}, [tab, call]);
 
 			useEffect(function () {
 				if (toast === null || toast.error === true) return undefined;
@@ -1210,6 +1400,25 @@ window.__ModuleLoader__.load({
 				});
 			}
 
+			function lanToggle(enabled) {
+				return run(call('lan-toggle', { enabled: enabled }), function (value) {
+					setLan(value);
+					notify(t('state.saved'), false);
+				}).catch(function () {});
+			}
+
+			function lanCopy(url) {
+				if (typeof navigator !== 'undefined' && navigator.clipboard !== undefined) {
+					navigator.clipboard.writeText(url).then(function () {
+						notify(t('lan.copied'), false);
+					}).catch(function () {
+						notify(t('lan.url') + ': ' + url, false);
+					});
+					return;
+				}
+				notify(t('lan.url') + ': ' + url, false);
+			}
+
 			var skillsCount = data === null ? 0 : data.skills.totals.skills;
 			var mcpCount = data === null ? 0 : data.mcp.servers.length;
 			return h('div', { className: 'mgrRoot' },
@@ -1236,7 +1445,16 @@ window.__ModuleLoader__.load({
 						'aria-selected': tab === 'mcp',
 						className: classes('mgrTab', tab === 'mcp' && 'mgrTabActive'),
 						onClick: function () { setTab('mcp'); },
-					}, t('tab.mcp'), h('span', { className: 'mgrTabCount' }, String(mcpCount)))),
+					}, t('tab.mcp'), h('span', { className: 'mgrTabCount' }, String(mcpCount))),
+					h('button', {
+						type: 'button',
+						role: 'tab',
+						'aria-selected': tab === 'lan',
+						className: classes('mgrTab', tab === 'lan' && 'mgrTabActive'),
+						onClick: function () { setTab('lan'); },
+					}, t('tab.lan'), lan !== null && lan.running === true
+						? h('span', { className: 'mgrDot mgrDot-ready' })
+						: null)),
 				h('div', { className: 'mgrBody' },
 					error === '' ? null : h('div', { className: 'mgrErrorBox' },
 						h('span', null, t('error.banner') + '：' + error),
@@ -1266,15 +1484,23 @@ window.__ModuleLoader__.load({
 								onRefresh: refresh,
 								onNew: function () { setCreating(true); },
 							})
-							: h(McpSection, {
-								t: t,
-								mcp: data.mcp,
-								busy: busy,
-								onToggle: mcpToggle,
-								onReconnect: mcpReconnect,
-								onRemove: mcpRemove,
-								onSave: mcpSave,
-							}))),
+							: tab === 'mcp'
+								? h(McpSection, {
+									t: t,
+									mcp: data.mcp,
+									busy: busy,
+									onToggle: mcpToggle,
+									onReconnect: mcpReconnect,
+									onRemove: mcpRemove,
+									onSave: mcpSave,
+								})
+								: h(LanSection, {
+									t: t,
+									state: lan,
+									busy: busy,
+									onToggle: lanToggle,
+									onCopy: lanCopy,
+								}))),
 				detail === null ? null : h(SkillDetail, {
 					category: detail.category,
 					name: detail.name,

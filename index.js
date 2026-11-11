@@ -20,9 +20,10 @@ import { readFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { isAbsolute, join, resolve } from 'node:path'
 
+import { createLanAccess } from './src/lan-access.js'
 import { createMcpManager } from './src/mcp.js'
 import { createManagerHandler, ENDPOINTS } from './src/remote.js'
-import { SettingsStore } from './src/settings.js'
+import { DEFAULT_LAN_PORT, SettingsStore } from './src/settings.js'
 import { createSkillsManager } from './src/skills.js'
 
 /** The plugin's row name. */
@@ -36,6 +37,8 @@ const MAX_REQUEST_BYTES = 1024 * 1024
 
 /** The services this plugin cannot work without. */
 export const inject = ['skills', 'connection']
+
+
 
 /**
  * The plugin's own version, read from the package it ships in.
@@ -101,6 +104,7 @@ export async function apply(ctx, config) {
 		defaults: {
 			skills: { roots: [defaultRoot] },
 			mcp: { servers: [] },
+			lan: { enabled: false, port: DEFAULT_LAN_PORT },
 		},
 	})
 	const ready = settings.load()
@@ -119,7 +123,21 @@ export async function apply(ctx, config) {
 	await ready
 	mcp.start()
 
-	const handler = createManagerHandler({ skills, mcp, version, dataDir, registry: ctx.skills })
+	// The LAN listener needs the web server's own origin, which the Host
+	// publishes only once it is listening; the manager reads it when the
+	// switch is turned on.
+	const lan = createLanAccess({
+		connection,
+		webServer: () => ctx.get('webServer'),
+		dataDir,
+		logger: ctx.logger,
+		port: settings.get().lan.port,
+	})
+	ctx.effect(() => () => {
+		void lan.dispose()
+	}, 'dsh-manager: lan access')
+
+	const handler = createManagerHandler({ skills, mcp, lan, settings, version, dataDir, registry: ctx.skills })
 	/** Everything that has to be undone when the plugin unloads. */
 	const disposers = []
 	ctx.effect(() => () => {
@@ -159,6 +177,11 @@ export async function apply(ctx, config) {
 				return Response.json(result.value ?? null)
 			},
 		}))
+	}
+
+	if (settings.get().lan.enabled) {
+		const state = await lan.enable()
+		if (state.error !== '') ctx.logger.warn(`dsh-manager: 局域网访问启动失败：${state.error}`)
 	}
 
 	ctx.logger.info(`dsh-manager: 技能根目录 ${defaultRoot}，数据目录 ${dataDir}，接口 ${API_PREFIX}`)

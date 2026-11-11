@@ -11,6 +11,9 @@
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises'
 import { dirname } from 'node:path'
 
+/** The port the LAN listener uses when the settings name none. */
+export const DEFAULT_LAN_PORT = 8443
+
 /**
  * Turn arbitrary JSON into the settings shape the manager assumes.
  *
@@ -22,6 +25,7 @@ export function normalizeSettings(raw, defaults) {
 	const source = raw !== null && typeof raw === 'object' ? raw : {}
 	const skills = source.skills !== null && typeof source.skills === 'object' ? source.skills : {}
 	const mcp = source.mcp !== null && typeof source.mcp === 'object' ? source.mcp : {}
+	const lan = source.lan !== null && typeof source.lan === 'object' ? source.lan : {}
 	const roots = Array.isArray(skills.roots)
 		? uniqueStrings(skills.roots)
 		: [...defaults.skills.roots]
@@ -36,7 +40,23 @@ export function normalizeSettings(raw, defaults) {
 		mcp: {
 			servers: dedupeServers(servers),
 		},
+		lan: {
+			enabled: lan.enabled === true,
+			port: normalizePort(lan.port, defaults.lan?.port ?? DEFAULT_LAN_PORT),
+		},
 	}
+}
+
+/**
+ * Normalize the port of the LAN listener.
+ *
+ * @param {unknown} value - The candidate port.
+ * @param {number} fallback - The default port.
+ * @returns {number} The port.
+ */
+function normalizePort(value, fallback) {
+	if (typeof value !== 'number' || !Number.isInteger(value) || value < 0 || value > 65535) return fallback
+	return value
 }
 
 /**

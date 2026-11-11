@@ -1,7 +1,7 @@
 # dsh-manager
 
-One sidebar entry in the DeepSeek Harness Web UI that manages the two things an
-agent's capabilities are usually assembled from: **skills** and **MCP servers**.
+One sidebar entry in the DeepSeek Harness Web UI that manages what an agent
+runs on and how you reach it: **skills**, **MCP servers**, and **LAN access**.
 
 - **技能** — scans `~/.agents/skills/` one level deeper than the built-in
   filesystem provider: each directory is a category, each child is a skill
@@ -18,6 +18,11 @@ agent's capabilities are usually assembled from: **skills** and **MCP servers**.
   `mcp__<server>__<tool>`, with the same naming contract the shipped MCP bridge
   uses. Environment values live in the Host credential store, never in the
   plugin's settings file.
+- **局域网访问** — one switch opens an encrypted door on this machine's LAN
+  address. The panel prints a QR code; a phone or tablet that scans it opens
+  the same GUI over HTTPS and drives this Harness with the same rights as the
+  local browser. The listener exists only while the switch is on, and it binds
+  one concrete address, never every interface.
 
 ## Install
 
@@ -76,11 +81,30 @@ and `KEY=VALUE` environment lines.
   privileges. The permission preset's sandbox does not confine it; only the
   environment is scrubbed.
 
-## Data
+## LAN access
+
+The Harness web server owns exactly one listener and binds loopback, and the
+shipped composition refuses a wildcard bind on purpose. The plugin therefore
+leaves the kernel alone: it opens its own HTTPS listener on one concrete LAN
+address and forwards every request to the running web server.
+
+- The certificate is self-signed and issued for that address. It is cached
+  under the manager's data folder and reissued when the address changes.
+- `Host` and `Origin` are rewritten to the upstream's own authority, because
+  that authority is the loopback one the Host's browser fence trusts. Cookies,
+  bodies and the WebSocket upgrade are forwarded unchanged.
+- The QR code carries the Host's launch token. The first visit exchanges it
+  for a signed session cookie exactly as a local browser does, and the token
+  leaves the address bar in the redirect that follows.
+- The link grants owner rights, so it is shown only while the switch is on.
+  Turning the switch off closes the port at once; the switch state is
+  remembered and the listener comes back on the next start.
 
 | What | Where |
 |---|---|
 | Manager settings (0600) | `<DSH_HOME>/manager/settings.json`, default `~/.dsh/manager/settings.json` |
+| LAN switch and port | the same file, under `lan` |
+| TLS material (0600) | `<DSH_HOME>/manager/lan-access/tls/` |
 | MCP environment values | the Host credential store, record `dsh-manager/<server-id>` |
 | Skill files | `~/.agents/skills/` (top of the configured roots) |
 
@@ -101,22 +125,35 @@ plugin never rewrites the profile patch.
 - Skill deletion is not offered — the panel creates and switches, the file
   manager deletes.
 - The MCP list panel reflects state in four-second polls while the tab is open.
+- The LAN listener needs `openssl` on the machine to issue the certificate.
+  Without it the switch reports the reason instead of opening a port.
+- The listener binds one address, never `0.0.0.0`. macOS does not route a
+  connection from this machine to its own LAN address, so the link has to be
+  opened from another device on the network — the phone is the intended one.
+- macOS asks once whether the Harness app may accept incoming connections.
+  Without that permission the phone cannot reach the port.
+- The certificate is self-signed, so the phone browser calls the page unsafe
+  on the first visit and the user has to continue anyway.
+- The QR code is generated in the plugin (byte mode, error correction level M,
+  versions 1 to 10), so a link longer than 213 bytes cannot be encoded.
 
 ## Development
 
 ```bash
-npm test          # frontmatter, category scan, MCP client, host wiring
+npm test          # frontmatter, category scan, MCP client, QR encoder, LAN proxy, host wiring
 ```
 
 Source map:
 
 | File | Role |
 |---|---|
-| `index.js` | Host entry: provider registration, MCP start, `/api/manager` routes |
+| `index.js` | Host entry: provider registration, MCP start, LAN listener, `/api/manager` routes |
 | `src/frontmatter.js` | `SKILL.md` frontmatter subset reader |
 | `src/skills.js` | category scan, `ctx.skills` provider, switches, create |
 | `src/mcp-client.js` | dependency-free stdio MCP client and tool-name contract |
 | `src/mcp.js` | server rows, connections, tool registration, credential-backed env |
+| `src/lan-access.js` | LAN address detection, self-signed certificate, HTTPS proxy |
+| `src/qr.js` | dependency-free QR encoder |
 | `src/settings.js` | atomic manager settings store |
 | `src/remote.js` | panel endpoints and the merged agent-catalog view |
 | `client.js` | sidebar entry and the management page |
