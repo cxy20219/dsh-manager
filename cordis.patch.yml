@@ -1,0 +1,13 @@
+# dsh-manager — one Host half, one sidebar entry, one management page.
+#
+# The Host half scans hierarchical skill categories and owns the stdio MCP
+# connections; the browser half renders the panel.
+#
+#   dsh plugin --profile <profile> add /path/to/dsh-manager
+#
+- insert:
+    - id: dsh-manager
+      name: dsh-manager
+      config:
+        # 数据目录（可选）：默认 <DSH_HOME>/manager。
+        # dataDir: /Users/you/.dsh/manager

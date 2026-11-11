@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Manager",
+    "description": "One panel for hierarchical skill categories and local MCP servers: enable skill categories under ~/.agents/skills and connect stdio MCP servers whose tools join the agent."
+  }
+}
