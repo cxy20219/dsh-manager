@@ -143,6 +143,12 @@ window.__ModuleLoader__.load({
 			'lan.tokenWarning': '链接里带着本机的启动令牌，等同于管理员权限，不要分享给别人。关闭开关后链接立即失效。',
 			'lan.certWarning': '证书是本机自签的，手机浏览器会提示"不安全"，选择继续访问即可。',
 			'lan.noAddress': '没有检测到局域网 IPv4 地址，请先连上局域网。',
+			'lan.trust': '手机信任证书',
+			'lan.trustHint': '浏览器可以点"继续访问"打开页面，但 WebSocket 会被直接拒绝，所以要先把根证书装到手机上并信任它。装一次即可，之后扫码即用。',
+			'lan.downloadCa': '下载根证书',
+			'lan.caDownloaded': '根证书已下载',
+			'lan.ios': 'iPhone / iPad：先下载根证书，再用「设置 → 通用 → VPN 与设备管理」安装描述文件，再到「设置 → 通用 → 关于本机 → 证书信任设置」里打开对这个根证书的完全信任。',
+			'lan.android': 'Android：先下载根证书，再到「设置 → 安全 → 加密与凭据 → 安装证书 → CA 证书」里选中它。',
 			'lan.error': '开启失败',
 			'lan.addresses': '检测到的地址',
 		};
@@ -264,6 +270,12 @@ window.__ModuleLoader__.load({
 			'lan.tokenWarning': 'The link carries this machine\'s launch token and therefore administrator rights. Do not share it; turning the switch off invalidates it.',
 			'lan.certWarning': 'The certificate is self-signed, so a phone browser calls the page unsafe; continue anyway.',
 			'lan.noAddress': 'No LAN IPv4 address was found; connect to a network first.',
+			'lan.trust': 'Trust the certificate on the phone',
+			'lan.trustHint': 'A browser can let the page through its warning, but it refuses the WebSocket outright, so the root certificate has to be installed and trusted on the phone. Once, and scanning works.',
+			'lan.downloadCa': 'Download root certificate',
+			'lan.caDownloaded': 'Root certificate downloaded',
+			'lan.ios': 'iPhone / iPad: download the root certificate, install the profile from Settings → General → VPN & Device Management, then enable full trust for it under Settings → General → About → Certificate Trust Settings.',
+			'lan.android': 'Android: download the root certificate, then pick it under Settings → Security → Encryption & credentials → Install a certificate → CA certificate.',
 			'lan.error': 'Could not start',
 			'lan.addresses': 'Detected addresses',
 		};
@@ -395,6 +407,8 @@ window.__ModuleLoader__.load({
 			'.mgrLanMetaKey{flex:none;width:96px;color:var(--dsw-alias-label-tertiary)}',
 			'.mgrLanMetaValue{flex:1;min-width:0;color:var(--dsw-alias-label-secondary);word-break:break-all}',
 			'.mgrLanActions{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap}',
+			'.mgrLanTrust{margin-top:14px;padding-top:12px;border-top:1px solid var(--dsw-alias-border-l1)}',
+			'.mgrLanSteps{margin-top:6px;line-height:1.7}',
 		].join('\n');
 
 		//#endregion
@@ -1232,6 +1246,17 @@ window.__ModuleLoader__.load({
 									certificate ? h('div', { className: 'mgrLanMetaRow' },
 										h('span', { className: 'mgrLanMetaKey' }, t('lan.certificateValid')),
 										h('span', { className: 'mgrLanMetaValue' }, certificate.validTo)) : null))),
+						h('div', { className: 'mgrLanTrust' },
+							h('div', { className: 'mgrLanTitle' }, t('lan.trust')),
+							h('div', { className: 'mgrLanHint' }, t('lan.trustHint')),
+							h('div', { className: 'mgrLanActions' },
+								h('button', {
+									type: 'button',
+									className: 'mgrBtn mgrBtnPrimary',
+									onClick: function () { props.onDownloadCa(); },
+								}, t('lan.downloadCa'))),
+							h('div', { className: 'mgrLanHint mgrLanSteps' }, t('lan.ios')),
+							h('div', { className: 'mgrLanHint mgrLanSteps' }, t('lan.android'))),
 						h('div', { className: 'mgrWarn' }, h('span', null, t('lan.certWarning'))),
 						h('div', { className: 'mgrWarn' }, h('span', null, t('lan.tokenWarning'))))
 					: h('div', { className: 'mgrLanCard' },
@@ -1407,6 +1432,29 @@ window.__ModuleLoader__.load({
 				}).catch(function () {});
 			}
 
+			function lanDownloadCa() {
+				return call('lan-ca').then(function (value) {
+					if (value === null || value === undefined || typeof value.der !== 'string' || value.der === '') {
+						throw new Error(t('lan.error'));
+					}
+					var binary = atob(value.der);
+					var bytes = new Uint8Array(binary.length);
+					for (var index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
+					var blob = new Blob([bytes], { type: 'application/x-x509-ca-cert' });
+					var url = URL.createObjectURL(blob);
+					var anchor = document.createElement('a');
+					anchor.href = url;
+					anchor.download = value.name;
+					document.body.appendChild(anchor);
+					anchor.click();
+					anchor.remove();
+					setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+					notify(t('lan.caDownloaded'), false);
+				}).catch(function (reason) {
+					notify(messageOf(reason), true);
+				});
+			}
+
 			function lanCopy(url) {
 				if (typeof navigator !== 'undefined' && navigator.clipboard !== undefined) {
 					navigator.clipboard.writeText(url).then(function () {
@@ -1500,6 +1548,7 @@ window.__ModuleLoader__.load({
 									busy: busy,
 									onToggle: lanToggle,
 									onCopy: lanCopy,
+									onDownloadCa: lanDownloadCa,
 								}))),
 				detail === null ? null : h(SkillDetail, {
 					category: detail.category,

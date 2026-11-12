@@ -6,7 +6,9 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
 
-import { createLanAccess, detectLanAddresses, rewriteRequestHeaders } from '../src/lan-access.js'
+import { X509Certificate } from 'node:crypto'
+
+import { createLanAccess, detectLanAddresses, ensureCertificate, rewriteRequestHeaders } from '../src/lan-access.js'
 
 const interfaces = {
 	lo0: [{ address: '127.0.0.1', family: 'IPv4', internal: true }],
@@ -121,6 +123,21 @@ test('forwards requests and upgrades to the upstream over TLS', async (t) => {
 	})
 	assert.equal(upgraded, 'upgrade payload')
 	assert.equal(received[1].headers.host, `127.0.0.1:${String(upstreamPort)}`)
+})
+
+test('issues a server certificate that the local authority signs', async (t) => {
+	const dataDir = await mkdtemp(join(tmpdir(), 'dsh-lan-test-'))
+	t.after(() => rm(dataDir, { recursive: true, force: true }))
+	const material = await ensureCertificate({ dir: join(dataDir, 'tls'), address: '192.168.31.40', names: ['host.local'] })
+	const leaf = new X509Certificate(material.cert)
+	const authority = new X509Certificate(material.ca)
+	assert.equal(leaf.verify(authority.publicKey), true, 'the leaf is signed by the local authority')
+	assert.equal(authority.ca, true, 'the authority is a certificate authority')
+	assert.equal(authority.subject, 'CN=dsh-manager local CA')
+	assert.match(leaf.subjectAltName ?? '', /IP Address:192\.168\.31\.40/)
+	assert.match(leaf.subjectAltName ?? '', /DNS:host\.local/)
+	const again = await ensureCertificate({ dir: join(dataDir, 'tls'), address: '192.168.31.40', names: ['host.local'] })
+	assert.equal(again.reused, true, 'the material is reused while the address does not change')
 })
 
 test('reports the state after the listener stops', async (t) => {

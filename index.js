@@ -180,7 +180,7 @@ export async function apply(ctx, config) {
 	}
 
 	if (settings.get().lan.enabled) {
-		const state = await lan.enable()
+		const state = await lan.apply(true)
 		if (state.error !== '') ctx.logger.warn(`dsh-manager: 局域网访问启动失败：${state.error}`)
 	}
 

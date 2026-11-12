@@ -24,8 +24,8 @@
 
 import { execFile } from 'node:child_process'
 import { X509Certificate, createHash } from 'node:crypto'
-import { chmod, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
-import { networkInterfaces } from 'node:os'
+import { appendFile, chmod, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { hostname, networkInterfaces } from 'node:os'
 import { join } from 'node:path'
 import http from 'node:http'
 import https from 'node:https'
@@ -42,6 +42,9 @@ export const DEFAULT_PORT = 8443
 
 /** The certificate lifetime in days. */
 const CERTIFICATE_DAYS = 825
+
+/** The local certificate authority lifetime in days. */
+const CA_DAYS = 3650
 
 /** The openssl binaries tried in order. */
 const OPENSSL_CANDIDATES = ['/usr/bin/openssl', '/opt/homebrew/bin/openssl', 'openssl']
@@ -154,24 +157,48 @@ async function findOpenssl() {
 }
 
 /**
- * The openssl configuration that names one address as the subject.
+ * The openssl configuration of the local certificate authority.
  *
- * @param {string} address - The IP address the certificate is issued for.
  * @returns {string} The configuration file content.
  */
-function opensslConfiguration(address) {
+function caConfiguration() {
 	return [
 		'[req]',
 		'distinguished_name = dn',
 		'x509_extensions = ext',
 		'prompt = no',
 		'[dn]',
-		`CN = ${address}`,
+		'CN = dsh-manager local CA',
 		'[ext]',
-		`subjectAltName = IP:${address}`,
+		'basicConstraints = critical,CA:TRUE,pathlen:0',
+		'keyUsage = critical,keyCertSign,cRLSign',
+		'subjectKeyIdentifier = hash',
+		'',
+	].join('\n')
+}
+
+/**
+ * The openssl configuration of the server certificate.
+ *
+ * @param {string} address - The IP address the certificate is issued for.
+ * @param {string[]} names - The host names the certificate also covers.
+ * @returns {string} The configuration file content.
+ */
+function leafConfiguration(address, names) {
+	const subjectAltName = [`IP:${address}`, ...names.map((name) => `DNS:${name}`)].join(',')
+	return [
+		'[req]',
+		'distinguished_name = dn',
+		'prompt = no',
+		'[dn]',
+		`CN = ${address}`,
+		'[v3]',
+		`subjectAltName = ${subjectAltName}`,
 		'basicConstraints = critical,CA:FALSE',
 		'keyUsage = critical,digitalSignature,keyEncipherment',
 		'extendedKeyUsage = serverAuth',
+		'subjectKeyIdentifier = hash',
+		'authorityKeyIdentifier = keyid,issuer',
 		'',
 	].join('\n')
 }
@@ -201,21 +228,57 @@ function certificateAddresses(pem) {
 /**
  * Issue or reuse the TLS material of one address.
  *
- * @param {{dir: string, address: string, logger?: object}} options - The options.
- * @returns {Promise<{key: string, cert: string, fingerprint: string, validTo: string, reused: boolean}>} The material.
+ * The server certificate is signed by a local certificate authority instead
+ * of being self-signed: a phone refuses a WebSocket to a certificate it does
+ * not trust, even after the reader let the page through a warning, so the
+ * user has to be able to install one root certificate on the device.
+ *
+ * @param {{dir: string, address: string, names?: string[], logger?: object}} options - The options.
+ * @returns {Promise<{key: string, cert: string, ca: string, fingerprint: string, validTo: string, reused: boolean}>} The material.
  */
-export async function ensureCertificate({ dir, address, logger }) {
+export async function ensureCertificate({ dir, address, names = [], logger }) {
 	await mkdir(dir, { recursive: true, mode: 0o700 })
+	const caKeyPath = join(dir, 'ca-key.pem')
+	const caCertPath = join(dir, 'ca-cert.pem')
 	const keyPath = join(dir, 'key.pem')
 	const certPath = join(dir, 'cert.pem')
+	const openssl = await findOpenssl()
+	if (openssl === undefined) throw new Error('找不到 openssl，无法生成证书')
+
+	let caCert = ''
+	try {
+		caCert = await readFile(caCertPath, 'utf8')
+		const ca = new X509Certificate(caCert)
+		if (Date.parse(ca.validTo) <= Date.now()) throw new Error('expired')
+	} catch {
+		const caConfigPath = join(dir, 'ca.cnf')
+		await writeFile(caConfigPath, caConfiguration(), { encoding: 'utf8', mode: 0o600 })
+		try {
+			await execFileAsync(openssl, [
+				'req', '-x509', '-newkey', 'rsa:2048', '-sha256', '-nodes',
+				'-days', String(CA_DAYS),
+				'-keyout', caKeyPath, '-out', caCertPath,
+				'-config', caConfigPath,
+			])
+		} catch (error) {
+			throw new Error(`openssl 生成根证书失败：${error instanceof Error ? error.message : String(error)}`)
+		}
+		await chmod(caKeyPath, 0o600).catch(() => {})
+		await chmod(caCertPath, 0o644).catch(() => {})
+		caCert = await readFile(caCertPath, 'utf8')
+		logger?.info?.('dsh-manager: 已生成局域网根证书，手机信任它之后即可使用加密访问')
+	}
+
 	try {
 		const [key, cert] = await Promise.all([readFile(keyPath, 'utf8'), readFile(certPath, 'utf8')])
 		const certificate = new X509Certificate(cert)
 		const expired = Date.parse(certificate.validTo) <= Date.now()
-		if (!expired && certificateAddresses(cert).includes(address)) {
+		const signedByAuthority = certificate.verify(new X509Certificate(caCert).publicKey)
+		if (!expired && signedByAuthority && certificateAddresses(cert).includes(address)) {
 			return {
 				key,
 				cert,
+				ca: caCert,
 				fingerprint: certificateFingerprint(cert),
 				validTo: certificate.validTo,
 				reused: true,
@@ -225,34 +288,54 @@ export async function ensureCertificate({ dir, address, logger }) {
 		// No usable material on disk: issue a new one.
 	}
 
-	const openssl = await findOpenssl()
-	if (openssl === undefined) throw new Error('找不到 openssl，无法生成自签证书')
 	const configPath = join(dir, 'openssl.cnf')
-	await writeFile(configPath, opensslConfiguration(address), { encoding: 'utf8', mode: 0o600 })
+	await writeFile(configPath, leafConfiguration(address, names), { encoding: 'utf8', mode: 0o600 })
+	const requestPath = join(dir, 'server.csr')
 	try {
 		await execFileAsync(openssl, [
-			'req', '-x509', '-newkey', 'rsa:2048', '-sha256', '-nodes',
-			'-days', String(CERTIFICATE_DAYS),
-			'-keyout', keyPath, '-out', certPath,
+			'req', '-new', '-newkey', 'rsa:2048', '-nodes',
+			'-keyout', keyPath, '-out', requestPath,
 			'-config', configPath,
 		])
+		await execFileAsync(openssl, [
+			'x509', '-req', '-in', requestPath,
+			'-CA', caCertPath, '-CAkey', caKeyPath, '-CAcreateserial',
+			'-out', certPath, '-days', String(CERTIFICATE_DAYS),
+			'-sha256', '-extfile', configPath, '-extensions', 'v3',
+		])
 	} catch (error) {
-		throw new Error(`openssl 生成证书失败：${error instanceof Error ? error.message : String(error)}`)
+		throw new Error(`openssl 生成服务器证书失败：${error instanceof Error ? error.message : String(error)}`)
 	}
+	await rm(requestPath, { force: true }).catch(() => {})
 	// openssl writes the key with the ambient umask; the private key stays
 	// owner-only.
 	await chmod(keyPath, 0o600).catch(() => {})
 	await chmod(certPath, 0o644).catch(() => {})
 	const [key, cert] = await Promise.all([readFile(keyPath, 'utf8'), readFile(certPath, 'utf8')])
 	const certificate = new X509Certificate(cert)
-	logger?.info?.(`dsh-manager: 已为 ${address} 生成自签证书，${certificate.validTo} 到期`)
+	logger?.info?.(`dsh-manager: 已为 ${address} 签发服务器证书，${certificate.validTo} 到期`)
 	return {
 		key,
 		cert,
+		ca: caCert,
 		fingerprint: certificateFingerprint(cert),
 		validTo: certificate.validTo,
 		reused: false,
 	}
+}
+
+/**
+ * The host names the server certificate also covers.
+ *
+ * The mDNS name of the machine is handy on a phone: it survives a change of
+ * the DHCP address, as long as the device resolves it.
+ *
+ * @returns {string[]} The host names.
+ */
+function hostNames() {
+	const name = hostname()
+	if (name === '') return []
+	return name.endsWith('.local') ? [name] : [name, `${name}.local`]
 }
 
 /**
@@ -270,6 +353,7 @@ export function createLanAccess({ connection, webServer, dataDir, logger, port, 
 		url: '',
 		matrix: [],
 		certificate: null,
+		ca: '',
 		upstream: '',
 		error: '',
 	}
@@ -278,6 +362,21 @@ export function createLanAccess({ connection, webServer, dataDir, logger, port, 
 	// stopped listener leaves no socket behind.
 	const upstreamAgent = new http.Agent({ keepAlive: true })
 	const upstreamTlsAgent = new https.Agent({ keepAlive: true, rejectUnauthorized: false })
+
+	/**
+	 * Append one line to the access log.
+	 *
+	 * The log is the only way to see what a phone actually sent: the browser
+	 * refuses a WebSocket to an untrusted certificate without leaving a trace
+	 * in the page.
+	 *
+	 * @param {string} message - The line.
+	 * @returns {void}
+	 */
+	function access(message) {
+		const line = `${new Date().toISOString()} ${message}\n`
+		void appendFile(join(dataDir, 'lan-access', 'access.log'), line).catch(() => {})
+	}
 
 	/**
 	 * The current state of the listener.
@@ -297,6 +396,17 @@ export function createLanAccess({ connection, webServer, dataDir, logger, port, 
 			upstream: state.upstream,
 			error: state.error,
 		}
+	}
+
+	/**
+	 * The root certificate a phone has to trust.
+	 *
+	 * @returns {object} The certificate in PEM and base64 DER form.
+	 */
+	function ca() {
+		if (state.ca === '') return { pem: '', der: '', name: 'dsh-manager-ca.cer' }
+		const der = Buffer.from(state.ca.replace(/-----(BEGIN|END) CERTIFICATE-----/g, '').replace(/\s+/g, ''), 'base64')
+		return { pem: state.ca, der: der.toString('base64'), name: 'dsh-manager-ca.cer' }
 	}
 
 	/**
@@ -336,6 +446,7 @@ export function createLanAccess({ connection, webServer, dataDir, logger, port, 
 			rejectUnauthorized: false,
 			agent: secure ? upstreamTlsAgent : upstreamAgent,
 		}, (upstreamRes) => {
+			access(`${req.method} ${req.url} -> ${String(upstreamRes.statusCode ?? 0)}`)
 			const responseHeaders = { ...upstreamRes.headers }
 			if (Array.isArray(responseHeaders['set-cookie'])) {
 				responseHeaders['set-cookie'] = responseHeaders['set-cookie'].map(withSecureCookie)
@@ -344,6 +455,7 @@ export function createLanAccess({ connection, webServer, dataDir, logger, port, 
 			upstreamRes.pipe(res)
 		})
 		proxied.on('error', (error) => {
+			access(`ERROR ${req.method} ${req.url} ${error instanceof Error ? error.message : String(error)}`)
 			logger?.warn?.(`dsh-manager: 局域网代理转发失败：${error instanceof Error ? error.message : String(error)}`)
 			if (!res.headersSent) res.writeHead(502, { 'content-type': 'text/plain; charset=utf-8' })
 			res.end('dsh lan access: upstream unavailable\n')
@@ -374,11 +486,22 @@ export function createLanAccess({ connection, webServer, dataDir, logger, port, 
 		connect.on('connect', () => {
 			connect.write(`${lines.join('\r\n')}\r\n\r\n`)
 			if (head !== undefined && head.length > 0) connect.write(head)
+			connect.once('data', (chunk) => {
+				const status = chunk.toString('latin1').split('\r\n', 1)[0]
+				access(`UPGRADE ${req.url} -> ${status}`)
+			})
 			socket.pipe(connect)
 			connect.pipe(socket)
 		})
-		connect.on('error', () => socket.destroy())
+		connect.on('error', (error) => {
+			access(`UPGRADE ${req.url} ERROR ${error instanceof Error ? error.message : String(error)}`)
+			socket.destroy()
+		})
 		socket.on('error', () => connect.destroy())
+		socket.on('close', () => {
+			access(`CLOSE ${req.url}`)
+			connect.destroy()
+		})
 	}
 
 	/**
@@ -406,7 +529,7 @@ export function createLanAccess({ connection, webServer, dataDir, logger, port, 
 		}
 		let material
 		try {
-			material = await ensureCertificate({ dir: join(dataDir, 'lan-access', 'tls'), address: chosen, logger })
+			material = await ensureCertificate({ dir: join(dataDir, 'lan-access', 'tls'), address: chosen, names: hostNames(), logger })
 		} catch (error) {
 			state.error = error instanceof Error ? error.message : String(error)
 			return status()
@@ -442,6 +565,7 @@ export function createLanAccess({ connection, webServer, dataDir, logger, port, 
 			validTo: material.validTo,
 			reused: material.reused,
 		}
+		state.ca = material.ca
 		const base = `https://${chosen}:${String(state.listenPort)}/`
 		state.url = connection.authenticatedUrl(base)
 		const qr = encodeQr(state.url)
@@ -489,6 +613,7 @@ export function createLanAccess({ connection, webServer, dataDir, logger, port, 
 	return {
 		status,
 		summary,
+		ca,
 		enable,
 		disable,
 		apply,

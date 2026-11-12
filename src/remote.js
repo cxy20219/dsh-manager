@@ -24,6 +24,7 @@ export const ENDPOINTS = [
 	'mcp-reconnect',
 	'lan-status',
 	'lan-toggle',
+	'lan-ca',
 ]
 
 /**
@@ -161,6 +162,10 @@ export function createManagerHandler({ skills, mcp, lan, settings, version, data
 				case 'lan-status': {
 					if (lan === undefined) throw new Error('当前 Host 没有局域网访问服务')
 					return { ok: true, value: lan.status() }
+				}
+				case 'lan-ca': {
+					if (lan === undefined) throw new Error('当前 Host 没有局域网访问服务')
+					return { ok: true, value: lan.ca() }
 				}
 				case 'lan-toggle': {
 					if (lan === undefined) throw new Error('当前 Host 没有局域网访问服务')
