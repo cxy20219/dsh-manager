@@ -1,159 +1,124 @@
 # dsh-manager
 
-One sidebar entry in the DeepSeek Harness Web UI that manages what an agent
-runs on and how you reach it: **skills**, **MCP servers**, and **LAN access**.
+DeepSeek Harness Web UI 左侧的一个入口，管理 Agent 运行所需的东西，以及你怎么访问它：
+**技能**、**MCP 服务**、**局域网访问**。
 
-- **技能** — scans `~/.agents/skills/` one level deeper than the built-in
-  filesystem provider: each directory is a category, each child is a skill
-  (`<category>/<skill>/SKILL.md`). Categories and single skills can be switched
-  off; a disabled category never enters the agent's skill catalog. Bodies are
-  still loaded on demand, so a catalog entry costs its name and description only.
-- **目录核对** — the skills tab also reports what the agent's registry actually
-  offers, merged across every provider (`ctx.skills.list`). Top-level skills and
-  bundled providers therefore show up in the totals, and a skill the manager
-  considers active but the registry does not list is called out as shadowed or
-  missing instead of silently counting as loaded.
-- **MCP** — add, edit, enable, disable, remove and reconnect local stdio MCP
-  servers. Discovered tools register on `ctx.tools` as
-  `mcp__<server>__<tool>`, with the same naming contract the shipped MCP bridge
-  uses. Environment values live in the Host credential store, never in the
-  plugin's settings file.
-- **局域网访问** — one switch opens an encrypted door on this machine's LAN
-  address. The panel prints a QR code; a phone or tablet that scans it opens
-  the same GUI over HTTPS and drives this Harness with the same rights as the
-  local browser. The listener exists only while the switch is on, and it binds
-  one concrete address, never every interface.
+- **技能** — 扫描 `~/.agents/skills/`，比内置的 filesystem provider 多深入一层：每个目录是一个分类，
+  其下每个子目录是一个技能（`<分类>/<技能>/SKILL.md`）。分类和单个技能都可以单独关闭；被关闭的分类
+  永远不会进入 Agent 的技能目录。技能正文仍按需加载，所以一条目录项只占一个名字和一段描述。
+- **目录核对** — 技能页还会报告 Agent 的注册表实际提供了什么，把所有 provider 合并后统计
+  （`ctx.skills.list`）。顶层技能和内置 provider 因此也会计入总数；管理器认为生效、但注册表里没有的
+  技能，会被明确标成「被遮蔽」或「缺失」，而不是悄悄算成已加载。
+- **MCP** — 添加、编辑、启用、停用、删除和重连本地 stdio MCP 服务。发现的工具按
+  `mcp__<服务>__<工具>` 注册到 `ctx.tools`，命名约定与内置 MCP 桥一致。环境变量的值存在宿主凭证库，
+  绝不写进插件的设置文件。
+- **局域网访问** — 一个开关，在本机的局域网地址上开一个加密入口。面板给出二维码；手机或平板扫码后
+  用浏览器打开的就是同一个 GUI，操作权限与本机浏览器完全一致。监听器只在开关打开时存在，并且只绑定
+  一个具体地址，绝不绑定所有网卡。
 
-## Install
+## 安装
 
-From this directory:
+在本目录下执行：
 
 ```bash
 dsh plugin --profile desktop add /Users/chengxinyu/Desktop/AI-work/dsh-manger
 ```
 
-Or through the Plugin Manager in the Web UI. The bundle inserts one Host row
-(`dsh-manager`) and one Client module; no dependencies are installed, so the
-install works offline.
+也可以用 Web UI 里的插件管理器安装。这个 bundle 会插入一行宿主配置（`dsh-manager`）和一个客户端模块；
+不安装任何依赖，所以离线也能装。
 
-After installation, reload the Web page once. The entry appears in the left
-rail next to the other global panels.
+装完后刷新一次网页，入口就出现在左侧栏的其他全局面板旁边。
 
-## Skill layout
+## 技能目录结构
 
 ```text
 ~/.agents/skills/
   dev/
     webapp-testing/SKILL.md
-    flat-skill.md            # flat files work too
+    flat-skill.md            # 扁平文件也可以
   office/
     docx/SKILL.md
-  ego-browser -> …           # a top-level skill; the filesystem provider owns it
+  ego-browser -> …           # 顶层技能，由 filesystem provider 负责
 ```
 
-The manager skips directories that have their own `SKILL.md` (top-level skills)
-and hidden directories. A skill is skipped in the panel with the parser's reason
-when its frontmatter is invalid. If two categories expose the same skill name,
-the first one (category order, then folder order) registers and the rest show
-`重名，未注册`.
+带自己 `SKILL.md` 的目录（顶层技能）和隐藏目录会被跳过。某个技能的 frontmatter 不合法时，面板会跳过它
+并给出解析器的具体原因。如果两个分类里有同名技能，先出现的那个（先按分类顺序，再按文件夹顺序）注册，
+其余显示 `重名，未注册`。
 
-The provider registers at rank 550, below the filesystem provider's user roots
-(500), so a top-level override still wins a name collision.
+provider 以 rank 550 注册，低于 filesystem provider 的用户根目录（500），所以顶层覆盖仍然能赢得重名。
 
-## MCP servers
+## MCP 服务
 
-Only `stdio` transport is supported. The form fields map directly to a child
-process: command, one argument per line, an optional absolute working directory,
-and `KEY=VALUE` environment lines.
+只支持 `stdio` 传输。表单字段直接对应一个子进程：命令、每行一个参数、可选的绝对工作目录，以及
+`KEY=VALUE` 环境变量行。
 
-- The child environment starts from the ambient environment minus names matching
-  `KEY|PASSWORD|SECRET|TOKEN` and `DSH_*`; explicit environment entries are added
-  on top.
-- Environment values are written to the credential store as the record
-  `dsh-manager/<server-id>` (`api-key` kind with an `env` map). The settings file
-  keeps only the key names, and the panel never reads values back.
-- Tools are re-synced when the server sends `notifications/tools/list_changed`.
-  A crashed server shows an error and keeps its row; use **重新连接**. There is
-  no automatic reconnect loop.
-- Tool results are forwarded as text. Images, audio and embedded binary
-  resources are represented by a short diagnostic instead of base64.
-- Each server runs as a child process of the Host with your OS user's
-  privileges. The permission preset's sandbox does not confine it; only the
-  environment is scrubbed.
+- 子进程环境从当前环境出发，先去掉名字匹配 `KEY|PASSWORD|SECRET|TOKEN` 和 `DSH_*` 的变量，再叠加表单里
+  显式填写的条目。
+- 环境变量的值写入凭证库，记录名 `dsh-manager/<服务 id>`（`api-key` 类型，带一个 `env` 映射）。设置文件
+  只保留变量名，面板不会回显值。
+- 服务发来 `notifications/tools/list_changed` 时重新同步工具。服务崩溃后会显示错误并保留该行，用
+  **重新连接**恢复；没有自动重连循环。
+- 工具结果按文本转发。图片、音频和内嵌二进制资源会显示成一段简短诊断，而不是 base64。
+- 每个服务都以宿主子进程的身份、用你当前系统的用户权限运行。权限预设里的沙箱不约束它，只有环境变量
+  被清洗过。
 
-## LAN access
+## 局域网访问
 
-The Harness web server owns exactly one listener and binds loopback, and the
-shipped composition refuses a wildcard bind on purpose. The plugin therefore
-leaves the kernel alone: it opens its own HTTPS listener on one concrete LAN
-address and forwards every request to the running web server.
+Harness 的 web 服务只拥有一个监听器，并且绑定回环地址；内置组合拒绝通配地址绑定是刻意的。因此插件不动
+内核：它自己在一个具体的局域网地址上开 HTTPS 监听，把每个请求转发给正在运行的 web 服务。
 
-- The certificate is self-signed and issued for that address. It is cached
-  under the manager's data folder and reissued when the address changes.
-- `Host` and `Origin` are rewritten to the upstream's own authority, because
-  that authority is the loopback one the Host's browser fence trusts. Cookies,
-  bodies and the WebSocket upgrade are forwarded unchanged.
-- The QR code carries the Host's launch token. The first visit exchanges it
-  for a signed session cookie exactly as a local browser does, and the token
-  leaves the address bar in the redirect that follows.
-- The link grants owner rights, so it is shown only while the switch is on.
-  Turning the switch off closes the port at once; the switch state is
-  remembered and the listener comes back on the next start.
+- 证书是自签的，签发给那个地址，缓存在管理器数据目录下；地址变了会重新签发。
+- `Host` 和 `Origin` 会被改写成上游自己的 authority，因为上游信任的是回环那个 authority。Cookie、
+  请求体和 WebSocket 升级都原样转发。
+- 二维码里带的是宿主的启动令牌。首次访问会像本机浏览器一样用它换成签名会话 Cookie，随后紧随的跳转
+  会把令牌从地址栏里去掉。
+- 这个链接等同于管理员权限，所以只在开关打开时显示。关掉开关会立刻收回端口；开关状态会被记住，
+  下次启动监听器自动回来。
 
-| What | Where |
+| 内容 | 位置 |
 |---|---|
-| Manager settings (0600) | `<DSH_HOME>/manager/settings.json`, default `~/.dsh/manager/settings.json` |
-| LAN switch and port | the same file, under `lan` |
-| TLS material (0600) | `<DSH_HOME>/manager/lan-access/tls/` |
-| MCP environment values | the Host credential store, record `dsh-manager/<server-id>` |
-| Skill files | `~/.agents/skills/` (top of the configured roots) |
+| 管理器设置（0600） | `<DSH_HOME>/manager/settings.json`，默认 `~/.dsh/manager/settings.json` |
+| 局域网开关与端口 | 同一个文件里的 `lan` 段 |
+| TLS 材质（0600） | `<DSH_HOME>/manager/lan-access/tls/` |
+| MCP 环境变量值 | 宿主凭证库，记录 `dsh-manager/<服务 id>` |
+| 技能文件 | `~/.agents/skills/`（已配置的扫描根目录的顶层） |
 
-Set an absolute `dataDir` in the row's config to move the settings folder. The
-plugin never rewrites the profile patch.
+在该行配置里填一个绝对路径 `dataDir` 可以改设置目录的位置。插件不会改写 profile 的 patch 文件。
 
-## Limits
+## 限制
 
-- Skill discovery is one category level; deeper nesting is ignored.
-- The catalog check covers global providers only: project-level skill roots need
-  a workspace, so they never appear in the panel's totals.
-- A scan is reused for up to a second to keep the overview cheap; a watcher
-  event, a switch, or **重新扫描** drops it immediately.
-- MCP transport is stdio only; Streamable HTTP is not implemented.
-- Servers configured with the shipped `@deepseek-ai/dsh-mcp-client` rows are
-  not imported. This panel manages its own stdio list, so the two don't
-  silently share a server namespace.
-- Skill deletion is not offered — the panel creates and switches, the file
-  manager deletes.
-- The MCP list panel reflects state in four-second polls while the tab is open.
-- The LAN listener needs `openssl` on the machine to issue the certificate.
-  Without it the switch reports the reason instead of opening a port.
-- The listener binds one address, never `0.0.0.0`. macOS does not route a
-  connection from this machine to its own LAN address, so the link has to be
-  opened from another device on the network — the phone is the intended one.
-- macOS asks once whether the Harness app may accept incoming connections.
-  Without that permission the phone cannot reach the port.
-- The certificate is self-signed, so the phone browser calls the page unsafe
-  on the first visit and the user has to continue anyway.
-- The QR code is generated in the plugin (byte mode, error correction level M,
-  versions 1 to 10), so a link longer than 213 bytes cannot be encoded.
+- 技能发现只看一层分类，更深的嵌套会被忽略。
+- 目录核对只覆盖全局 provider：项目级技能根目录需要工作区，因此不会出现在面板统计里。
+- 一次扫描结果最多复用一秒，让概览保持便宜；文件监听事件、开关操作或 **重新扫描** 会立刻丢弃它。
+- MCP 只支持 stdio，没有实现 Streamable HTTP。
+- 用内置 `@deepseek-ai/dsh-mcp-client` 行配置的服务不会被导入。本面板管理自己的一套 stdio 列表，两者
+  不会悄悄共用服务命名空间。
+- 不提供删除技能——面板负责创建和开关，删除交给文件管理器。
+- 标签页打开时，MCP 列表面板每四秒轮询一次状态。
+- 局域网监听需要机器上有 `openssl` 才能签发证书。没有时开关会直接报出原因，不会开出端口。
+- 监听器只绑一个地址，绝不绑 `0.0.0.0`。macOS 不会把「本机 → 自己的局域网地址」的连接路由回来，所以
+  这个链接必须用网络里的另一台设备打开——手机就是预期的打开方式。
+- macOS 会问一次是否允许 Harness 应用接受传入连接。不放行的话手机连不上这个端口。
+- 证书是自签的，手机浏览器第一次访问会提示页面不安全，需要用户选择继续。
+- 二维码由插件自己生成（字节模式，纠错等级 M，版本 1 到 10），超过 213 字节的链接无法编码。
 
-## Development
+## 开发
 
 ```bash
-npm test          # frontmatter, category scan, MCP client, QR encoder, LAN proxy, host wiring
+npm test          # frontmatter、分类扫描、MCP 客户端、二维码编码器、局域网代理、宿主接线
 ```
 
-Source map:
+源码地图：
 
-| File | Role |
+| 文件 | 职责 |
 |---|---|
-| `index.js` | Host entry: provider registration, MCP start, LAN listener, `/api/manager` routes |
-| `src/frontmatter.js` | `SKILL.md` frontmatter subset reader |
-| `src/skills.js` | category scan, `ctx.skills` provider, switches, create |
-| `src/mcp-client.js` | dependency-free stdio MCP client and tool-name contract |
-| `src/mcp.js` | server rows, connections, tool registration, credential-backed env |
-| `src/lan-access.js` | LAN address detection, self-signed certificate, HTTPS proxy |
-| `src/qr.js` | dependency-free QR encoder |
-| `src/settings.js` | atomic manager settings store |
-| `src/remote.js` | panel endpoints and the merged agent-catalog view |
-| `client.js` | sidebar entry and the management page |
+| `index.js` | 宿主入口：provider 注册、MCP 启动、局域网监听、`/api/manager` 路由 |
+| `src/frontmatter.js` | `SKILL.md` frontmatter 子集解析器 |
+| `src/skills.js` | 分类扫描、`ctx.skills` provider、开关、创建 |
+| `src/mcp-client.js` | 无依赖的 stdio MCP 客户端与工具命名约定 |
+| `src/mcp.js` | 服务行、连接、工具注册、基于凭证库的环境变量 |
+| `src/lan-access.js` | 局域网地址探测、自签证书、HTTPS 反向代理 |
+| `src/qr.js` | 无依赖的二维码编码器 |
+| `src/settings.js` | 原子写入的管理器设置存储 |
+| `src/remote.js` | 面板端点与合并后的 Agent 目录视图 |
+| `client.js` | 侧边栏入口与管理页面 |
