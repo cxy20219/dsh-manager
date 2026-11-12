@@ -104,7 +104,7 @@ export async function apply(ctx, config) {
 		defaults: {
 			skills: { roots: [defaultRoot] },
 			mcp: { servers: [] },
-			lan: { enabled: false, port: DEFAULT_LAN_PORT },
+			lan: { enabled: false, secure: false, port: DEFAULT_LAN_PORT },
 		},
 	})
 	const ready = settings.load()
@@ -132,6 +132,7 @@ export async function apply(ctx, config) {
 		dataDir,
 		logger: ctx.logger,
 		port: settings.get().lan.port,
+		secure: settings.get().lan.secure,
 	})
 	ctx.effect(() => () => {
 		void lan.dispose()
@@ -180,7 +181,7 @@ export async function apply(ctx, config) {
 	}
 
 	if (settings.get().lan.enabled) {
-		const state = await lan.apply(true)
+		const state = await lan.apply(true, settings.get().lan.secure)
 		if (state.error !== '') ctx.logger.warn(`dsh-manager: 局域网访问启动失败：${state.error}`)
 	}
 

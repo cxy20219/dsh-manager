@@ -76,19 +76,19 @@ test('forwards requests and upgrades to the upstream over TLS', async (t) => {
 
 	const state = await manager.enable()
 	assert.equal(state.running, true, state.error)
-	assert.equal(state.url, `https://127.0.0.1:${String(state.port)}/?token=launch-token`)
+	assert.equal(state.url, `http://127.0.0.1:${String(state.port)}/?token=launch-token`)
 	assert.ok(state.matrix.length > 0)
 	assert.equal(state.matrix.length, state.matrix[0].length)
 	assert.match(state.matrix[0], /^[01]+$/)
-	assert.ok(state.certificate.fingerprint.length > 32)
+	assert.equal(state.certificate, null, 'a plain listener issues no certificate')
+	assert.equal(state.secure, false)
 
 	const body = await new Promise((resolve, reject) => {
-		const request = https.request({
+		const request = http.request({
 			host: '127.0.0.1',
 			port: state.port,
 			path: '/?token=launch-token',
-			headers: { origin: `https://127.0.0.1:${String(state.port)}`, 'sec-fetch-site': 'same-origin' },
-			rejectUnauthorized: false,
+			headers: { origin: `http://127.0.0.1:${String(state.port)}`, 'sec-fetch-site': 'same-origin' },
 		}, (response) => {
 			let text = ''
 			response.setEncoding('utf8')
@@ -101,15 +101,14 @@ test('forwards requests and upgrades to the upstream over TLS', async (t) => {
 	assert.equal(body.text, 'upstream body')
 	assert.equal(received[0].headers.host, `127.0.0.1:${String(upstreamPort)}`)
 	assert.equal(received[0].headers.origin, `http://127.0.0.1:${String(upstreamPort)}`)
-	assert.match(String(body.headers['set-cookie']), /; Secure/)
+	assert.doesNotMatch(String(body.headers['set-cookie']), /Secure/, 'a plain listener must not mark cookies secure')
 
 	const upgraded = await new Promise((resolve, reject) => {
-		const request = https.request({
+		const request = http.request({
 			host: '127.0.0.1',
 			port: state.port,
 			path: '/api/remote.mux',
 			headers: { connection: 'Upgrade', upgrade: 'websocket' },
-			rejectUnauthorized: false,
 		})
 		request.on('upgrade', (response, socket) => {
 			socket.setEncoding('utf8')
@@ -123,6 +122,47 @@ test('forwards requests and upgrades to the upstream over TLS', async (t) => {
 	})
 	assert.equal(upgraded, 'upgrade payload')
 	assert.equal(received[1].headers.host, `127.0.0.1:${String(upstreamPort)}`)
+})
+
+test('serves HTTPS and marks cookies secure when encryption is on', async (t) => {
+	const upstream = http.createServer((req, res) => {
+		res.writeHead(200, { 'content-type': 'text/plain', 'set-cookie': 'dsh-auth-x=1; Path=/' })
+		res.end('secure body')
+	})
+	await new Promise((resolve) => upstream.listen(0, '127.0.0.1', resolve))
+	const upstreamPort = upstream.address().port
+	t.after(() => new Promise((resolve) => {
+		upstream.closeAllConnections()
+		upstream.close(resolve)
+	}))
+	const dataDir = await mkdtemp(join(tmpdir(), 'dsh-lan-test-'))
+	t.after(() => rm(dataDir, { recursive: true, force: true }))
+	const manager = createLanAccess({
+		connection: { authenticatedUrl: (url) => url },
+		webServer: { getOrigin: () => `http://127.0.0.1:${String(upstreamPort)}` },
+		dataDir,
+		address: '127.0.0.1',
+		port: 0,
+		secure: true,
+	})
+	t.after(() => manager.dispose())
+	const state = await manager.enable()
+	assert.equal(state.running, true, state.error)
+	assert.equal(state.url, `https://127.0.0.1:${String(state.port)}/`)
+	assert.ok(state.certificate.fingerprint.length > 32)
+	assert.equal(state.secure, true)
+	const body = await new Promise((resolve, reject) => {
+		const request = https.request({ host: '127.0.0.1', port: state.port, path: '/', rejectUnauthorized: false }, (response) => {
+			let text = ''
+			response.setEncoding('utf8')
+			response.on('data', (chunk) => { text += chunk })
+			response.on('end', () => resolve({ text, headers: response.headers }))
+		})
+		request.on('error', reject)
+		request.end()
+	})
+	assert.equal(body.text, 'secure body')
+	assert.match(String(body.headers['set-cookie']), /; Secure/)
 })
 
 test('issues a server certificate that the local authority signs', async (t) => {

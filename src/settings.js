@@ -42,6 +42,7 @@ export function normalizeSettings(raw, defaults) {
 		},
 		lan: {
 			enabled: lan.enabled === true,
+			secure: lan.secure === true,
 			port: normalizePort(lan.port, defaults.lan?.port ?? DEFAULT_LAN_PORT),
 		},
 	}

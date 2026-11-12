@@ -140,6 +140,19 @@ function withSecureCookie(cookie) {
 }
 
 /**
+ * Whether a cookie needs the `Secure` attribute.
+ *
+ * Only a TLS listener may mark a cookie secure: a browser drops a secure
+ * cookie that arrives over plain HTTP.
+ *
+ * @param {boolean} secure - Whether the listener speaks TLS.
+ * @returns {(cookie: string) => string} The cookie writer.
+ */
+function cookieWriter(secure) {
+	return secure ? withSecureCookie : (cookie) => cookie
+}
+
+/**
  * Find an openssl binary that answers.
  *
  * @returns {Promise<string | undefined>} The binary path, or undefined.
@@ -341,13 +354,14 @@ function hostNames() {
 /**
  * Build the LAN access manager.
  *
- * @param {{connection: object, webServer: object | (() => object | undefined), dataDir: string, logger?: object, port?: number, address?: string}} options - The options.
+ * @param {{connection: object, webServer: object | (() => object | undefined), dataDir: string, logger?: object, port?: number, address?: string, secure?: boolean}} options - The options.
  * @returns {object} The manager.
  */
-export function createLanAccess({ connection, webServer, dataDir, logger, port, address }) {
+export function createLanAccess({ connection, webServer, dataDir, logger, port, address, secure = false }) {
 	const state = {
 		enabled: false,
 		running: false,
+		secure,
 		address: '',
 		listenPort: port ?? DEFAULT_PORT,
 		url: '',
@@ -387,6 +401,7 @@ export function createLanAccess({ connection, webServer, dataDir, logger, port, 
 		return {
 			enabled: state.enabled,
 			running: state.running,
+			secure: state.secure,
 			addresses: detectLanAddresses(),
 			address: state.address,
 			port: state.listenPort,
@@ -418,6 +433,7 @@ export function createLanAccess({ connection, webServer, dataDir, logger, port, 
 		return {
 			enabled: state.enabled,
 			running: state.running,
+			secure: state.secure,
 			address: state.address,
 			port: state.listenPort,
 			upstream: state.upstream,
@@ -435,6 +451,7 @@ export function createLanAccess({ connection, webServer, dataDir, logger, port, 
 	 */
 	function forward(req, res, upstream) {
 		const headers = rewriteRequestHeaders(req.headers, upstream)
+		const writeCookie = cookieWriter(state.secure)
 		const secure = upstream.protocol === 'https:'
 		const agent = secure ? https : http
 		const proxied = agent.request({
@@ -449,7 +466,7 @@ export function createLanAccess({ connection, webServer, dataDir, logger, port, 
 			access(`${req.method} ${req.url} -> ${String(upstreamRes.statusCode ?? 0)}`)
 			const responseHeaders = { ...upstreamRes.headers }
 			if (Array.isArray(responseHeaders['set-cookie'])) {
-				responseHeaders['set-cookie'] = responseHeaders['set-cookie'].map(withSecureCookie)
+				responseHeaders['set-cookie'] = responseHeaders['set-cookie'].map(writeCookie)
 			}
 			res.writeHead(upstreamRes.statusCode ?? 502, responseHeaders)
 			upstreamRes.pipe(res)
@@ -527,22 +544,33 @@ export function createLanAccess({ connection, webServer, dataDir, logger, port, 
 			state.error = `读取本机 Web 服务地址失败：${error instanceof Error ? error.message : String(error)}`
 			return status()
 		}
-		let material
-		try {
-			material = await ensureCertificate({ dir: join(dataDir, 'lan-access', 'tls'), address: chosen, names: hostNames(), logger })
-		} catch (error) {
-			state.error = error instanceof Error ? error.message : String(error)
-			return status()
+		let material = null
+		if (state.secure) {
+			try {
+				material = await ensureCertificate({ dir: join(dataDir, 'lan-access', 'tls'), address: chosen, names: hostNames(), logger })
+			} catch (error) {
+				state.error = error instanceof Error ? error.message : String(error)
+				return status()
+			}
 		}
-		const listener = https.createServer({ key: material.key, cert: material.cert }, (req, res) => {
-			forward(req, res, upstream)
-		})
+		const listener = material === null
+			? http.createServer((req, res) => { forward(req, res, upstream) })
+			: https.createServer({ key: material.key, cert: material.cert }, (req, res) => { forward(req, res, upstream) })
 		listener.on('upgrade', (req, socket, head) => {
 			forwardUpgrade(req, socket, head, upstream)
 		})
 		listener.on('error', (error) => {
 			state.error = `监听失败：${error instanceof Error ? error.message : String(error)}`
 			logger?.warn?.(`dsh-manager: ${state.error}`)
+		})
+		// A phone that does not trust the certificate fails here, before any
+		// request reaches the panel; the reason is worth keeping.
+		listener.on('tlsClientError', (error) => {
+			access(`TLS ${error instanceof Error ? error.message : String(error)}`)
+			logger?.warn?.(`dsh-manager: 局域网 TLS 握手失败：${error instanceof Error ? error.message : String(error)}`)
+		})
+		listener.on('clientError', (error) => {
+			access(`CLIENT ${error instanceof Error ? error.message : String(error)}`)
 		})
 		try {
 			await new Promise((resolve, reject) => {
@@ -560,13 +588,13 @@ export function createLanAccess({ connection, webServer, dataDir, logger, port, 
 		state.running = true
 		state.address = chosen
 		state.upstream = `${upstream.protocol}//${upstream.authority}`
-		state.certificate = {
+		state.certificate = material === null ? null : {
 			fingerprint: material.fingerprint,
 			validTo: material.validTo,
 			reused: material.reused,
 		}
-		state.ca = material.ca
-		const base = `https://${chosen}:${String(state.listenPort)}/`
+		state.ca = material === null ? '' : material.ca
+		const base = `${state.secure ? 'https' : 'http'}://${chosen}:${String(state.listenPort)}/`
 		state.url = connection.authenticatedUrl(base)
 		const qr = encodeQr(state.url)
 		state.matrix = qr.rows
@@ -604,10 +632,14 @@ export function createLanAccess({ connection, webServer, dataDir, logger, port, 
 	 * @param {boolean} enabled - Whether the switch is on.
 	 * @returns {Promise<object>} The state.
 	 */
-	async function apply(enabled) {
+	async function apply(enabled, secure) {
 		state.enabled = enabled
-		if (enabled) return enable()
-		return disable()
+		const changed = typeof secure === 'boolean' && secure !== state.secure
+		if (typeof secure === 'boolean') state.secure = secure
+		if (!enabled) return disable()
+		// The transport changes with the flag, so the listener has to restart.
+		if (changed && state.running) await disable()
+		return enable()
 	}
 
 	return {

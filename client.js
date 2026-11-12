@@ -143,6 +143,8 @@ window.__ModuleLoader__.load({
 			'lan.tokenWarning': '链接里带着本机的启动令牌，等同于管理员权限，不要分享给别人。关闭开关后链接立即失效。',
 			'lan.certWarning': '证书由本机根证书签发，不是公开 CA 签的；手机信任上面那个根证书之后，浏览器就不会再提示不安全。',
 			'lan.noAddress': '没有检测到局域网 IPv4 地址，请先连上局域网。',
+			'lan.secure': '加密连接（HTTPS）',
+			'lan.secureHint': '默认关闭：明文 HTTP，但链接里的令牌就是口令，扫码即用。打开后走 HTTPS，代价是要在手机上装一次根证书，否则浏览器会拒绝该主机的 WebSocket。',
 			'lan.trust': '手机信任证书',
 			'lan.trustHint': '浏览器可以点"继续访问"打开页面，但 WebSocket 会被直接拒绝，所以要先把根证书装到手机上并信任它。装一次即可，之后扫码即用。',
 			'lan.downloadCa': '下载根证书',
@@ -270,6 +272,8 @@ window.__ModuleLoader__.load({
 			'lan.tokenWarning': 'The link carries this machine\'s launch token and therefore administrator rights. Do not share it; turning the switch off invalidates it.',
 			'lan.certWarning': 'The certificate is signed by the local root certificate, not by a public authority; once the phone trusts that root, the browser stops calling the page unsafe.',
 			'lan.noAddress': 'No LAN IPv4 address was found; connect to a network first.',
+			'lan.secure': 'Encrypted connection (HTTPS)',
+			'lan.secureHint': 'Off by default: plain HTTP, with the token in the link acting as the password, so scanning is enough. Turning it on uses HTTPS, at the price of installing a root certificate on the phone once, because a browser refuses the WebSocket of an untrusted host.',
 			'lan.trust': 'Trust the certificate on the phone',
 			'lan.trustHint': 'A browser can let the page through its warning, but it refuses the WebSocket outright, so the root certificate has to be installed and trusted on the phone. Once, and scanning works.',
 			'lan.downloadCa': 'Download root certificate',
@@ -407,6 +411,7 @@ window.__ModuleLoader__.load({
 			'.mgrLanMetaKey{flex:none;width:96px;color:var(--dsw-alias-label-tertiary)}',
 			'.mgrLanMetaValue{flex:1;min-width:0;color:var(--dsw-alias-label-secondary);word-break:break-all}',
 			'.mgrLanActions{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap}',
+			'.mgrLanRowSub{margin-top:12px;padding-top:12px;border-top:1px solid var(--dsw-alias-border-l1)}',
 			'.mgrLanTrust{margin-top:14px;padding-top:12px;border-top:1px solid var(--dsw-alias-border-l1)}',
 			'.mgrLanSteps{margin-top:6px;line-height:1.7}',
 		].join('\n');
@@ -1213,7 +1218,17 @@ window.__ModuleLoader__.load({
 							disabled: props.busy === true,
 							label: t('lan.switch'),
 							onChange: props.onToggle,
-						}))),
+						})),
+					enabled ? h('div', { className: 'mgrLanRow mgrLanRowSub' },
+						h('div', { className: 'mgrLanRowMain' },
+							h('div', { className: 'mgrLanTitle' }, t('lan.secure')),
+							h('div', { className: 'mgrLanHint' }, t('lan.secureHint'))),
+						h(Switch, {
+							checked: state.secure === true,
+							disabled: props.busy === true,
+							label: t('lan.secure'),
+							onChange: props.onToggleSecure,
+						})) : null),
 				state !== null && state.error !== ''
 					? h('div', { className: 'mgrErrorBox' },
 						h('span', null, t('lan.error') + '：' + state.error))
@@ -1246,7 +1261,7 @@ window.__ModuleLoader__.load({
 									certificate ? h('div', { className: 'mgrLanMetaRow' },
 										h('span', { className: 'mgrLanMetaKey' }, t('lan.certificateValid')),
 										h('span', { className: 'mgrLanMetaValue' }, certificate.validTo)) : null))),
-						h('div', { className: 'mgrLanTrust' },
+						state.secure === true ? h('div', { className: 'mgrLanTrust' },
 							h('div', { className: 'mgrLanTitle' }, t('lan.trust')),
 							h('div', { className: 'mgrLanHint' }, t('lan.trustHint')),
 							h('div', { className: 'mgrLanActions' },
@@ -1256,8 +1271,8 @@ window.__ModuleLoader__.load({
 									onClick: function () { props.onDownloadCa(); },
 								}, t('lan.downloadCa'))),
 							h('div', { className: 'mgrLanHint mgrLanSteps' }, t('lan.ios')),
-							h('div', { className: 'mgrLanHint mgrLanSteps' }, t('lan.android'))),
-						h('div', { className: 'mgrWarn' }, h('span', null, t('lan.certWarning'))),
+							h('div', { className: 'mgrLanHint mgrLanSteps' }, t('lan.android'))) : null,
+						state.secure === true ? h('div', { className: 'mgrWarn' }, h('span', null, t('lan.certWarning'))) : null,
 						h('div', { className: 'mgrWarn' }, h('span', null, t('lan.tokenWarning'))))
 					: h('div', { className: 'mgrLanCard' },
 						h('div', { className: 'mgrLanHint' }, t('lan.off')),
@@ -1426,7 +1441,14 @@ window.__ModuleLoader__.load({
 			}
 
 			function lanToggle(enabled) {
-				return run(call('lan-toggle', { enabled: enabled }), function (value) {
+				return run(call('lan-toggle', { enabled: enabled, secure: lan !== null && lan.secure === true }), function (value) {
+					setLan(value);
+					notify(t('state.saved'), false);
+				}).catch(function () {});
+			}
+
+			function lanToggleSecure(secure) {
+				return run(call('lan-toggle', { enabled: lan !== null && lan.enabled === true, secure: secure }), function (value) {
 					setLan(value);
 					notify(t('state.saved'), false);
 				}).catch(function () {});
@@ -1547,6 +1569,7 @@ window.__ModuleLoader__.load({
 									state: lan,
 									busy: busy,
 									onToggle: lanToggle,
+									onToggleSecure: lanToggleSecure,
 									onCopy: lanCopy,
 									onDownloadCa: lanDownloadCa,
 								}))),

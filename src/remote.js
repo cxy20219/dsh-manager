@@ -170,13 +170,14 @@ export function createManagerHandler({ skills, mcp, lan, settings, version, data
 				case 'lan-toggle': {
 					if (lan === undefined) throw new Error('当前 Host 没有局域网访问服务')
 					const enabled = payload?.enabled !== false
+					const secure = payload?.secure === true
 					if (settings !== undefined) {
 						await settings.update((draft) => {
-							draft.lan = { ...draft.lan, enabled }
+							draft.lan = { ...draft.lan, enabled, secure }
 							return draft
 						})
 					}
-					const state = await lan.apply(enabled)
+					const state = await lan.apply(enabled, secure)
 					return { ok: true, value: state }
 				}
 				default: {
