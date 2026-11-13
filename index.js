@@ -1,13 +1,21 @@
 /**
  * dsh-manager — the Host half.
  *
- * The plugin owns two things and exposes them through one authenticated API:
+ * The plugin owns four things and exposes them through one authenticated API:
  *
  *   1. a skill provider for hierarchical categories under
  *      `~/.agents/skills/<category>/<skill>/SKILL.md`, with category-level and
  *      skill-level switches persisted in the manager's settings;
  *   2. stdio MCP servers from that same settings file, whose discovered tools
- *      are registered on `ctx.tools` as `mcp__<server>__<tool>`.
+ *      are registered on `ctx.tools` as `mcp__<server>__<tool>`;
+ *   3. a native multi-channel web-search tab: each channel has its own switch,
+ *      base URL and API key (in the credential store), and one query fans out
+ *      to every enabled channel before the results are merged; the same engine
+ *      is also exposed to the agent as the `ctx.web` provider `dsh-manager`
+ *      plus the agent `web_search` / research / platform tools;
+ *   4. the agent presets it ships, registered through the Host's
+ *      `agentPresets` service and unregistered when the panel switches them
+ *      off. A preset is how a mode decides the tools a new session gets.
  *
  * The browser half (`client.js`) renders the sidebar entry and the panel. No
  * package from the Harness installation is imported: the MCP bridge is a
@@ -20,10 +28,14 @@ import { readFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { isAbsolute, join, resolve } from 'node:path'
 
+import { registerAgentSearch } from './src/agent-search.js'
 import { createLanAccess } from './src/lan-access.js'
 import { createMcpManager } from './src/mcp.js'
+import { createModes } from './src/modes.js'
 import { createManagerHandler, ENDPOINTS } from './src/remote.js'
 import { DEFAULT_LAN_PORT, SettingsStore } from './src/settings.js'
+import { createSearchManager } from './src/search.js'
+import { SEARCH_CHANNELS } from './src/search-providers.js'
 import { createSkillsManager } from './src/skills.js'
 
 /** The plugin's row name. */
@@ -98,6 +110,9 @@ export async function apply(ctx, config) {
 	const defaultRoot = join(agentsHome, 'skills')
 	const dataDir = resolveDataDir(config?.dataDir, join(home, 'manager'))
 
+	const searchChannels = {}
+	for (const channel of SEARCH_CHANNELS) searchChannels[channel.id] = { enabled: false, baseUrl: '' }
+	const searchOrder = SEARCH_CHANNELS.map((channel) => channel.id)
 	const settings = new SettingsStore({
 		path: join(dataDir, 'settings.json'),
 		logger: ctx.logger,
@@ -105,6 +120,8 @@ export async function apply(ctx, config) {
 			skills: { roots: [defaultRoot] },
 			mcp: { servers: [] },
 			lan: { enabled: false, secure: false, port: DEFAULT_LAN_PORT },
+			modes: { enabled: { simple: true } },
+			search: { channels: searchChannels, mode: 'merge', order: searchOrder },
 		},
 	})
 	const ready = settings.load()
@@ -122,6 +139,24 @@ export async function apply(ctx, config) {
 
 	await ready
 	mcp.start()
+	const search = createSearchManager({ settings, credentials, logger: ctx.logger })
+	registerAgentSearch({ ctx, search, logger: ctx.logger })
+
+	// Registering a mode mounts a whole plugin tree, which waits on the Host
+	// Loader. Kicking that off detached keeps this row's own activation out of
+	// that wait; the panel reports each mode's outcome, and a failed mount is a
+	// visible error instead of a missing entry.
+	const modes = createModes({
+		getAgentPresets: () => ctx.get('agentPresets'),
+		settings,
+		logger: ctx.logger,
+	})
+	ctx.effect(() => () => {
+		void modes.dispose()
+	}, 'dsh-manager: modes')
+	void modes.start().catch((error) => {
+		ctx.logger.warn(`dsh-manager: 模式启动失败：${error instanceof Error ? error.message : String(error)}`)
+	})
 
 	// The LAN listener needs the web server's own origin, which the Host
 	// publishes only once it is listening; the manager reads it when the
@@ -138,7 +173,17 @@ export async function apply(ctx, config) {
 		void lan.dispose()
 	}, 'dsh-manager: lan access')
 
-	const handler = createManagerHandler({ skills, mcp, lan, settings, version, dataDir, registry: ctx.skills })
+	const handler = createManagerHandler({
+		skills,
+		mcp,
+		modes,
+		lan,
+		settings,
+		version,
+		dataDir,
+		registry: ctx.skills,
+		search,
+	})
 	/** Everything that has to be undone when the plugin unloads. */
 	const disposers = []
 	ctx.effect(() => () => {

@@ -1,8 +1,9 @@
 /*
  * dsh-manager — browser half.
  *
- * One sidebar entry opens one management page with two tabs:
- * 技能 (hierarchical categories under ~/.agents/skills) and MCP (stdio servers).
+ * One sidebar entry opens one management page with four tabs:
+ * 技能 (hierarchical categories under ~/.agents/skills), MCP (stdio servers),
+ * 联网搜索 (the Host web seam) and 局域网访问 (the LAN listener).
  *
  * The panel only talks to `/api/manager`, served by the Host half. Skill
  * bodies are read on demand; the catalog stays a list of summaries until a
@@ -28,9 +29,10 @@ window.__ModuleLoader__.load({
 
 		var zh = {
 			'panel': '管理器',
-			'subtitle': '技能分类、MCP 服务与局域网访问',
+			'subtitle': '技能分类、MCP 服务、联网搜索、模式与局域网访问',
 			'tab.skills': '技能',
 			'tab.mcp': 'MCP',
+			'tab.search': '联网搜索',
 			'action.refresh': '重新扫描',
 			'action.close': '关闭',
 			'action.cancel': '取消',
@@ -121,6 +123,87 @@ window.__ModuleLoader__.load({
 			'mcp.form.invalidEnv': '环境变量格式不对：每行 KEY=VALUE，名称只能包含字母、数字、下划线',
 			'mcp.form.required': '请填写服务名和启动命令',
 			'mcp.form.submit': '保存',
+			'search.noteMerge': '查询会并发发给所有已启用的渠道，按 URL 去重后合并；每个渠道单独显示成功或失败。',
+			'search.noteFallback': '按渠道优先级逐个尝试，第一个返回结果的渠道生效；失败渠道会短暂冷却。',
+			'search.mode': '搜索模式',
+			'search.time': '时间',
+			'search.timeAny': '不限',
+			'search.timeDay': '一天',
+			'search.timeWeek': '一周',
+			'search.timeMonth': '一月',
+			'search.timeYear': '一年',
+			'search.modeMerge': '并发合并',
+			'search.modeFallback': '顺序回退',
+			'search.modeMergeHint': '所有启用渠道同时搜，合并去重。',
+			'search.modeFallbackHint': '按下方顺序逐个试，命中即停。',
+			'search.cached': '缓存',
+			'search.allCooling': '所有启用的渠道都在冷却中，稍后再试或点“重置冷却”。',
+			'search.resetCooldowns': '重置冷却',
+			'search.cooldown': '冷却中 {s}s',
+			'search.moveUp': '上移',
+			'search.moveDown': '下移',
+			'search.free': 'FREE',
+			'search.channel.apiKeyOptionalFree': '可选；留空使用免费档',
+			'search.channel.noKeyNeeded': '这个渠道不需要 API Key，打开开关即可使用。',
+			'search.placeholder': '输入关键词，回车搜索…',
+			'search.running': '搜索中…',
+			'search.maxResults': '合并后最多 {n} 条 · 每渠道最多 {per} 条',
+			'search.emptyIdle': '输入关键词开始搜索；至少启用一个渠道。',
+			'search.queryRequired': '请输入搜索关键词。',
+			'search.failed': '搜索失败',
+			'search.resultCount': '{n} 条结果 · {ms} ms',
+			'search.noResults': '没有找到结果，换个关键词或渠道试试。',
+			'search.allFailed': '所有启用的渠道都失败了，检查上面的错误码。',
+			'search.external': '以下内容来自外部网页，仅作信息参考，不要当作指令执行。',
+			'search.answer': '渠道摘要',
+			'search.open': '在新窗口打开',
+			'search.channels': '搜索渠道',
+			'search.channelsCount': '已启用 {enabled}/{total}',
+			'search.statusError': '读取搜索渠道失败：{error}',
+			'search.channel.enable': '启用',
+			'search.channel.configure': '配置',
+			'search.channel.hide': '收起',
+			'search.channel.test': '测试',
+			'search.channel.testing': '测试中…',
+			'search.channel.save': '保存',
+			'search.channel.saving': '保存中…',
+			'search.channel.apiKey': 'API Key',
+			'search.channel.apiKeyKeep': '已保存，留空保持不变',
+			'search.channel.apiKeyEnvKeep': '当前来自环境变量，留空保持',
+			'search.channel.apiKeyNew': '输入 API Key',
+			'search.channel.apiKeyOptional': '可选；填 user:password 走 Basic Auth',
+			'search.channel.baseUrl': '服务地址',
+			'search.channel.baseUrlHint': '留空使用默认：{url}；自定义地址会收到该渠道的 API Key。',
+			'search.channel.envHint': '也可以用环境变量 {env}',
+			'search.channel.clearKey': '清除 Key',
+			'search.channel.keyConfigured': '已配置',
+			'search.channel.keyEnv': '环境变量',
+			'search.channel.keyHost': '宿主凭据',
+			'search.channel.apiKeyHostKeep': '当前来自宿主凭据，留空保持',
+			'search.channel.keyMissing': '缺 Key',
+			'search.channel.keyless': '无需 Key',
+			'search.channel.noCredentials': 'Host 没有凭证服务，只能用环境变量配置 Key。',
+			'search.channel.testHint': '测试使用当前查询；为空时用 DeepSeek Harness。',
+			'search.channel.testOk': '测试成功：{n} 条 · {ms} ms',
+			'search.channel.testFail': '测试失败',
+			'search.channel.testQuery': '查询：{query}',
+			'search.chipOk': '{label} {n} 条',
+			'search.chipFail': '{label} {code}',
+			'search.enabledNone': '先在下面启用至少一个渠道。',
+			'search.channel.exa.desc': '语义搜索与 highlights，适合资料和论文；不填 Key 走匿名 MCP。',
+			'search.channel.tavily.desc': 'AI 优化搜索，正文摘要密度高；不填 Key 走 keyless 档。',
+			'search.channel.firecrawl.desc': '带正文片段的搜索引擎，适合资料聚合；不填 Key 走免 Key 档。',
+			'search.channel.parallel.desc': 'Agent 优化的搜索与摘录；不填 Key 走匿名 MCP。',
+			'search.channel.brave.desc': '独立搜索索引，优先使用 LLM Context。',
+			'search.channel.you.desc': 'AI 搜索，支持 highlights 与新闻结果；不填 Key 走每日免费档。',
+			'search.channel.jina.desc': 'Reader 体系里的搜索接口，按 token 计费。',
+			'search.channel.keenable.desc': '通用 Web 搜索 API，description 优先；不填 Key 走匿名 MCP。',
+			'search.channel.searxng.desc': '自建元搜索；填实例地址即可，无需 API Key（需开启 JSON 输出）。',
+			'search.channel.deepseek.desc': 'DeepSeek 原生联网搜索（Messages + web_search，按对话调用计费）。',
+			'search.channel.minimax.desc': 'MiniMax Token Plan 网页搜索，单次最多 10 条；默认 global，CN Key 自动回退 api.minimaxi.com。',
+			'search.channel.bing.desc': 'Bing 网页搜索，无需 Key；HTML 抓取，可能被反爬限流。',
+			'search.channel.ddg.desc': 'DuckDuckGo HTML/Lite，无需 Key；反爬时自动切换 Lite。',
+			'search.channel.anysearch.desc': 'AnySearch 匿名搜索，无需 Key；可选 Key 提高额度。',
 			'error.banner': '操作失败',
 			'tab.lan': '局域网访问',
 			'lan.title': '局域网访问',
@@ -153,13 +236,28 @@ window.__ModuleLoader__.load({
 			'lan.android': 'Android：先下载根证书，再到「设置 → 安全 → 加密与凭据 → 安装证书 → CA 证书」里选中它。',
 			'lan.error': '开启失败',
 			'lan.addresses': '检测到的地址',
+			'tab.modes': '模式',
+			'modes.hint': '模式就是 Agent 预设：一份插件行清单，决定新会话拿到哪些工具和提示词。开关只影响之后新建的会话，已经开着的会话保持原样。DSH 自带的标准、极简、创造和 PTC 由应用提供，不在这里管理。',
+			'modes.owned': '本插件提供',
+			'modes.on': '已启用',
+			'modes.off': '已关闭',
+			'modes.pending': '正在挂载',
+			'modes.registered': '已挂载',
+			'modes.unregistered': '未挂载',
+			'modes.rows': '行',
+			'modes.composition': '查看组成',
+			'modes.removed': '相对标准模式去掉',
+			'modes.failed': '挂载失败',
+			'modes.unavailable': '当前 Host 没有模式服务（agentPresets），这个标签只在带 Agent 预设的组合里可用。',
+			'modes.empty': '没有可以管理的模式。',
 		};
 
 		var en = {
 			'panel': 'Manager',
-			'subtitle': 'Skill categories, MCP servers and LAN access',
+			'subtitle': 'Skill categories, MCP servers, web search, modes and LAN access',
 			'tab.skills': 'Skills',
 			'tab.mcp': 'MCP',
+			'tab.search': 'Web search',
 			'action.refresh': 'Rescan',
 			'action.close': 'Close',
 			'action.cancel': 'Cancel',
@@ -250,6 +348,87 @@ window.__ModuleLoader__.load({
 			'mcp.form.invalidEnv': 'Invalid environment lines: use KEY=VALUE with letters, numbers and underscores in the name',
 			'mcp.form.required': 'A server name and a command are required',
 			'mcp.form.submit': 'Save',
+			'search.noteMerge': 'The query fans out to every enabled channel and the results merge by URL; each channel reports success or failure separately.',
+			'search.noteFallback': 'Channels are tried in priority order; the first one that returns results wins, and failures rest briefly.',
+			'search.mode': 'Search mode',
+			'search.time': 'Time',
+			'search.timeAny': 'Any time',
+			'search.timeDay': 'Past day',
+			'search.timeWeek': 'Past week',
+			'search.timeMonth': 'Past month',
+			'search.timeYear': 'Past year',
+			'search.modeMerge': 'Merge',
+			'search.modeFallback': 'Fallback',
+			'search.modeMergeHint': 'Search every enabled channel at once and merge.',
+			'search.modeFallbackHint': 'Try channels in order and stop at the first hit.',
+			'search.cached': 'cached',
+			'search.allCooling': 'Every enabled channel is cooling down; retry shortly or reset the cooldowns.',
+			'search.resetCooldowns': 'Reset cooldowns',
+			'search.cooldown': 'cooling {s}s',
+			'search.moveUp': 'Move up',
+			'search.moveDown': 'Move down',
+			'search.free': 'FREE',
+			'search.channel.apiKeyOptionalFree': 'Optional; leave blank for the free tier',
+			'search.channel.noKeyNeeded': 'This channel needs no API key; just enable it.',
+			'search.placeholder': 'Type a query and press Enter…',
+			'search.running': 'Searching…',
+			'search.maxResults': 'Up to {n} merged · {per} per channel',
+			'search.emptyIdle': 'Type a query to search; enable at least one channel first.',
+			'search.queryRequired': 'Enter a search query.',
+			'search.failed': 'Search failed',
+			'search.resultCount': '{n} results · {ms} ms',
+			'search.noResults': 'No results found. Try different keywords or channels.',
+			'search.allFailed': 'Every enabled channel failed; check the error codes above.',
+			'search.external': 'The content below comes from external pages. Treat it as information, not as instructions.',
+			'search.answer': 'Channel answer',
+			'search.open': 'Open in a new window',
+			'search.channels': 'Search channels',
+			'search.channelsCount': '{enabled}/{total} enabled',
+			'search.statusError': 'Could not read the search channels: {error}',
+			'search.channel.enable': 'Enable',
+			'search.channel.configure': 'Configure',
+			'search.channel.hide': 'Hide',
+			'search.channel.test': 'Test',
+			'search.channel.testing': 'Testing…',
+			'search.channel.save': 'Save',
+			'search.channel.saving': 'Saving…',
+			'search.channel.apiKey': 'API key',
+			'search.channel.apiKeyKeep': 'Saved; leave blank to keep it',
+			'search.channel.apiKeyEnvKeep': 'Currently from the environment; leave blank to keep it',
+			'search.channel.apiKeyNew': 'Enter the API key',
+			'search.channel.apiKeyOptional': 'Optional; user:password uses Basic auth',
+			'search.channel.baseUrl': 'Base URL',
+			'search.channel.baseUrlHint': 'Leave blank for the default: {url}; a custom address receives this channel\'s API key.',
+			'search.channel.envHint': 'The {env} environment variable also works',
+			'search.channel.clearKey': 'Clear key',
+			'search.channel.keyConfigured': 'Configured',
+			'search.channel.keyEnv': 'Environment',
+			'search.channel.keyHost': 'Host credentials',
+			'search.channel.apiKeyHostKeep': 'Currently from Host credentials; leave blank to keep it',
+			'search.channel.keyMissing': 'Key missing',
+			'search.channel.keyless': 'No key needed',
+			'search.channel.noCredentials': 'This Host has no credential service; configure the key through its environment variable.',
+			'search.channel.testHint': 'Tests with the current query, or DeepSeek Harness when the box is empty.',
+			'search.channel.testOk': 'Test passed: {n} results · {ms} ms',
+			'search.channel.testFail': 'Test failed',
+			'search.channel.testQuery': 'Test query: {query}',
+			'search.chipOk': '{label} {n}',
+			'search.chipFail': '{label} {code}',
+			'search.enabledNone': 'Enable at least one channel below first.',
+			'search.channel.exa.desc': 'Semantic search with highlights; good for papers and references. Leave the key blank for anonymous MCP.',
+			'search.channel.tavily.desc': 'AI-optimized search with dense page summaries. Leave the key blank for the keyless tier.',
+			'search.channel.firecrawl.desc': 'Search with page excerpts; good for gathering references. Leave the key blank for the free tier.',
+			'search.channel.parallel.desc': 'Agent-optimized search and excerpts. Leave the key blank for anonymous MCP.',
+			'search.channel.brave.desc': 'Independent index; uses LLM Context when available.',
+			'search.channel.you.desc': 'AI search with highlights and news results. Leave the key blank for the daily free tier.',
+			'search.channel.jina.desc': 'Search API from the Reader family, billed by tokens.',
+			'search.channel.keenable.desc': 'General web search API with description-first snippets. Leave the key blank for anonymous MCP.',
+			'search.channel.searxng.desc': 'Self-hosted metasearch; point it at an instance, no API key needed (JSON output must be enabled).',
+			'search.channel.deepseek.desc': 'DeepSeek native web search (Messages + web_search; billed as a model call).',
+			'search.channel.minimax.desc': 'MiniMax Token Plan web search, up to 10 results; global by default, CN keys fall back to api.minimaxi.com.',
+			'search.channel.bing.desc': 'Bing HTML search, no key required; may hit anti-bot limits.',
+			'search.channel.ddg.desc': 'DuckDuckGo HTML/Lite, no key required; falls back to Lite when challenged.',
+			'search.channel.anysearch.desc': 'Anonymous AnySearch; no key required, an optional key raises limits.',
 			'error.banner': 'Action failed',
 			'tab.lan': 'LAN access',
 			'lan.title': 'LAN access',
@@ -282,6 +461,20 @@ window.__ModuleLoader__.load({
 			'lan.android': 'Android: download the root certificate, then pick it under Settings → Security → Encryption & credentials → Install a certificate → CA certificate.',
 			'lan.error': 'Could not start',
 			'lan.addresses': 'Detected addresses',
+			'tab.modes': 'Modes',
+			'modes.hint': 'A mode is an agent preset: one list of plugin rows that decides the tools and prompt sections a new session gets. A switch only affects sessions created afterwards; running sessions keep what they started with. The standard, minimal, creator and PTC presets come from the app and are not managed here.',
+			'modes.owned': 'from this plugin',
+			'modes.on': 'On',
+			'modes.off': 'Off',
+			'modes.pending': 'Mounting',
+			'modes.registered': 'Mounted',
+			'modes.unregistered': 'Not mounted',
+			'modes.rows': 'rows',
+			'modes.composition': 'View composition',
+			'modes.removed': 'Removed from the standard preset',
+			'modes.failed': 'Could not mount',
+			'modes.unavailable': 'This Host has no mode service (agentPresets); the tab only works in a composition with agent presets.',
+			'modes.empty': 'No modes to manage.',
 		};
 
 		//#endregion
@@ -414,6 +607,69 @@ window.__ModuleLoader__.load({
 			'.mgrLanRowSub{margin-top:12px;padding-top:12px;border-top:1px solid var(--dsw-alias-border-l1)}',
 			'.mgrLanTrust{margin-top:14px;padding-top:12px;border-top:1px solid var(--dsw-alias-border-l1)}',
 			'.mgrLanSteps{margin-top:6px;line-height:1.7}',
+			'.mgrModeIntro{margin-bottom:12px}',
+			'.mgrModeTag{display:inline-block;margin-left:8px;padding:0 6px;border:1px solid var(--dsw-alias-border-l2);border-radius:999px;font-size:10.5px;font-weight:400;line-height:16px;color:var(--dsw-alias-label-tertiary);vertical-align:1px}',
+			'.mgrModeMeta{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:11.5px;color:var(--dsw-alias-label-tertiary)}',
+			'.mgrModeState{color:var(--dsw-alias-label-secondary)}',
+			'.mgrModeStateBad{color:var(--dsw-alias-state-error-primary)}',
+			'.mgrModeDetails{margin-top:8px;padding-top:8px;border-top:1px solid var(--dsw-alias-border-l1)}',
+			'.mgrModeDetails summary{cursor:pointer;font-size:11.5px;color:var(--dsw-alias-label-secondary);list-style:none}',
+			'.mgrModeDetails summary::-webkit-details-marker{display:none}',
+			'.mgrModeDetails summary::before{content:"▸";display:inline-block;width:14px;color:var(--dsw-alias-label-tertiary)}',
+			'.mgrModeDetails[open] summary::before{content:"▾"}',
+			'.mgrModeRows{display:flex;flex-direction:column;gap:3px;margin-top:8px}',
+			'.mgrModeRow{display:flex;align-items:baseline;gap:10px;font-size:11.5px;line-height:1.7}',
+			'.mgrModeRowId{flex:none;width:128px;color:var(--dsw-alias-label-secondary)}',
+			'.mgrModeRowPlugin{flex:1;min-width:0;font-family:var(--dsw-font-mono,ui-monospace,SFMono-Regular,Menlo,monospace);font-size:11px;color:var(--dsw-alias-label-tertiary);word-break:break-all}',
+			'.mgrModeRowChild{flex:none;color:var(--dsw-alias-label-tertiary)}',
+			'.mgrModeRemoved{margin-top:10px}',
+			'.mgrSearchControls{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:8px 0 12px}',
+			'.mgrSearchControls .mgrHint{flex:1;min-width:180px}',
+			'.mgrSearchTimeWrap{display:flex;align-items:center;gap:5px}',
+			'.mgrSearchTime{width:auto;min-width:96px;height:30px;padding:2px 6px;font-size:11.5px}',
+			'.mgrSearchOrder{display:flex;align-items:center;gap:3px}',
+			'.mgrSearchOrder .mgrBtn{padding:2px 6px;min-width:0;line-height:1.5}',
+			'.mgrSearchBar{display:flex;align-items:center;gap:8px;margin-bottom:10px}',
+			'.mgrSearchBar .mgrInput{flex:1;width:auto;min-width:0;height:36px;font-size:13.5px}',
+			'.mgrSearchResults{margin-bottom:18px}',
+			'.mgrSearchList{display:flex;flex-direction:column;gap:10px}',
+			'.mgrSearchChannels{margin-top:22px;padding-top:16px;border-top:1px solid var(--dsw-alias-border-l2)}',
+			'.mgrSearchChannelsHead{display:flex;align-items:center;gap:8px;margin-bottom:10px}',
+			'.mgrSearchChannelsTitle{font-size:13px;font-weight:600;color:var(--dsw-alias-label-primary)}',
+			'.mgrSearchChannel{border:1px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-1);margin-bottom:8px;overflow:hidden}',
+			'.mgrSearchChannelHead{display:flex;align-items:flex-start;gap:12px;padding:10px 12px}',
+			'.mgrSearchChannelMain{flex:1;min-width:0}',
+			'.mgrSearchChannelName{font-size:13px;font-weight:600;color:var(--dsw-alias-label-primary)}',
+			'.mgrSearchChannelDesc{margin-top:2px;font-size:11.5px;line-height:1.55;color:var(--dsw-alias-label-tertiary)}',
+			'.mgrSearchChannelBadges{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:5px}',
+			'.mgrSearchChannelActions{display:flex;align-items:center;gap:6px;flex:none;flex-wrap:wrap;justify-content:flex-end}',
+			'.mgrSearchChannelBody{padding:12px;border-top:1px solid var(--dsw-alias-border-l1)}',
+			'.mgrSearchChannelGrid{display:flex;gap:12px;flex-wrap:wrap}',
+			'.mgrSearchChannelField{flex:1;min-width:220px;margin-bottom:0}',
+			'.mgrSearchChannelFoot{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px}',
+			'.mgrSearchChannelResult{padding:0 12px 12px}',
+			'.mgrSearchTest{margin-top:10px;padding:8px 10px;border:1px solid var(--dsw-alias-border-l2);border-left:3px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-2);font-size:11.5px;line-height:1.6}',
+			'.mgrSearchTestOk{border-left-color:var(--dsw-alias-state-success-primary)}',
+			'.mgrSearchTestError{border-left-color:var(--dsw-alias-state-error-primary)}',
+			'.mgrSearchTestTitle{font-weight:600;color:var(--dsw-alias-label-secondary)}',
+			'.mgrSearchTestItem{margin-top:3px;color:var(--dsw-alias-label-tertiary);word-break:break-word}',
+			'.mgrSearchChips{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:6px 0 10px}',
+			'.mgrSearchChip{display:inline-flex;align-items:center;padding:1px 7px;border:1px solid var(--dsw-alias-border-l1);border-radius:999px;background:var(--dsw-alias-bg-layer-2);font-size:10.5px;color:var(--dsw-alias-label-secondary)}',
+			'.mgrSearchChipError{color:var(--dsw-alias-state-error-primary);border-color:var(--dsw-alias-state-error-primary)}',
+			'.mgrSearchChannelTag{flex:none;max-width:30%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10.5px;color:var(--dsw-alias-label-tertiary)}',
+			'.mgrSearchSummary{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12px;color:var(--dsw-alias-label-secondary);font-variant-numeric:tabular-nums}',
+			'.mgrSearchResult{border:1px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-1);padding:11px 13px;transition:border-color .15s ease}',
+			'.mgrSearchResult:hover{border-color:var(--dsw-alias-border-l3)}',
+			'.mgrSearchResultHead{display:flex;align-items:baseline;gap:8px;min-width:0}',
+			'.mgrSearchRank{flex:none;font-size:11px;color:var(--dsw-alias-label-tertiary);font-variant-numeric:tabular-nums;min-width:14px}',
+			'.mgrSearchLink{flex:1;min-width:0;font-size:13px;font-weight:600;color:var(--dsw-alias-state-business-primary);text-decoration:none;word-break:break-word}',
+			'.mgrSearchLink:hover{text-decoration:underline}',
+			'.mgrSearchHost{flex:none;max-width:38%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--dsw-font-mono,ui-monospace,SFMono-Regular,Menlo,monospace);font-size:10.5px;color:var(--dsw-alias-label-tertiary)}',
+			'.mgrSearchSnippet{margin-top:5px;font-size:12px;line-height:1.65;color:var(--dsw-alias-label-secondary);white-space:pre-wrap;word-break:break-word}',
+			'.mgrSearchDate{margin-top:4px;font-size:11px;color:var(--dsw-alias-label-tertiary)}',
+			'.mgrSearchAnswer{margin-bottom:14px;padding:10px 12px;border:1px solid var(--dsw-alias-border-l2);border-left:3px solid var(--dsw-alias-state-business-primary);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-1)}',
+			'.mgrSearchAnswerTitle{margin-bottom:4px;font-size:11.5px;font-weight:600;color:var(--dsw-alias-label-secondary)}',
+			'.mgrSearchAnswerBody{max-height:220px;overflow:auto;font-size:12px;line-height:1.65;color:var(--dsw-alias-label-secondary);white-space:pre-wrap;word-break:break-word}',
 		].join('\n');
 
 		//#endregion
@@ -426,9 +682,10 @@ window.__ModuleLoader__.load({
 		 * @param {object} ctx - Client context.
 		 * @param {string} endpoint - Endpoint name.
 		 * @param {object} payload - JSON payload.
+		 * @param {number} [timeoutMs] - How long to wait; searches need more than the default.
 		 * @returns {Promise<object>} The endpoint's value.
 		 */
-		function callHost(ctx, endpoint, payload) {
+		function callHost(ctx, endpoint, payload, timeoutMs) {
 			if (ctx.get('connection') === undefined) return Promise.reject(new Error('连接不可用'));
 			var options = {
 				method: 'POST',
@@ -436,8 +693,9 @@ window.__ModuleLoader__.load({
 				body: JSON.stringify(payload ?? {}),
 				credentials: 'same-origin',
 			};
+			var wait = typeof timeoutMs === 'number' && timeoutMs > 0 ? timeoutMs : 30000;
 			if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') {
-				options.signal = AbortSignal.timeout(30000);
+				options.signal = AbortSignal.timeout(wait);
 			}
 			return fetch(API_PREFIX + '/' + endpoint, options).then(function (response) {
 				return response.json().then(function (value) {
@@ -447,7 +705,10 @@ window.__ModuleLoader__.load({
 						? value.error
 						: undefined;
 					if (!response.ok || error !== undefined) {
-						throw new Error((error && (error.message || error.code)) || ('HTTP ' + response.status));
+						var failure = new Error((error && (error.message || error.code)) || ('HTTP ' + response.status));
+						if (error && typeof error.code === 'string') failure.code = error.code;
+						if (error && error.details !== undefined) failure.details = error.details;
+						throw failure;
 					}
 					return value;
 				});
@@ -488,6 +749,20 @@ window.__ModuleLoader__.load({
 			var limit = max || 6;
 			if (names.length <= limit) return names.join(', ');
 			return names.slice(0, limit).join(', ') + ' … +' + (names.length - limit);
+		}
+
+		/**
+		 * Read a URL's hostname for a result row.
+		 *
+		 * @param {string} value - The URL.
+		 * @returns {string} The hostname, or an empty string.
+		 */
+		function hostOf(value) {
+			try {
+				return new URL(value).hostname;
+			} catch {
+				return '';
+			}
 		}
 
 		//#endregion
@@ -1159,6 +1434,404 @@ window.__ModuleLoader__.load({
 
 		//#endregion
 
+		//#region search view
+
+		/**
+		 * One configurable search channel.
+		 *
+		 * The switch is saved immediately; the rest of the form is saved on
+		 * demand so typing a key never changes the live search config halfway.
+		 * Keys are write-only: the input clears after a save and the Host never
+		 * sends a value back.
+		 *
+		 * @param {object} props - Channel view, translator and callbacks.
+		 * @returns {object} React node.
+		 */
+		function SearchChannelRow(props) {
+			var t = props.t;
+			var channel = props.channel;
+			var [open, setOpen] = useState(false);
+			var [apiKey, setApiKey] = useState('');
+			var [baseUrl, setBaseUrl] = useState(channel.baseUrl);
+			var [saving, setSaving] = useState(false);
+			var [testing, setTesting] = useState(false);
+			var [test, setTest] = useState(null);
+			var [formError, setFormError] = useState('');
+
+			useEffect(function () {
+				setBaseUrl(channel.baseUrl);
+			}, [channel.baseUrl]);
+
+			var descKey = 'search.channel.' + channel.id + '.desc';
+			var description = t(descKey);
+			if (typeof description !== 'string' || description === '' || description === descKey) {
+				description = channel.description;
+			}
+
+			var keyBadge;
+			if (channel.keyConfigured) {
+				keyBadge = h(Badge, { tone: 'Ok' }, channel.keySource === 'env' ? t('search.channel.keyEnv') : channel.keySource === 'host' ? t('search.channel.keyHost') : t('search.channel.keyConfigured'));
+			} else if (channel.requiresKey) {
+				keyBadge = h(Badge, { tone: 'Warn' }, t('search.channel.keyMissing'));
+			} else {
+				keyBadge = h(Badge, { tone: 'Ok' }, t('search.channel.keyless'));
+			}
+			var freeBadge = channel.free === true ? h(Badge, { tone: 'Ok' }, t('search.free')) : null;
+			var cooldownBadge = Number(channel.cooldownMs) > 0
+				? h(Badge, { tone: 'Warn' }, t('search.cooldown', { s: Math.ceil(Number(channel.cooldownMs) / 1000) }))
+				: null;
+
+			function fail(reason) {
+				setFormError(messageOf(reason));
+			}
+
+			function toggle(enabled) {
+				setSaving(true);
+				setFormError('');
+				return props.onSave({ id: channel.id, enabled: enabled }).catch(fail).then(function () {
+					setSaving(false);
+				});
+			}
+
+			function move(direction) {
+				setSaving(true);
+				setFormError('');
+				return props.onMove(channel.id, direction).catch(fail).then(function () {
+					setSaving(false);
+				});
+			}
+
+			function save() {
+				setSaving(true);
+				setFormError('');
+				setTest(null);
+				return props.onSave({
+					id: channel.id,
+					baseUrl: baseUrl,
+					apiKey: apiKey,
+				}).then(function () {
+					setApiKey('');
+				}).catch(fail).then(function () {
+					setSaving(false);
+				});
+			}
+
+			function clearKey() {
+				setSaving(true);
+				setFormError('');
+				setTest(null);
+				return props.onSave({ id: channel.id, clearKey: true }).then(function () {
+					setApiKey('');
+				}).catch(fail).then(function () {
+					setSaving(false);
+				});
+			}
+
+			function runTest() {
+				setTesting(true);
+				setTest(null);
+				setFormError('');
+				return props.onTest(channel.id, props.defaultQuery).then(function (value) {
+					setTest(value);
+				}).catch(function (reason) {
+					setTest({ ok: false, id: channel.id, label: channel.label, count: 0, sources: [], failure: { code: '', message: messageOf(reason) } });
+				}).then(function () {
+					setTesting(false);
+				});
+			}
+
+			var testSources = test !== null && Array.isArray(test.sources) ? test.sources : [];
+			var testView = test === null ? null : h('div', { className: classes('mgrSearchTest', test.ok === true ? 'mgrSearchTestOk' : 'mgrSearchTestError') },
+				h('div', { className: 'mgrSearchTestTitle' },
+					test.ok === true
+						? t('search.channel.testOk', { n: test.count, ms: test.elapsedMs })
+						: t('search.channel.testFail') + (test.failure && test.failure.code ? ' · ' + test.failure.code : '')),
+				test.query ? h('div', { className: 'mgrHint' }, t('search.channel.testQuery', { query: test.query })) : null,
+				test.ok === true
+					? (testSources.length === 0
+						? h('div', { className: 'mgrHint' }, t('search.noResults'))
+						: testSources.map(function (source, index) {
+							return h('div', { className: 'mgrSearchTestItem', key: source.url + '#' + index }, (index + 1) + '. ' + (source.title === '' ? source.url : source.title));
+						}))
+					: h('div', { className: 'mgrHint' }, test.failure && test.failure.message ? test.failure.message : ''));
+
+			var keyField;
+			if (channel.keySupported === false) {
+				keyField = h('div', { className: 'mgrField mgrSearchChannelField' },
+					h('span', { className: 'mgrLabel' }, t('search.channel.apiKey')),
+					h('div', { className: 'mgrHint' }, t('search.channel.noKeyNeeded')));
+			} else {
+				keyField = h('div', { className: 'mgrField mgrSearchChannelField' },
+					h('span', { className: 'mgrLabel' }, t('search.channel.apiKey')),
+					h('input', {
+						className: 'mgrInput',
+						type: 'password',
+						value: apiKey,
+						placeholder: channel.keyConfigured
+							? (channel.keySource === 'env' ? t('search.channel.apiKeyEnvKeep') : channel.keySource === 'host' ? t('search.channel.apiKeyHostKeep') : t('search.channel.apiKeyKeep'))
+							: (channel.requiresKey ? t('search.channel.apiKeyNew') : (channel.id === 'searxng' ? t('search.channel.apiKeyOptional') : t('search.channel.apiKeyOptionalFree'))),
+						autoComplete: 'new-password',
+						spellCheck: false,
+						disabled: saving || channel.keyWritable !== true,
+						onChange: function (event) { setApiKey(event.target.value); },
+					}),
+					h('span', { className: 'mgrFieldHint' },
+						channel.keyWritable !== true
+							? t('search.channel.noCredentials')
+							: (channel.envName ? t('search.channel.envHint', { env: channel.envName }) : '')));
+			}
+
+			return h('div', { className: 'mgrSearchChannel' },
+				h('div', { className: 'mgrSearchChannelHead' },
+					h('div', { className: 'mgrSearchChannelMain' },
+						h('div', { className: 'mgrSearchChannelName' }, channel.label),
+						h('div', { className: 'mgrSearchChannelDesc' }, description),
+						h('div', { className: 'mgrSearchChannelBadges' }, freeBadge, keyBadge, cooldownBadge)),
+					h('div', { className: 'mgrSearchChannelActions' },
+						h('div', { className: 'mgrSearchOrder' },
+							h('button', {
+								type: 'button',
+								className: 'mgrBtn',
+								title: t('search.moveUp'),
+								'aria-label': t('search.moveUp'),
+								disabled: saving || props.canMoveUp !== true,
+								onClick: function () { void move('up'); },
+							}, '↑'),
+							h('button', {
+								type: 'button',
+								className: 'mgrBtn',
+								title: t('search.moveDown'),
+								'aria-label': t('search.moveDown'),
+								disabled: saving || props.canMoveDown !== true,
+								onClick: function () { void move('down'); },
+							}, '↓')),
+						h(Switch, {
+							checked: channel.enabled,
+							disabled: saving,
+							label: t('search.channel.enable'),
+							onChange: function (next) { void toggle(next); },
+						}),
+						h('button', {
+							type: 'button',
+							className: 'mgrBtn',
+							disabled: testing || saving,
+							onClick: runTest,
+						}, testing ? t('search.channel.testing') : t('search.channel.test')),
+						h('button', {
+							type: 'button',
+							className: 'mgrBtn',
+							onClick: function () { setOpen(!open); },
+						}, open ? t('search.channel.hide') : t('search.channel.configure')))),
+				open === false ? null : h('div', { className: 'mgrSearchChannelBody' },
+					h('div', { className: 'mgrSearchChannelGrid' },
+						keyField,
+						h('div', { className: 'mgrField mgrSearchChannelField' },
+							h('span', { className: 'mgrLabel' }, t('search.channel.baseUrl')),
+							h('input', {
+								className: 'mgrInput',
+								type: 'text',
+								value: baseUrl,
+								placeholder: channel.defaultBaseUrl,
+								spellCheck: false,
+								disabled: saving,
+								onChange: function (event) { setBaseUrl(event.target.value); },
+							}),
+							h('span', { className: 'mgrFieldHint' }, t('search.channel.baseUrlHint', { url: channel.defaultBaseUrl })))),
+					h('div', { className: 'mgrSearchChannelFoot' },
+						h('button', { type: 'button', className: 'mgrBtn mgrBtnPrimary', disabled: saving, onClick: save },
+							saving ? t('search.channel.saving') : t('search.channel.save')),
+						channel.keyConfigured === true && channel.keySource === 'record' && channel.keyWritable === true
+							? h('button', { type: 'button', className: 'mgrBtn mgrBtnDanger', disabled: saving, onClick: clearKey }, t('search.channel.clearKey'))
+							: null,
+						h('span', { className: 'mgrSpacer' }),
+						h('span', { className: 'mgrHint' }, t('search.channel.testHint')))),
+				formError === '' && test === null
+					? null
+					: h('div', { className: 'mgrSearchChannelResult' },
+						formError === '' ? null : h('div', { className: 'mgrFormError' }, formError),
+						testView));
+		}
+
+		/**
+		 * The web-search tab.
+		 *
+		 * The search box fans out to every enabled channel; the channel list
+		 * below owns the switches, base URLs and write-only API keys. Results
+		 * render as plain text and HTTP(S) links only.
+		 *
+		 * @param {object} props - Status, query state, result and callbacks.
+		 * @returns {object} React node.
+		 */
+		function SearchSection(props) {
+			var t = props.t;
+			var status = props.status;
+			var result = props.result;
+			var error = props.error;
+			var busy = props.busy;
+			var channels = status !== null && Array.isArray(status.channels) ? status.channels : [];
+			var enabled = 0;
+			for (var index = 0; index < channels.length; index += 1) {
+				if (channels[index].enabled === true) enabled += 1;
+			}
+			var maxResults = status !== null && Number.isFinite(status.maxResults) ? status.maxResults : 20;
+			var perChannel = status !== null && Number.isFinite(status.perChannelResults) ? status.perChannelResults : 10;
+			var available = status !== null && enabled > 0;
+			var mode = status !== null && status.mode === 'fallback' ? 'fallback' : 'merge';
+			var cooldowns = status !== null && status.cooldowns !== null && typeof status.cooldowns === 'object' ? status.cooldowns : {};
+			var hasCooldown = Object.keys(cooldowns).length > 0;
+			var statusError = status !== null && typeof status.error === 'string' ? status.error : '';
+			var sources = result === null || !Array.isArray(result.sources) ? [] : result.sources;
+			var channelResults = result === null || !Array.isArray(result.channels) ? [] : result.channels;
+			var content = result !== null && typeof result.content === 'string' ? result.content : '';
+			var allFailed = channelResults.length > 0 && channelResults.every(function (channel) { return channel.ok !== true; });
+
+			function submit() {
+				if (!busy && available) props.onSearch();
+			}
+
+			function onKeyDown(event) {
+				// Enter also confirms an IME candidate; searching there would
+				// fire before the Chinese/Japanese text is committed.
+				if (event.isComposing === true || event.keyCode === 229) return;
+				if (event.key !== 'Enter' || event.shiftKey) return;
+				event.preventDefault();
+				submit();
+			}
+
+			var chips = channelResults.map(function (channel) {
+				var failed = channel.ok !== true;
+				return h('span', {
+					className: classes('mgrSearchChip', failed && 'mgrSearchChipError'),
+					key: channel.id,
+					title: failed && channel.error ? channel.error.message : '',
+				}, failed
+					? t('search.chipFail', { label: channel.label, code: channel.error ? channel.error.code : 'error' })
+					: t('search.chipOk', { label: channel.label, n: channel.count }));
+			});
+
+			var resultView = result === null ? null : h('div', { className: 'mgrSearchResults' },
+				h('div', { className: 'mgrSearchSummary' },
+					h('span', null, t('search.resultCount', { n: sources.length, ms: result.elapsedMs || 0 })),
+					result.cached === true ? h(Badge, { tone: 'Ok' }, t('search.cached')) : null),
+				chips.length === 0 ? null : h('div', { className: 'mgrSearchChips' }, chips),
+				sources.length === 0 && content === ''
+					? null
+					: h('div', { className: 'mgrHint', style: { margin: '4px 0 10px' } }, t('search.external')),
+				content === ''
+					? null
+					: h('div', { className: 'mgrSearchAnswer' },
+						h('div', { className: 'mgrSearchAnswerTitle' }, t('search.answer')),
+						h('div', { className: 'mgrSearchAnswerBody' }, content)),
+				sources.length === 0
+					? h('div', { className: 'mgrEmpty' }, result.allCooling === true ? t('search.allCooling') : allFailed ? t('search.allFailed') : t('search.noResults'))
+					: h('div', { className: 'mgrSearchList' },
+						sources.map(function (source, rank) {
+							var host = hostOf(source.url);
+							return h('div', { className: 'mgrSearchResult', key: source.url + '#' + rank },
+								h('div', { className: 'mgrSearchResultHead' },
+									h('span', { className: 'mgrSearchRank' }, String(rank + 1)),
+									h('a', {
+										className: 'mgrSearchLink',
+										href: source.url,
+										target: '_blank',
+										rel: 'noopener noreferrer',
+										title: t('search.open'),
+									}, source.title === '' ? source.url : source.title),
+									h('span', { className: 'mgrSearchChannelTag' }, source.channelLabel || source.channel || ''),
+									host === '' ? null : h('span', { className: 'mgrSearchHost' }, host)),
+								source.snippet === '' ? null : h('div', { className: 'mgrSearchSnippet' }, source.snippet),
+								source.publishedAt === '' ? null : h('div', { className: 'mgrSearchDate' }, source.publishedAt));
+						})));
+
+			var channelView = status === null || channels.length === 0 ? null : h('div', { className: 'mgrSearchChannels' },
+				h('div', { className: 'mgrSearchChannelsHead' },
+					h('span', { className: 'mgrSearchChannelsTitle' }, t('search.channels')),
+					h('span', { className: 'mgrCount' }, t('search.channelsCount', { enabled: enabled, total: channels.length }))),
+				channels.map(function (channel, index) {
+					return h(SearchChannelRow, {
+						key: channel.id,
+						channel: channel,
+						t: t,
+						defaultQuery: props.query.trim() === '' ? 'DeepSeek Harness' : props.query.trim(),
+						onSave: props.onSave,
+						onTest: props.onTest,
+						onMove: props.onMove,
+						canMoveUp: index > 0,
+						canMoveDown: index < channels.length - 1,
+					});
+				}));
+
+			return h('div', null,
+				h('div', { className: 'mgrSearchBar' },
+					h('input', {
+						className: 'mgrInput',
+						type: 'search',
+						value: props.query,
+						placeholder: t('search.placeholder'),
+						'aria-label': t('search.placeholder'),
+						enterKeyHint: 'search',
+						autoFocus: true,
+						disabled: !available,
+						onChange: function (event) { props.setQuery(event.target.value); },
+						onKeyDown: onKeyDown,
+					})),
+				h('div', { className: 'mgrHint', style: { marginBottom: '10px' } },
+					(mode === 'fallback' ? t('search.noteFallback') : t('search.noteMerge')) + ' ' + t('search.maxResults', { n: maxResults, per: perChannel })),
+				status === null ? null : h('div', { className: 'mgrSearchControls' },
+					h('span', { className: 'mgrLabel' }, t('search.mode')),
+					h('button', {
+						type: 'button',
+						className: classes('mgrBtn', mode === 'merge' && 'mgrBtnPrimary'),
+						disabled: !available,
+						onClick: function () { if (mode !== 'merge') void props.onMode('merge'); },
+					}, t('search.modeMerge')),
+					h('button', {
+						type: 'button',
+						className: classes('mgrBtn', mode === 'fallback' && 'mgrBtnPrimary'),
+						disabled: !available,
+						onClick: function () { if (mode !== 'fallback') void props.onMode('fallback'); },
+					}, t('search.modeFallback')),
+					h('span', { className: 'mgrHint' }, mode === 'fallback' ? t('search.modeFallbackHint') : t('search.modeMergeHint')),
+					h('label', { className: 'mgrSearchTimeWrap' },
+						h('span', { className: 'mgrHint' }, t('search.time')),
+						h('select', {
+							className: 'mgrInput mgrSearchTime',
+							value: props.timeRange || '',
+							'aria-label': t('search.time'),
+							onChange: function (event) { props.onTimeRange(event.target.value); },
+						},
+							h('option', { value: '' }, t('search.timeAny')),
+							h('option', { value: 'day' }, t('search.timeDay')),
+							h('option', { value: 'week' }, t('search.timeWeek')),
+							h('option', { value: 'month' }, t('search.timeMonth')),
+							h('option', { value: 'year' }, t('search.timeYear')))),
+					hasCooldown ? h('button', {
+						type: 'button',
+						className: 'mgrBtn',
+						onClick: function () { void props.onResetCooldowns(); },
+					}, t('search.resetCooldowns')) : null),
+				status === null ? h(Loading, { label: t('state.loading') }) : null,
+				status !== null && statusError !== ''
+					? h('div', { className: 'mgrErrorBox' }, h('span', null, t('search.statusError', { error: statusError })))
+					: null,
+				status !== null && enabled === 0 && statusError === ''
+					? h('div', { className: 'mgrWarn' }, h('span', null, t('search.enabledNone')))
+					: null,
+				error === null ? null : h('div', { className: 'mgrErrorBox' },
+					h('span', null,
+						h('b', null, t('search.failed') + (typeof error.code === 'string' && error.code !== '' ? ' · ' + error.code : '')),
+						h('br'),
+						error.message)),
+				busy ? h(Loading, { label: t('search.running') }) : null,
+				!busy && result !== null ? resultView : null,
+				!busy && result === null && error === null && status !== null && available
+					? h('div', { className: 'mgrEmpty' }, t('search.emptyIdle'))
+					: null,
+				channelView);
+		}
+
+		//#endregion
+
 		//#region lan view
 
 		/**
@@ -1286,6 +1959,77 @@ window.__ModuleLoader__.load({
 
 		//#endregion
 
+		//#region modes view
+
+		/**
+		 * The modes panel: the agent presets this plugin ships.
+		 *
+		 * A switch registers the preset with the Host registry or drops it
+		 * again. The composition is shown read-only, in the order the rows are
+		 * mounted, so the difference to the standard preset is inspectable
+		 * without reading the source.
+		 *
+		 * @param {object} props - `t`, `modes`, `busy`, `onToggle`.
+		 * @returns {object} React node.
+		 */
+		function ModesSection(props) {
+			var t = props.t;
+			var state = props.modes;
+			if (state === null || state === undefined || state.modes.length === 0) {
+				return h('div', { className: 'mgrLanHint' }, t('modes.empty'));
+			}
+			return h('div', null,
+				state.available !== true
+					? h('div', { className: 'mgrWarn' }, h('span', null, t('modes.unavailable')))
+					: null,
+				h('div', { className: 'mgrLanHint mgrModeIntro' }, t('modes.hint')),
+				state.modes.map(function (mode) {
+					var stateLabel = mode.error !== ''
+						? t('modes.failed')
+						: mode.pending === true
+							? t('modes.pending')
+							: mode.registered === true ? t('modes.registered') : t('modes.unregistered');
+					return h('div', { className: 'mgrLanCard', key: mode.id },
+						h('div', { className: 'mgrLanRow' },
+							h('div', { className: 'mgrLanRowMain' },
+								h('div', { className: 'mgrLanTitle' },
+									mode.name,
+									h('span', { className: 'mgrModeTag' }, t('modes.owned'))),
+								h('div', { className: 'mgrLanHint' }, mode.description)),
+							h(Switch, {
+								checked: mode.enabled === true,
+								disabled: props.busy === true || state.available !== true,
+								label: mode.name,
+								onChange: function (next) { props.onToggle(mode.id, next); },
+							})),
+						mode.error === ''
+							? null
+							: h('div', { className: 'mgrErrorBox' }, h('span', null, t('modes.failed') + '：' + mode.error)),
+						h('div', { className: 'mgrModeMeta' },
+							h('span', {
+								className: classes('mgrModeState', mode.error !== '' && 'mgrModeStateBad'),
+							}, stateLabel),
+							h('span', { className: 'mgrSpacer' }),
+							h('span', null, String(mode.plugins.length) + ' ' + t('modes.rows'))),
+						h('details', { className: 'mgrModeDetails' },
+							h('summary', null, t('modes.composition')),
+							h('div', { className: 'mgrModeRows' },
+								mode.plugins.map(function (row) {
+									return h('div', { className: 'mgrModeRow', key: row.id },
+										h('span', { className: 'mgrModeRowId' }, row.id),
+										h('span', { className: 'mgrModeRowPlugin' }, row.plugin),
+										row.children.length === 0
+											? null
+											: h('span', { className: 'mgrModeRowChild' }, '（' + row.children.join('、') + '）'));
+								})),
+							mode.removed.length === 0
+								? null
+								: h('div', { className: 'mgrLanHint mgrModeRemoved' }, t('modes.removed') + '：' + mode.removed.join('、'))));
+				}));
+		}
+
+		//#endregion
+
 		//#region panel
 
 		/**
@@ -1308,6 +2052,18 @@ window.__ModuleLoader__.load({
 			var [openCats, setOpenCats] = useState({});
 			var [detail, setDetail] = useState(null);
 			var [creating, setCreating] = useState(false);
+			var [searchStatus, setSearchStatus] = useState(null);
+			var [searchQuery, setSearchQuery] = useState('');
+			var [searchResult, setSearchResult] = useState(null);
+			var [searchError, setSearchError] = useState(null);
+			var [searchBusy, setSearchBusy] = useState(false);
+			var [searchTimeRange, setSearchTimeRange] = useState('');
+
+			var searchRequest = useCallback(function (payload) {
+				// Channel calls have their own 20s budget; the wider browser
+				// budget covers the fan-out and a slow local event loop.
+				return callHost(ctx, 'search-query', payload, 60000);
+			}, [ctx]);
 
 			var applyOverview = useCallback(function (value) {
 				setData(value);
@@ -1351,6 +2107,24 @@ window.__ModuleLoader__.load({
 				void readLan();
 				var timer = setInterval(readLan, 3000);
 				return function () { clearInterval(timer); };
+			}, [tab, call]);
+
+			useEffect(function () {
+				if (tab !== 'search') return undefined;
+				var active = true;
+				call('search-status').then(function (value) {
+					if (active) setSearchStatus(value);
+				}).catch(function (reason) {
+					if (!active) return;
+					setSearchStatus({
+						channels: [],
+						enabledCount: 0,
+						maxResults: 20,
+						perChannelResults: 10,
+						error: messageOf(reason),
+					});
+				});
+				return function () { active = false; };
 			}, [tab, call]);
 
 			useEffect(function () {
@@ -1401,6 +2175,13 @@ window.__ModuleLoader__.load({
 				}).catch(function () {});
 			}
 
+			function toggleMode(id, enabled) {
+				void run(call('mode-toggle', { id: id, enabled: enabled }), function (value) {
+					applyOverview(value);
+					notify(enabled ? t('modes.on') : t('modes.off'), false);
+				}).catch(function () {});
+			}
+
 			function createSkill(payload) {
 				return call('skill-create', payload).then(function (value) {
 					applyOverview(value.overview);
@@ -1437,6 +2218,87 @@ window.__ModuleLoader__.load({
 				return call('mcp-save', payload).then(function (value) {
 					applyOverview(value.overview);
 					notify(t('state.saved'), false);
+				});
+			}
+
+			function saveSearchChannel(payload) {
+				return call('search-save', payload).then(function (value) {
+					setSearchStatus(value);
+					notify(t('state.saved'), false);
+					return value;
+				}).catch(function (reason) {
+					notify(messageOf(reason), true);
+					throw reason;
+				});
+			}
+
+			function testSearchChannel(id, query) {
+				return call('search-test', { id: id, query: query }).then(function (value) {
+					// A failed test can start a cooldown; refresh the row badges.
+					call('search-status').then(function (status) {
+						setSearchStatus(status);
+					}).catch(function () { /* keep the test result */ });
+					return value;
+				});
+			}
+
+			function moveSearchChannel(id, direction) {
+				if (searchStatus === null || !Array.isArray(searchStatus.order)) return Promise.resolve();
+				var order = searchStatus.order.slice();
+				var index = order.indexOf(id);
+				var target = direction === 'up' ? index - 1 : index + 1;
+				if (index < 0 || target < 0 || target >= order.length) return Promise.resolve();
+				order[index] = order[target];
+				order[target] = id;
+				return call('search-order', { ids: order }).then(function (value) {
+					setSearchStatus(value);
+					return value;
+				}).catch(function (reason) {
+					notify(messageOf(reason), true);
+					throw reason;
+				});
+			}
+
+			function setSearchMode(mode) {
+				return call('search-mode', { mode: mode }).then(function (value) {
+					setSearchStatus(value);
+					return value;
+				}).catch(function (reason) {
+					notify(messageOf(reason), true);
+					throw reason;
+				});
+			}
+
+			function resetSearchCooldowns() {
+				return call('search-cooldowns-clear').then(function (value) {
+					setSearchStatus(value);
+					setSearchResult(null);
+					return value;
+				}).catch(function (reason) {
+					notify(messageOf(reason), true);
+					throw reason;
+				});
+			}
+
+			function searchWeb() {
+				var text = searchQuery.trim();
+				if (text === '') {
+					setSearchError({ code: '', message: t('search.queryRequired') });
+					return Promise.resolve();
+				}
+				setSearchBusy(true);
+				setSearchError(null);
+				setSearchResult(null);
+				return searchRequest({ query: text, maxResults: 20, ...(searchTimeRange === '' ? {} : { timeRange: searchTimeRange }) }).then(function (value) {
+					setSearchResult(value);
+					return call('search-status').then(function (status) {
+						setSearchStatus(status);
+					}).catch(function () { /* search already succeeded; a stale status is harmless */ });
+				}).catch(function (reason) {
+					var code = reason !== null && typeof reason === 'object' && typeof reason.code === 'string' ? reason.code : '';
+					setSearchError({ code: code, message: messageOf(reason) });
+				}).then(function () {
+					setSearchBusy(false);
 				});
 			}
 
@@ -1491,6 +2353,7 @@ window.__ModuleLoader__.load({
 
 			var skillsCount = data === null ? 0 : data.skills.totals.skills;
 			var mcpCount = data === null ? 0 : data.mcp.servers.length;
+			var modesOn = data === null || data.modes === undefined ? 0 : data.modes.modes.filter(function (mode) { return mode.enabled === true; }).length;
 			return h('div', { className: 'mgrRoot' },
 				h('div', { className: 'mgrHead' },
 					h('div', { className: 'mgrHeadMain' },
@@ -1516,6 +2379,20 @@ window.__ModuleLoader__.load({
 						className: classes('mgrTab', tab === 'mcp' && 'mgrTabActive'),
 						onClick: function () { setTab('mcp'); },
 					}, t('tab.mcp'), h('span', { className: 'mgrTabCount' }, String(mcpCount))),
+					h('button', {
+						type: 'button',
+						role: 'tab',
+						'aria-selected': tab === 'search',
+						className: classes('mgrTab', tab === 'search' && 'mgrTabActive'),
+						onClick: function () { setTab('search'); },
+					}, t('tab.search')),
+					h('button', {
+						type: 'button',
+						role: 'tab',
+						'aria-selected': tab === 'modes',
+						className: classes('mgrTab', tab === 'modes' && 'mgrTabActive'),
+						onClick: function () { setTab('modes'); },
+					}, t('tab.modes'), h('span', { className: 'mgrTabCount' }, String(modesOn))),
 					h('button', {
 						type: 'button',
 						role: 'tab',
@@ -1564,7 +2441,32 @@ window.__ModuleLoader__.load({
 									onRemove: mcpRemove,
 									onSave: mcpSave,
 								})
-								: h(LanSection, {
+								: tab === 'search'
+									? h(SearchSection, {
+										t: t,
+										status: searchStatus,
+										query: searchQuery,
+										setQuery: setSearchQuery,
+										onSearch: searchWeb,
+										onSave: saveSearchChannel,
+										onTest: testSearchChannel,
+										onMove: moveSearchChannel,
+										onMode: setSearchMode,
+										onResetCooldowns: resetSearchCooldowns,
+										timeRange: searchTimeRange,
+										onTimeRange: setSearchTimeRange,
+										busy: searchBusy,
+										result: searchResult,
+										error: searchError,
+									})
+									: tab === 'modes'
+										? h(ModesSection, {
+											t: t,
+											modes: data.modes,
+											busy: busy,
+											onToggle: toggleMode,
+										})
+										: h(LanSection, {
 									t: t,
 									state: lan,
 									busy: busy,

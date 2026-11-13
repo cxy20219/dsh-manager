@@ -68,7 +68,9 @@ test('registers discovered tools, calls them, and removes them on disable', asyn
 			env: { MCP_TEST_TOKEN: 'token-from-credentials' },
 			enabled: true,
 		})
-		await waitFor(() => mcp.describe().servers[0].state === 'ready')
+		// `ready` is set when the connection negotiates, before the tool list
+		// comes back; wait for the tools themselves, not the state flag.
+		await waitFor(() => (mcp.describe().servers[0].tools ?? []).length === 3)
 		assert.equal(saved.envKeys.length, 1)
 		// Credential keys must be two `[a-z][a-z0-9-]*` segments.
 		assert.match(saved.id, /^[a-z][a-z0-9-]*$/u)

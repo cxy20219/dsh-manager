@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises'
+import { createServer } from 'node:http'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
@@ -30,7 +31,9 @@ test('the Host half serves skills, toggles categories, and stores MCP rows', asy
 
 	const routes = []
 	const effects = []
+	const registeredPresets = new Map()
 	let provider
+	let searchServer
 	/** What the merged registry offers; the test changes it to simulate a shadow. */
 	let catalogEntries = [
 		{ name: 'demo-skill', description: '演示技能', provider: 'manager', invocation: { modelInvocable: true, userInvocable: true } },
@@ -48,6 +51,19 @@ test('the Host half serves skills, toggles categories, and stores MCP rows', asy
 			},
 		},
 		get(name) {
+			if (name === 'agentPresets') {
+				return {
+					async register(definition) {
+						registeredPresets.set(definition.id, definition)
+						return async () => {
+							registeredPresets.delete(definition.id)
+						}
+					},
+					async list() {
+						return [...registeredPresets.keys()].map((id) => ({ id }))
+					},
+				}
+			}
 			if (name === 'connection') {
 				return {
 					fetch: {
@@ -85,6 +101,20 @@ test('the Host half serves skills, toggles categories, and stores MCP rows', asy
 		assert.deepEqual(overview.value.catalog.external, ['builtin-skill'])
 		assert.deepEqual(overview.value.catalog.missing, [])
 
+		// The mode is registered detached from this row's own activation, so
+		// wait for the mount to land before reading it back.
+		let modes = overview.value.modes
+		for (let attempt = 0; attempt < 100 && modes.modes[0]?.registered !== true; attempt += 1) {
+			await new Promise((resolve) => setTimeout(resolve, 10))
+			modes = (await post(routes, 'overview')).value.modes
+		}
+		assert.equal(modes.available, true)
+		assert.equal(modes.modes[0].id, 'simple')
+		assert.equal(modes.modes[0].enabled, true)
+		assert.equal(modes.modes[0].error, '')
+		assert.equal(registeredPresets.size, 1)
+		assert.ok(registeredPresets.get('simple').plugins.length > 10)
+
 		// A higher-priority provider wins the name: the manager's copy is active
 		// in its own scan but never reaches the agent, so the panel must say so.
 		catalogEntries = [
@@ -116,6 +146,89 @@ test('the Host half serves skills, toggles categories, and stores MCP rows', asy
 		const status = await post(routes, 'mcp-status')
 		assert.equal(status.value.servers.length, 1)
 
+		const searchStatus = await post(routes, 'search-status')
+		assert.equal(searchStatus.status, 200)
+		assert.equal(searchStatus.value.channels.length, 14)
+		assert.equal(searchStatus.value.mode, 'merge')
+		assert.equal(searchStatus.value.order.length, 14)
+		assert.equal(searchStatus.value.enabledCount, 0)
+		assert.ok(searchStatus.value.channels.some((channel) => channel.id === 'exa' && channel.requiresKey === false))
+		assert.ok(searchStatus.value.channels.some((channel) => channel.id === 'bing' && channel.keyMode === 'none' && channel.free === true))
+		assert.ok(searchStatus.value.channels.some((channel) => channel.id === 'brave' && channel.requiresKey === true))
+		assert.ok(searchStatus.value.channels.some((channel) => channel.id === 'searxng' && channel.requiresKey === false))
+		assert.ok(searchStatus.value.channels.some((channel) => channel.id === 'deepseek' && channel.requiresKey === true))
+		assert.ok(searchStatus.value.channels.some((channel) => channel.id === 'minimax' && channel.requiresKey === true))
+
+		const savedSearch = await post(routes, 'search-save', { id: 'brave', enabled: true })
+		assert.equal(savedSearch.status, 200)
+		assert.equal(savedSearch.value.enabledCount, 1)
+		assert.equal(savedSearch.value.channels.find((channel) => channel.id === 'brave').enabled, true)
+
+		const savedKey = await post(routes, 'search-save', { id: 'brave', apiKey: 'secret' })
+		assert.equal(savedKey.status, 400)
+		assert.match(savedKey.value.error.message, /凭证服务/)
+
+		const savedBraveKey = process.env.BRAVE_API_KEY
+		delete process.env.BRAVE_API_KEY
+		try {
+			const searched = await post(routes, 'search-query', { query: '  dsh manager  ' })
+			assert.equal(searched.status, 200)
+			assert.equal(searched.value.query, 'dsh manager')
+			assert.equal(searched.value.sources.length, 0)
+			const brave = searched.value.channels.find((channel) => channel.id === 'brave')
+			assert.equal(brave.ok, false)
+			assert.equal(brave.error.code, 'config')
+
+			const tested = await post(routes, 'search-test', { id: 'brave' })
+			assert.equal(tested.status, 200)
+			assert.equal(tested.value.ok, false)
+			assert.equal(tested.value.failure.code, 'config')
+		} finally {
+			if (savedBraveKey === undefined) delete process.env.BRAVE_API_KEY
+			else process.env.BRAVE_API_KEY = savedBraveKey
+		}
+
+		const savedOrder = await post(routes, 'search-order', { ids: ['bing', 'minimax'] })
+		assert.equal(savedOrder.status, 200)
+		assert.equal(savedOrder.value.order[0], 'bing')
+		const savedMode = await post(routes, 'search-mode', { mode: 'fallback' })
+		assert.equal(savedMode.status, 200)
+		assert.equal(savedMode.value.mode, 'fallback')
+		await post(routes, 'search-mode', { mode: 'merge' })
+		const cleared = await post(routes, 'search-cooldowns-clear')
+		assert.equal(cleared.status, 200)
+		assert.deepEqual(cleared.value.cooldowns, {})
+		const rejectedKeylessKey = await post(routes, 'search-save', { id: 'bing', apiKey: 'nope' })
+		assert.equal(rejectedKeylessKey.status, 400)
+		assert.match(rejectedKeylessKey.value.error.message, /不需要 API Key/)
+
+		await post(routes, 'search-save', { id: 'brave', enabled: false })
+
+		searchServer = createServer((_request, response) => {
+			response.writeHead(200, { 'content-type': 'application/json' })
+			response.end(JSON.stringify({
+				results: [{ url: 'https://native.example/1', title: 'Native', content: 'native snippet' }],
+				answer: 'native answer',
+			}))
+		})
+		await new Promise((resolve) => searchServer.listen(0, '127.0.0.1', resolve))
+		const address = searchServer.address()
+		assert.ok(address !== null && typeof address === 'object')
+		const savedNative = await post(routes, 'search-save', {
+			id: 'searxng',
+			enabled: true,
+			baseUrl: `http://127.0.0.1:${address.port}`,
+		})
+		assert.equal(savedNative.status, 200)
+		const native = await post(routes, 'search-query', { query: 'native' })
+		assert.equal(native.status, 200)
+		assert.equal(native.value.sources.length, 1)
+		assert.equal(native.value.sources[0].url, 'https://native.example/1')
+		assert.equal(native.value.sources[0].channel, 'searxng')
+		assert.equal(native.value.channels.find((channel) => channel.id === 'searxng').ok, true)
+		assert.match(native.value.content, /native answer/u)
+		await post(routes, 'search-save', { id: 'searxng', enabled: false })
+
 		const rejected = await post(routes, 'mcp-save', {
 			id: saved.value.server.id,
 			name: 'demo',
@@ -130,7 +243,16 @@ test('the Host half serves skills, toggles categories, and stores MCP rows', asy
 		const removed = await post(routes, 'mcp-remove', { id: saved.value.server.id })
 		assert.equal(removed.status, 200)
 		assert.deepEqual(removed.value.mcp.servers, [])
+
+		const switchedOff = await post(routes, 'mode-toggle', { id: 'simple', enabled: false })
+		assert.equal(switchedOff.status, 200)
+		assert.equal(switchedOff.value.modes.modes[0].enabled, false)
+		assert.equal(switchedOff.value.modes.modes[0].registered, false)
+		assert.equal(registeredPresets.size, 0)
 	} finally {
+		if (searchServer !== undefined) {
+			await new Promise((resolve) => searchServer.close(resolve))
+		}
 		for (const dispose of effects) {
 			try {
 				await dispose()

@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "Manager",
-    "description": "One panel for hierarchical skill categories and local MCP servers: enable skill categories under ~/.agents/skills and connect stdio MCP servers whose tools join the agent."
+    "description": "Manage hierarchical skill categories, local MCP servers, multi-channel web search with keyless engines and merge/fallback modes (also the agent web_search provider), agent modes, and LAN access."
   }
 }

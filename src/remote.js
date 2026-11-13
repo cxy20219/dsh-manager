@@ -25,15 +25,23 @@ export const ENDPOINTS = [
 	'lan-status',
 	'lan-toggle',
 	'lan-ca',
+	'search-status',
+	'search-save',
+	'search-order',
+	'search-mode',
+	'search-cooldowns-clear',
+	'search-test',
+	'search-query',
+	'mode-toggle',
 ]
 
 /**
  * Build the endpoint handler.
  *
- * @param {{skills: object, mcp: object, lan?: object, settings?: object, version: string, dataDir: string, registry?: object}} deps - Services the endpoints use.
+ * @param {{skills: object, mcp: object, modes?: object, lan?: object, settings?: object, version: string, dataDir: string, registry?: object, search?: object}} deps - Services the endpoints use.
  * @returns {(endpoint: string, payload: unknown) => Promise<object>} The handler.
  */
-export function createManagerHandler({ skills, mcp, lan, settings, version, dataDir, registry }) {
+export function createManagerHandler({ skills, mcp, modes, lan, settings, version, dataDir, registry, search }) {
 	/**
 	 * The catalog the agent is actually offered, projected against this scan.
 	 *
@@ -95,6 +103,7 @@ export function createManagerHandler({ skills, mcp, lan, settings, version, data
 			skills: snapshot,
 			catalog: await catalogOf(snapshot),
 			mcp: mcp.describe(),
+			modes: modes === undefined ? { available: false, modes: [] } : modes.status(),
 			lan: lan === undefined ? { enabled: false, running: false, address: '', port: 0, upstream: '', error: '' } : lan.summary(),
 		}
 	}
@@ -180,6 +189,60 @@ export function createManagerHandler({ skills, mcp, lan, settings, version, data
 					const state = await lan.apply(enabled, secure)
 					return { ok: true, value: state }
 				}
+				case 'search-status': {
+					if (search === undefined) throw new Error('当前 Host 没有联网搜索服务')
+					return { ok: true, value: await search.describe() }
+				}
+				case 'search-save': {
+					if (search === undefined) throw new Error('当前 Host 没有联网搜索服务')
+					return {
+						ok: true,
+						value: await search.save({
+							id: text(payload, 'id'),
+							enabled: payload?.enabled,
+							baseUrl: payload?.baseUrl,
+							apiKey: payload?.apiKey,
+							clearKey: payload?.clearKey === true,
+						}),
+					}
+				}
+				case 'search-order': {
+					if (search === undefined) throw new Error('当前 Host 没有联网搜索服务')
+					return { ok: true, value: await search.saveOrder({ ids: payload?.ids }) }
+				}
+				case 'search-mode': {
+					if (search === undefined) throw new Error('当前 Host 没有联网搜索服务')
+					return { ok: true, value: await search.saveMode({ mode: payload?.mode }) }
+				}
+				case 'search-cooldowns-clear': {
+					if (search === undefined) throw new Error('当前 Host 没有联网搜索服务')
+					return { ok: true, value: await search.clearCooldowns() }
+				}
+				case 'search-test': {
+					if (search === undefined) throw new Error('当前 Host 没有联网搜索服务')
+					return {
+						ok: true,
+						value: await search.test({
+							id: text(payload, 'id'),
+							query: text(payload, 'query'),
+						}),
+					}
+				}
+				case 'search-query': {
+					if (search === undefined) throw new Error('当前 Host 没有联网搜索服务')
+					return {
+						ok: true,
+						value: await search.search({
+							query: text(payload, 'query'),
+							maxResults: payload?.maxResults,
+						}),
+					}
+				}
+				case 'mode-toggle': {
+					if (modes === undefined) throw new Error('当前 Host 没有模式服务')
+					await modes.setEnabled(text(payload, 'id'), payload?.enabled !== false)
+					return { ok: true, value: await overview() }
+				}
 				default: {
 					throw new Error(`未知接口：${endpoint}`)
 				}
@@ -188,7 +251,7 @@ export function createManagerHandler({ skills, mcp, lan, settings, version, data
 			return {
 				ok: false,
 				error: {
-					code: 'dsh-manager/error',
+					code: typeof error?.code === 'string' && error.code !== '' ? error.code : 'dsh-manager/error',
 					message: error instanceof Error ? error.message : String(error),
 					details: {},
 				},

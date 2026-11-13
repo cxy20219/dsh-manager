@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "管理器",
-    "description": "统一管理分层的技能分类与本地 MCP 服务：按类目启停 ~/.agents/skills 下的技能，连接 stdio MCP 并把工具注入 Agent。"
+    "description": "统一管理分层的技能分类、本地 MCP 服务、支持免 Key 渠道与并发/回退模式的多渠道联网搜索（同时作为 agent 的 web_search provider）、Agent 模式与局域网访问。"
   }
 }

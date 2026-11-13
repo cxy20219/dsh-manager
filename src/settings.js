@@ -26,6 +26,8 @@ export function normalizeSettings(raw, defaults) {
 	const skills = source.skills !== null && typeof source.skills === 'object' ? source.skills : {}
 	const mcp = source.mcp !== null && typeof source.mcp === 'object' ? source.mcp : {}
 	const lan = source.lan !== null && typeof source.lan === 'object' ? source.lan : {}
+	const modes = source.modes !== null && typeof source.modes === 'object' ? source.modes : {}
+	const search = source.search !== null && typeof source.search === 'object' ? source.search : {}
 	const roots = Array.isArray(skills.roots)
 		? uniqueStrings(skills.roots)
 		: [...defaults.skills.roots]
@@ -45,7 +47,90 @@ export function normalizeSettings(raw, defaults) {
 			secure: lan.secure === true,
 			port: normalizePort(lan.port, defaults.lan?.port ?? DEFAULT_LAN_PORT),
 		},
+		modes: {
+			// The switch the user set for each shipped mode. A mode added later
+			// starts from its default instead of reading as "off".
+			enabled: normalizeModeSwitches(modes.enabled, defaults.modes?.enabled),
+		},
+		search: {
+			// One row per search channel: the switch and an optional base URL.
+			// API keys are credentials, never settings, so they are not here.
+			channels: normalizeSearchChannels(search.channels, defaults.search?.channels),
+			mode: search.mode === 'fallback' ? 'fallback' : 'merge',
+			order: normalizeSearchOrder(search.order, defaults.search?.order),
+		},
 	}
+}
+
+/**
+ * Normalize the per-channel search switches and base URLs.
+ *
+ * The union of defaults and stored ids is kept so a channel added by a newer
+ * build starts from its default row, while a stored row is not lost when a
+ * test store omits the search defaults.
+ *
+ * @param {unknown} stored - The persisted channel map.
+ * @param {object} [defaults] - Default channel rows.
+ * @returns {Record<string, {enabled: boolean, baseUrl: string}>} The normalized channel map.
+ */
+function normalizeSearchChannels(stored, defaults) {
+	const base = defaults !== null && typeof defaults === 'object' ? defaults : {}
+	const overrides = stored !== null && typeof stored === 'object' ? stored : {}
+	const channels = {}
+	for (const id of new Set([...Object.keys(base), ...Object.keys(overrides)])) {
+		if (!/^[a-z][a-z0-9-]*$/.test(id)) continue
+		const fallback = base[id] !== null && typeof base[id] === 'object' ? base[id] : {}
+		const value = overrides[id] !== null && typeof overrides[id] === 'object' ? overrides[id] : {}
+		channels[id] = {
+			enabled: (value.enabled ?? fallback.enabled) === true,
+			baseUrl: typeof value.baseUrl === 'string' ? value.baseUrl.trim() : typeof fallback.baseUrl === 'string' ? fallback.baseUrl.trim() : '',
+		}
+	}
+	return channels
+}
+
+/**
+ * Normalize the channel priority order.
+ *
+ * Stored ids keep their order; new ids are appended in the default order.
+ * Unknown or duplicate ids are dropped.
+ *
+ * @param {unknown} stored - The persisted order.
+ * @param {unknown} defaults - The default order.
+ * @returns {string[]} Channel ids in priority order.
+ */
+function normalizeSearchOrder(stored, defaults) {
+	const base = Array.isArray(defaults) ? defaults.filter((id) => typeof id === 'string' && /^[a-z][a-z0-9-]*$/.test(id)) : []
+	const order = []
+	const seen = new Set()
+	for (const id of Array.isArray(stored) ? stored : []) {
+		if (typeof id !== 'string' || !/^[a-z][a-z0-9-]*$/.test(id) || seen.has(id)) continue
+		seen.add(id)
+		order.push(id)
+	}
+	for (const id of base) {
+		if (seen.has(id)) continue
+		seen.add(id)
+		order.push(id)
+	}
+	return order
+}
+
+/**
+ * Keep one boolean per mode id, defaults first and the stored value on top.
+ *
+ * @param {unknown} stored - The persisted switch map.
+ * @param {object} [defaults] - Default switches for this installation.
+ * @returns {Record<string, boolean>} The normalized switch map.
+ */
+function normalizeModeSwitches(stored, defaults) {
+	const base = defaults !== null && typeof defaults === 'object' ? defaults : {}
+	const overrides = stored !== null && typeof stored === 'object' ? stored : {}
+	const switches = {}
+	for (const [id, value] of Object.entries({ ...base, ...overrides })) {
+		if (typeof value === 'boolean') switches[id] = value
+	}
+	return switches
 }
 
 /**

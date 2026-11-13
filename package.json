@@ -2,7 +2,7 @@
   "name": "dsh-manager",
   "version": "0.1.0",
   "private": true,
-  "description": "Manager panel for the DeepSeek Harness: review hierarchical skill categories under ~/.agents/skills and connect stdio MCP servers, from one sidebar entry.",
+  "description": "Manager panel for the DeepSeek Harness: hierarchical skill categories under ~/.agents/skills, stdio MCP servers, per-channel web search (keyless engines, independent switches and keys, merge/fallback modes, cooldowns and cache), agent modes, and LAN access.",
   "type": "module",
   "main": "./index.js",
   "exports": {
