@@ -168,7 +168,7 @@ provider 以 rank 550 注册，低于 filesystem provider 的用户根目录（5
   以及依赖 Grok Build CLI 的 X 搜索。除此之外，free-search 的搜索、路由、冷却、缓存、research 与抓取链都已接上。
 - `web.searchProvider` / `web.fetchProvider` 的接管会写 profile 的 `web` 配置；这是为了修掉 free-search
   停用后残留的 `ddg` / `fs-quality-fetch` 指针。抓取 provider 会切到 `dsh-manager-fetch`（直连 → Exa →
-  Firecrawl）；注册失败时回退 `http`。如果你明确指定了别的 provider，本插件不会覆盖。
+  Firecrawl → Crawl4AI）；注册失败时回退 `http`。如果你明确指定了别的 provider，本插件不会覆盖。
 
 ## 模式
 
@@ -236,13 +236,13 @@ Harness 的 web 服务只拥有一个监听器，并且绑定回环地址；内�
   不会悄悄共用服务命名空间。
 - 不提供删除技能——面板负责创建和开关，删除交给文件管理器。
 - 标签页打开时，MCP 列表面板每四秒轮询一次状态。
-- 搜索只实现各渠道的搜索接口：不做网页正文抓取、多轮研究、结果归档，也不做 X / 小红书平台检索。
+- 搜索渠道本身只负责搜索；正文抓取、多轮 research 和检索缓存由 `agent-fetch` / `research` 负责。X / 小红书站内检索没有接。
 - 免 Key 的 HTML 渠道（Bing/DDG）没有浏览器渲染和代理池，反爬、验证码或出口 IP 被限流时会失败；这是免费抓取的固有限制，
   填 Key 的 API 渠道不受影响。
 - DDG/You.com 在部分网络（尤其国内直连）会连接超时；不需要时关掉即可，不影响其他渠道。
 - Exa/Parallel/Keenable/You 的免 Key 档使用官方固定端点；自定义服务地址只影响有 Key 的请求。
   Tavily/Firecrawl/AnySearch/SearXNG 的免 Key 请求仍使用自定义地址。
-- 冷却和结果缓存都在 Host 进程内存里，重启后清空；只有开关、优先级、模式、服务地址和凭证会持久化。
+- 冷却状态写进管理器设置，跨重启保留；结果缓存仍是 Host 进程内存里的 5 分钟缓存。开关、优先级、模式、服务地址、凭证与冷却都会持久化。
 - 搜索渠道使用 Node 的 `fetch` 直连，不读取 Host 的代理设置；需要代理时要改适配器。
 - 自定义服务地址会原样用于请求，面板不做 SSRF / 私网过滤；只填可信地址（自定义地址会收到该渠道的 Key）。
 - 自定义搜索源（任意 JSON 接口）暂不支持；新增渠道要改 `src/search-providers.js` 并补测试。
@@ -291,13 +291,16 @@ npm test          # frontmatter、分类扫描、MCP 客户端、二维码编码
 | `src/serp-engines.js` | 5 个中文 HTML 渠道的抓取、解析与反爬分类 |
 | `src/search-route.js` | 智能路由：语言、意图、按次计费渠道排除 |
 | `src/rerank.js` | 可选的 SiliconFlow 重排（无 Key 自动关闭） |
-| `src/agent-search.js` | `ctx.web` provider 与 `web_search` / `advanced_search` / `platform_search` / `free_search_test` agent 工具 |
+| `src/agent-search.js` | `ctx.web` provider 与 10 个 agent 工具（`web_search` / `advanced_search` / `multi_search` / `platform_search` / `domain_search` / `weather` / `video_search` / `research` / `cache_search` / `free_search_test`） |
 | `src/platform-search.js` | 13 个平台的 keyless 站内搜索适配器 |
 | `src/domain-search.js` | 41 个垂直源的 keyless 直查适配器 |
 | `src/weather.js` | Open-Meteo 地理编码、当前天气与预报 |
 | `src/video-search.js` | Bing Videos / DuckDuckGo Videos 免 Key 视频搜索 |
-| `src/research.js` | 多查询 research、直接抓正文、SSRF 防护、证据分级与内存 cache_search |
-| `src/agent-fetch.js` | web_fetch 质量链：直连 → Exa → Firecrawl |
+| `src/research.js` | 多查询 research、正文抓取、90 秒预算、证据分级与持久化 cache_search |
+| `src/agent-fetch.js` | web_fetch 质量链：直连 → Exa → Firecrawl → Crawl4AI |
 | `src/modes.js` | 内置模式的行清单，以及注册 / 注销的生命周期与失败上抛 |
 | `src/remote.js` | 面板端点与合并后的 Agent 目录视图 |
+| `src/agent-prompt.js` | 联网搜索的系统提示词段与工具分工 |
+| `src/safe-text.js` | 工具输出/抓取正文的安全截断（按码点、清理半个 surrogate） |
+| `src/search-error.js` | 搜索渠道错误分类与用户可读消息 |
 | `client.js` | 侧边栏入口与管理页面（技能、MCP、联网搜索、模式、局域网） |
