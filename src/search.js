@@ -12,7 +12,10 @@
  * @module dsh-manager/search
  */
 
+import { stripLoneSurrogates } from './safe-text.js'
+import { routeChannelIds } from './search-route.js'
 import { normalizeTimeRange, SEARCH_CHANNELS, SEARCH_CHANNEL_BY_ID, SearchChannelError } from './search-providers.js'
+import { normalizeBlockedDomains } from './settings.js'
 
 /** Most sources the merged result keeps. */
 export const MAX_RESULTS = 20
@@ -22,6 +25,9 @@ export const PER_CHANNEL_RESULTS = 10
 
 /** How long one channel gets before its request is aborted. */
 export const CHANNEL_TIMEOUT_MS = 20_000
+
+/** Most channels `auto` tries before it gives up on a query. */
+export const AUTO_MAX_ATTEMPTS = 4
 
 /** Cap for provider answer text. */
 const MAX_CONTENT_CHARS = 4_000
@@ -41,6 +47,9 @@ const CACHE_TTL_MS = 5 * 60_000
 /** Result cache capacity. */
 const CACHE_MAX_ENTRIES = 50
 
+/** Most keys one channel may hold for rotation. */
+export const MAX_KEYS_PER_CHANNEL = 5
+
 /** How long a failed channel rests, by failure class. */
 const COOLDOWN_MS = {
 	auth: 5 * 60_000,
@@ -55,9 +64,13 @@ const COOLDOWN_MS = {
  * @param {{settings: object, credentials?: object, logger?: object, fetchImpl?: Function}} options - Wiring.
  * @returns {{describe: () => Promise<object>, save: (input: object) => Promise<object>, test: (input: object) => Promise<object>, search: (input: object) => Promise<object>}} The manager.
  */
-export function createSearchManager({ settings, credentials, logger, fetchImpl }) {
+export function createSearchManager({ settings, credentials, logger, fetchImpl, persistCooldowns = false }) {
 	const cache = new Map()
 	const cooldowns = new Map()
+	/** Round-robin cursor per channel when several keys are configured. */
+	const rotation = new Map()
+	/** Pending debounce handle for the cooldown write. */
+	let persistTimer = null
 	/**
 	 * One channel's stored switch and base URL.
 	 *
@@ -104,9 +117,22 @@ export function createSearchManager({ settings, credentials, logger, fetchImpl }
 		return order
 	}
 
-	/** @returns {'merge' | 'fallback'} The search mode. */
+	/** @returns {'merge' | 'fallback' | 'auto'} The search mode. */
 	function modeOf() {
-		return settings.get().search?.mode === 'fallback' ? 'fallback' : 'merge'
+		const mode = settings.get().search?.mode
+		if (mode === 'fallback' || mode === 'auto') return mode
+		return 'merge'
+	}
+
+	/** @returns {boolean} Whether safe search is on (the default). */
+	function safeSearchOf() {
+		return settings.get().search?.safeSearch !== false
+	}
+
+	/** @returns {string[]} The active domain blocklist. */
+	function blockedDomainsOf() {
+		const stored = settings.get().search?.blockedDomains
+		return Array.isArray(stored) ? stored.filter((value) => typeof value === 'string' && value !== '') : []
 	}
 
 	/**
@@ -141,6 +167,84 @@ export function createSearchManager({ settings, credentials, logger, fetchImpl }
 			return
 		}
 		cooldowns.set(id, { until: Date.now() + duration, code })
+		scheduleCooldownPersist()
+	}
+
+	/**
+	 * Load persisted cooldowns so a restart does not immediately re-hit a
+	 * channel that just failed.
+	 *
+	 * @returns {void}
+	 */
+	function restoreCooldowns() {
+		const stored = settings.get().search?.cooldowns
+		if (stored === null || typeof stored !== 'object') return
+		const now = Date.now()
+		for (const [id, entry] of Object.entries(stored)) {
+			if (!SEARCH_CHANNEL_BY_ID.has(id)) continue
+			const until = Number(entry?.until)
+			if (!Number.isFinite(until) || until <= now) continue
+			cooldowns.set(id, { until, code: typeof entry?.code === 'string' ? entry.code : 'unknown' })
+		}
+	}
+
+	/**
+	 * Write the live cooldowns to the settings file.
+	 *
+	 * @returns {Promise<void>} Resolves after the write attempt.
+	 */
+	async function saveCooldowns() {
+		if (persistCooldowns !== true) return
+		const snapshot = {}
+		for (const [id, entry] of cooldowns) {
+			if (entry.until > Date.now()) snapshot[id] = { until: entry.until, code: entry.code }
+		}
+		try {
+			await settings.update((draft) => {
+				draft.search = draft.search !== null && typeof draft.search === 'object' ? draft.search : {}
+				draft.search.cooldowns = snapshot
+				return draft
+			})
+		} catch (error) {
+			logger?.warn?.(`dsh-manager: 保存搜索冷却失败（${error instanceof Error ? error.message : String(error)}）`)
+		}
+	}
+
+	/**
+	 * Coalesce a burst of failures into one settings write.
+	 *
+	 * @returns {void}
+	 */
+	function scheduleCooldownPersist() {
+		if (persistTimer !== null) return
+		persistTimer = setTimeout(() => {
+			persistTimer = null
+			void saveCooldowns()
+		}, 600)
+		if (typeof persistTimer.unref === 'function') persistTimer.unref()
+	}
+
+	/**
+	 * Flush pending cooldown writes; called when the plugin unloads.
+	 *
+	 * @returns {Promise<void>} Resolves after the final write.
+	 */
+	async function dispose() {
+		if (persistTimer !== null) {
+			clearTimeout(persistTimer)
+			persistTimer = null
+		}
+		await saveCooldowns()
+	}
+
+	/**
+	 * Drop one channel's cooldown and mirror the change to disk.
+	 *
+	 * @param {string} id - Channel id.
+	 * @returns {void}
+	 */
+	function clearCooldown(id) {
+		if (cooldowns.delete(id)) scheduleCooldownPersist()
 	}
 
 	/** @returns {Record<string, number>} Remaining cooldowns by channel id. */
@@ -167,14 +271,18 @@ export function createSearchManager({ settings, credentials, logger, fetchImpl }
 	 * @param {string} mode - Search mode.
 	 * @param {object[]} enabled - Enabled channels in priority order.
 	 * @param {string} timeRange - Fixed time filter.
+	 * @param {string[]} blocked - Active domain blocklist.
+	 * @param {boolean} safeSearch - Safe-search switch.
 	 * @returns {string} Cache key.
 	 */
-	function cacheKeyOf(query, limit, mode, enabled, timeRange) {
+	function cacheKeyOf(query, limit, mode, enabled, timeRange, blocked, safeSearch) {
 		return JSON.stringify({
 			query,
 			limit,
 			mode,
 			timeRange,
+			safeSearch,
+			blocked: [...blocked].sort(),
 			channels: enabled.map((channel) => [channel.id, configOf(channel.id).baseUrl]),
 		})
 	}
@@ -213,17 +321,20 @@ export function createSearchManager({ settings, credentials, logger, fetchImpl }
 	}
 
 	/**
-	 * Resolve one channel's key: stored record first, then its environment name.
+	 * Resolve one channel's keys: stored record first, then the Host credential
+	 * center, then the environment. A record may hold several comma/newline
+	 * separated keys; they are used round-robin so a spent key does not disable
+	 * the channel.
 	 *
 	 * @param {object} channel - Channel metadata.
-	 * @returns {Promise<{value: string, source: string}>} The key and its source.
+	 * @returns {Promise<{values: string[], source: string}>} The keys and their source.
 	 */
-	async function keyOf(channel) {
+	async function keysOf(channel) {
 		if (credentials !== undefined) {
 			try {
 				const record = await credentials.readRecord(credentialKey(channel.id))
-				const value = record?.kind === 'api-key' && typeof record.key === 'string' ? record.key.trim() : ''
-				if (value !== '') return { value, source: 'record' }
+				const values = splitSearchKeys(record?.kind === 'api-key' && typeof record.key === 'string' ? record.key : '')
+				if (values.length > 0) return { values, source: 'record' }
 			} catch (error) {
 				logger?.warn?.(`dsh-manager: 读取 ${channel.label} 的搜索凭证失败（${error instanceof Error ? error.message : String(error)}）`)
 			}
@@ -233,18 +344,19 @@ export function createSearchManager({ settings, credentials, logger, fetchImpl }
 			if (channel.envName !== '' && typeof credentials.resolve === 'function') {
 				try {
 					const resolved = await credentials.resolve(channel.envName)
-					const value = typeof resolved === 'string'
-						? resolved.trim()
-						: (typeof resolved?.value === 'string' ? resolved.value.trim() : '')
-					if (value !== '') return { value, source: 'host' }
+					const raw = typeof resolved === 'string'
+						? resolved
+						: (typeof resolved?.value === 'string' ? resolved.value : '')
+					const values = splitSearchKeys(raw)
+					if (values.length > 0) return { values, source: 'host' }
 				} catch (error) {
 					logger?.warn?.(`dsh-manager: 解析宿主凭据 ${channel.envName} 失败（${error instanceof Error ? error.message : String(error)}）`)
 				}
 			}
 		}
-		const ambient = process.env[channel.envName]
-		if (typeof ambient === 'string' && ambient.trim() !== '') return { value: ambient.trim(), source: 'env' }
-		return { value: '', source: '' }
+		const values = splitSearchKeys(process.env[channel.envName])
+		if (values.length > 0) return { values, source: 'env' }
+		return { values: [], source: '' }
 	}
 
 	/**
@@ -255,7 +367,7 @@ export function createSearchManager({ settings, credentials, logger, fetchImpl }
 	 */
 	async function channelView(channel) {
 		const config = configOf(channel.id)
-		const key = channel.keyMode === 'none' ? { value: '', source: '' } : await keyOf(channel)
+		const key = channel.keyMode === 'none' ? { values: [], source: '' } : await keysOf(channel)
 		return {
 			id: channel.id,
 			label: channel.label,
@@ -269,7 +381,8 @@ export function createSearchManager({ settings, credentials, logger, fetchImpl }
 			envName: channel.envName,
 			enabled: config.enabled,
 			baseUrl: config.baseUrl,
-			keyConfigured: key.value !== '',
+			keyConfigured: key.values.length > 0,
+			keyCount: key.values.length,
 			keySource: key.source,
 			keyWritable: credentials !== undefined,
 			cooldownMs: cooldownMsOf(channel.id),
@@ -295,6 +408,8 @@ export function createSearchManager({ settings, credentials, logger, fetchImpl }
 			perChannelResults: PER_CHANNEL_RESULTS,
 			mode: modeOf(),
 			order,
+			safeSearch: safeSearchOf(),
+			blockedDomains: blockedDomainsOf(),
 			cooldowns: activeCooldowns(),
 			cacheTtlMs: CACHE_TTL_MS,
 		}
@@ -359,7 +474,7 @@ export function createSearchManager({ settings, credentials, logger, fetchImpl }
 			draft.search.channels[id] = next
 			return draft
 		})
-		cooldowns.delete(id)
+		clearCooldown(id)
 		clearCache()
 		return describe()
 	}
@@ -400,10 +515,49 @@ export function createSearchManager({ settings, credentials, logger, fetchImpl }
 	 */
 	async function saveMode(input) {
 		const mode = input?.mode
-		if (mode !== 'merge' && mode !== 'fallback') throw new Error('搜索模式只能是 merge 或 fallback。')
+		if (mode !== 'merge' && mode !== 'fallback' && mode !== 'auto') throw new Error('搜索模式只能是 merge、fallback 或 auto。')
 		await settings.update((draft) => {
 			draft.search = draft.search !== null && typeof draft.search === 'object' ? draft.search : {}
 			draft.search.mode = mode
+			return draft
+		})
+		clearCache()
+		return describe()
+	}
+
+	/**
+	 * Persist the safe-search switch.
+	 *
+	 * @param {{safeSearch?: unknown}} input - Requested switch.
+	 * @returns {Promise<object>} The refreshed status view.
+	 */
+	async function saveSafeSearch(input) {
+		if (typeof input?.safeSearch !== 'boolean') throw new Error('安全搜索开关必须是布尔值。')
+		await settings.update((draft) => {
+			draft.search = draft.search !== null && typeof draft.search === 'object' ? draft.search : {}
+			draft.search.safeSearch = input.safeSearch
+			return draft
+		})
+		clearCache()
+		return describe()
+	}
+
+	/**
+	 * Replace the domain blocklist.
+	 *
+	 * @param {{domains?: unknown}} input - Array of rules or a newline/comma separated string.
+	 * @returns {Promise<object>} The refreshed status view.
+	 */
+	async function saveBlockedDomains(input) {
+		const raw = Array.isArray(input?.domains)
+			? input.domains
+			: typeof input?.domains === 'string'
+				? input.domains.split(/[\n,]/)
+				: []
+		const domains = normalizeBlockedDomains(raw)
+		await settings.update((draft) => {
+			draft.search = draft.search !== null && typeof draft.search === 'object' ? draft.search : {}
+			draft.search.blockedDomains = domains
 			return draft
 		})
 		clearCache()
@@ -418,6 +572,7 @@ export function createSearchManager({ settings, credentials, logger, fetchImpl }
 	async function clearCooldowns() {
 		cooldowns.clear()
 		clearCache()
+		await saveCooldowns()
 		return describe()
 	}
 
@@ -438,6 +593,7 @@ export function createSearchManager({ settings, credentials, logger, fetchImpl }
 			query,
 			maxResults,
 			timeRange,
+			safeSearch: safeSearchOf(),
 			apiKey,
 			baseUrl: config.baseUrl,
 			signal,
@@ -492,33 +648,56 @@ export function createSearchManager({ settings, credentials, logger, fetchImpl }
 	}
 
 	/**
-	 * Merge channel results round-robin by rank, deduplicating URLs.
+	 * Merge channel results by cross-channel consensus.
+	 *
+	 * A URL returned by several channels is promoted (the `seenIn` signal), then
+	 * round-robin rank breaks ties. Near-duplicate titles/snippets are dropped,
+	 * and when the result set spans at least four sites one site is capped at
+	 * three sources so a single site cannot fill the page.
 	 *
 	 * @param {object[]} runs - Per-channel run results.
 	 * @param {number} limit - Merged cap.
+	 * @param {string[]} [blocked] - Active domain blocklist.
 	 * @returns {object[]} The merged sources.
 	 */
-	function mergeSources(runs, limit) {
+	function mergeSources(runs, limit, blocked = []) {
 		const lists = runs
 			.filter((run) => run.ok && run.sources.length > 0)
 			.map((run) => run.sources)
-		const seen = new Set()
-		const merged = []
-		let rank = 0
-		while (merged.length < limit) {
-			let consumed = false
-			for (const sources of lists) {
-				const source = sources[rank]
-				if (source === undefined) continue
-				consumed = true
+		const records = new Map()
+		let order = 0
+		for (const sources of lists) {
+			for (const source of sources) {
+				if (isBlockedUrl(source.url, blocked)) continue
 				const key = urlKey(source.url)
-				if (key === '' || seen.has(key)) continue
-				seen.add(key)
-				merged.push(source)
-				if (merged.length >= limit) break
+				if (key === '') continue
+				const existing = records.get(key)
+				if (existing !== undefined) {
+					existing.seenIn.add(source.channel)
+					if (existing.source.title === '' && source.title !== '') existing.source = source
+					continue
+				}
+				records.set(key, {
+					key,
+					source,
+					seenIn: new Set([source.channel]),
+					first: order,
+				})
+				order += 1
 			}
-			if (!consumed) break
-			rank += 1
+		}
+		const candidates = [...records.values()].sort((a, b) => b.seenIn.size - a.seenIn.size || a.first - b.first)
+		const sites = new Set(candidates.map((record) => siteOf(record.source.url)).filter(Boolean))
+		const perSiteCap = sites.size >= 4 ? 3 : Number.POSITIVE_INFINITY
+		const perSite = new Map()
+		const merged = []
+		for (const record of candidates) {
+			if (merged.length >= limit) break
+			const site = siteOf(record.source.url)
+			if (site !== '' && (perSite.get(site) ?? 0) >= perSiteCap) continue
+			if (merged.some((source) => similarSource(source, record.source))) continue
+			merged.push(record.source)
+			if (site !== '') perSite.set(site, (perSite.get(site) ?? 0) + 1)
 		}
 		return merged
 	}
@@ -535,8 +714,9 @@ export function createSearchManager({ settings, credentials, logger, fetchImpl }
 		if (channel === undefined) throw new Error('未知的搜索渠道。')
 		const query = typeof input?.query === 'string' && input.query.trim() !== '' ? input.query.trim() : 'DeepSeek Harness'
 		const config = configOf(id)
-		const key = channel.keyMode === 'none' ? { value: '', source: '' } : await keyOf(channel)
-		if (channel.keyMode === 'required' && key.value === '') {
+		const key = channel.keyMode === 'none' ? { values: [], source: '' } : await keysOf(channel)
+		const firstKey = key.values[0] ?? ''
+		if (channel.keyMode === 'required' && firstKey === '') {
 			return {
 				ok: false,
 				id,
@@ -550,8 +730,8 @@ export function createSearchManager({ settings, credentials, logger, fetchImpl }
 		}
 		const started = Date.now()
 		try {
-			const outcome = await runChannel(channel, config, key.value, query, 5, normalizeTimeRange(input?.timeRange))
-			cooldowns.delete(id)
+			const outcome = await runChannel(channel, config, firstKey, query, 5, normalizeTimeRange(input?.timeRange))
+			clearCooldown(id)
 			const sources = normalizeSources(outcome?.sources, channel, 5)
 			return {
 				ok: true,
@@ -581,6 +761,44 @@ export function createSearchManager({ settings, credentials, logger, fetchImpl }
 	}
 
 	/**
+	 * Test several channels at once for the doctor button.
+	 *
+	 * Enabled channels are the default; `all` includes disabled ones so an
+	 * operator can check a channel before switching it on.
+	 *
+	 * @param {{query?: unknown, all?: unknown}} input - Optional query and scope.
+	 * @returns {Promise<object>} Per-channel results and a summary.
+	 */
+	async function testAll(input) {
+		const includeDisabled = input?.all === true
+		const channels = orderOf()
+			.map((id) => SEARCH_CHANNEL_BY_ID.get(id))
+			.filter((channel) => channel !== undefined && (includeDisabled || configOf(channel.id).enabled))
+		const results = await Promise.all(channels.map(async (channel) => {
+			try {
+				const result = await test({ id: channel.id, query: input?.query })
+				return {
+					id: channel.id,
+					label: channel.label,
+					ok: result.ok === true,
+					count: result.count,
+					...(result.ok === true ? {} : { failure: result.failure }),
+				}
+			} catch (error) {
+				return {
+					id: channel.id,
+					label: channel.label,
+					ok: false,
+					count: 0,
+					failure: { code: 'error', message: error instanceof Error ? error.message : String(error) },
+				}
+			}
+		}))
+		const ok = results.filter((result) => result.ok).length
+		return { results, total: results.length, ok, failed: results.length - ok }
+	}
+
+	/**
 	 * Run one channel, recording a cooldown when it fails.
 	 *
 	 * @param {object} channel - Channel metadata.
@@ -590,8 +808,9 @@ export function createSearchManager({ settings, credentials, logger, fetchImpl }
 	 */
 	async function attemptChannel(channel, query, perChannel, timeRange) {
 		const config = configOf(channel.id)
-		const key = channel.keyMode === 'none' ? { value: '', source: '' } : await keyOf(channel)
-		if (channel.keyMode === 'required' && key.value === '') {
+		const key = channel.keyMode === 'none' ? { values: [], source: '' } : await keysOf(channel)
+		const values = key.values.length > 0 ? key.values : ['']
+		if (channel.keyMode === 'required' && key.values.length === 0) {
 			return {
 				channel,
 				ok: false,
@@ -602,29 +821,39 @@ export function createSearchManager({ settings, credentials, logger, fetchImpl }
 			}
 		}
 		const started = Date.now()
-		try {
-			const outcome = await runChannel(channel, config, key.value, query, perChannel, timeRange)
-			cooldowns.delete(channel.id)
-			return {
-				channel,
-				ok: true,
-				sources: normalizeSources(outcome?.sources, channel, perChannel),
-				content: typeof outcome?.content === 'string' ? outcome.content.trim() : '',
-				elapsedMs: Date.now() - started,
+		const start = values.length > 1 ? (rotation.get(channel.id) ?? 0) % values.length : 0
+		let failure = null
+		for (let offset = 0; offset < values.length; offset += 1) {
+			const index = (start + offset) % values.length
+			try {
+				const outcome = await runChannel(channel, config, values[index], query, perChannel, timeRange)
+				clearCooldown(channel.id)
+				if (values.length > 1) rotation.set(channel.id, (index + 1) % values.length)
+				return {
+					channel,
+					ok: true,
+					sources: normalizeSources(outcome?.sources, channel, perChannel),
+					content: typeof outcome?.content === 'string' ? outcome.content.trim() : '',
+					elapsedMs: Date.now() - started,
+				}
+			} catch (error) {
+				failure = errorView(error)
+				// A dead key or a spent quota is worth another key; everything else
+				// (timeout, bot wall, bad request) would repeat identically.
+				const retryable = failure.code === 'auth' || failure.code === 'quota'
+				if (!retryable || offset + 1 >= values.length) break
 			}
-		} catch (error) {
-			const failure = errorView(error)
-			setCooldown(channel.id, failure.code)
-			const cooldownMs = cooldownMsOf(channel.id)
-			return {
-				channel,
-				ok: false,
-				sources: [],
-				content: '',
-				elapsedMs: Date.now() - started,
-				error: failure,
-				...(cooldownMs > 0 ? { cooldownMs } : {}),
-			}
+		}
+		setCooldown(channel.id, failure.code)
+		const cooldownMs = cooldownMsOf(channel.id)
+		return {
+			channel,
+			ok: false,
+			sources: [],
+			content: '',
+			elapsedMs: Date.now() - started,
+			error: failure,
+			...(cooldownMs > 0 ? { cooldownMs } : {}),
 		}
 	}
 
@@ -686,33 +915,59 @@ export function createSearchManager({ settings, credentials, logger, fetchImpl }
 		for (const id of requested) {
 			if (!SEARCH_CHANNEL_BY_ID.has(id)) throw new Error(`未知的搜索渠道：${id}`)
 		}
+		const disabled = requested
+			.map((id) => SEARCH_CHANNEL_BY_ID.get(id))
+			.filter((channel) => channel !== undefined && !configOf(channel.id).enabled)
+		if (disabled.length > 0) {
+			throw new Error(`指定的搜索渠道未启用：${disabled.map((channel) => channel.label).join('、')}。请在面板打开，或不指定渠道让所有已启用渠道参与。`)
+		}
 		const order = orderOf()
 		const enabled = order
 			.map((id) => SEARCH_CHANNEL_BY_ID.get(id))
 			.filter((channel) => channel !== undefined && configOf(channel.id).enabled && (requested.length === 0 || requested.includes(channel.id)))
 		if (enabled.length === 0) throw new Error('没有启用的搜索渠道，请先在下方打开并配置至少一个渠道。')
 		const mode = modeOf()
+		const blocked = blockedDomainsOf()
+		const safeSearch = safeSearchOf()
 		const perChannel = Math.min(PER_CHANNEL_RESULTS, limit)
-		const cacheKey = cacheKeyOf(query, limit, mode, enabled, timeRange)
+		const cacheKey = cacheKeyOf(query, limit, mode, enabled, timeRange, blocked, safeSearch)
 		const cached = cacheGet(cacheKey)
 		if (cached !== null) return { ...cached, cached: true }
 
 		const started = Date.now()
 		const runs = []
-		if (mode === 'fallback') {
-			for (const channel of enabled) {
+		/**
+		 * Whether a run can contribute at least one source after the blocklist.
+		 *
+		 * @param {object} run - One channel result.
+		 * @returns {boolean} Whether anything usable came back.
+		 */
+		const usable = (run) => run.ok === true && run.sources.some((source) => !isBlockedUrl(source.url, blocked))
+		const routed = mode === 'auto'
+			? routeChannelIds({ query, enabledIds: enabled.map((channel) => channel.id), order })
+			: null
+		const attempted = routed === null
+			? enabled
+			: routed.order
+				.map((id) => SEARCH_CHANNEL_BY_ID.get(id))
+				.filter((channel) => channel !== undefined)
+				.slice(0, AUTO_MAX_ATTEMPTS)
+		if (mode === 'fallback' || mode === 'auto') {
+			for (const channel of attempted) {
 				const run = await runOne(channel, query, perChannel, timeRange)
 				runs.push(run)
-				if (run.ok === true && run.sources.length > 0) break
+				if (usable(run)) break
 			}
 		} else {
 			runs.push(...await Promise.all(enabled.map((channel) => runOne(channel, query, perChannel, timeRange))))
 		}
 
-		const sources = mode === 'fallback'
-			? (runs.find((run) => run.ok === true && run.sources.length > 0)?.sources ?? []).slice(0, limit)
-			: mergeSources(runs, limit)
-		const contentRuns = mode === 'fallback'
+		const sources = mode === 'fallback' || mode === 'auto'
+			? (runs.find(usable)?.sources ?? [])
+				.filter((source) => !isBlockedUrl(source.url, blocked))
+				.slice(0, limit)
+			: mergeSources(runs, limit, blocked)
+		const contentRuns = mode === 'fallback' || mode === 'auto'
 			? runs.filter((run) => run.ok === true && run.sources.length > 0).slice(0, 1)
 			: runs.filter((run) => run.ok === true && run.content !== '')
 		const content = contentRuns
@@ -723,6 +978,7 @@ export function createSearchManager({ settings, credentials, logger, fetchImpl }
 			query,
 			mode,
 			timeRange,
+			...(routed === null ? {} : { route: { language: routed.language, intent: routed.intent } }),
 			channelsRequested: requested,
 			cached: false,
 			elapsedMs: Date.now() - started,
@@ -744,7 +1000,79 @@ export function createSearchManager({ settings, credentials, logger, fetchImpl }
 		return payload
 	}
 
-	return { describe, save, saveOrder, saveMode, clearCooldowns, test, search }
+
+	/**
+	 * Seed the two keyless channels once when no free channel is enabled.
+	 *
+	 * Free-search used to supply keyless engines; after it is disabled a user
+	 * with only a paid channel would have no fallback. The flag makes this a
+	 * one-time migration, so a later deliberate disable is respected.
+	 *
+	 * @returns {Promise<boolean>} Whether any channel was enabled.
+	 */
+	async function ensureFreeFallback() {
+		const search = settings.get().search ?? {}
+		if (search.freeFallbackSeeded === true) return false
+		const channels = search.channels ?? {}
+		const hasFree = SEARCH_CHANNELS.some((channel) => channel.free === true && channels[channel.id]?.enabled === true)
+		const targets = hasFree ? [] : ['bing', 'exa']
+		await settings.update((draft) => {
+			draft.search = draft.search !== null && typeof draft.search === 'object' ? draft.search : {}
+			draft.search.channels = draft.search.channels !== null && typeof draft.search.channels === 'object' ? draft.search.channels : {}
+			for (const id of targets) {
+				const current = draft.search.channels[id]
+				draft.search.channels[id] = {
+					enabled: true,
+					baseUrl: current !== null && typeof current === 'object' && typeof current.baseUrl === 'string' ? current.baseUrl : '',
+				}
+			}
+			draft.search.freeFallbackSeeded = true
+			return draft
+		})
+		clearCache()
+		return targets.length > 0
+	}
+
+	/**
+	 * Resolve one channel's key without exposing its source.
+	 *
+	 * Used by the fetch provider to reuse Exa/Firecrawl credentials.
+	 *
+	 * @param {string} id - Channel id.
+	 * @returns {Promise<string>} Key, or an empty string.
+	 */
+	restoreCooldowns()
+
+	async function resolveKey(id) {
+		const channel = SEARCH_CHANNEL_BY_ID.get(id)
+		if (channel === undefined) return ''
+		return (await keysOf(channel)).values[0] ?? ''
+	}
+
+	return { describe, save, saveOrder, saveMode, saveSafeSearch, saveBlockedDomains, clearCooldowns, test, testAll, search, resolveKey, ensureFreeFallback, dispose }
+}
+
+/**
+ * Split one stored credential into distinct rotation keys.
+ *
+ * Operators paste "k1,k2" or one key per line; separators are commas,
+ * semicolons and whitespace. Duplicates are dropped and the list is capped.
+ *
+ * @param {unknown} value - Stored credential.
+ * @returns {string[]} The keys, in order.
+ */
+export function splitSearchKeys(value) {
+	if (typeof value !== 'string') return []
+	const seen = new Set()
+	const keys = []
+	for (const part of value.split(/[\s,;]+/)) {
+		const key = part.trim()
+		if (key === '' || seen.has(key)) continue
+		seen.add(key)
+		keys.push(key)
+		if (keys.length >= MAX_KEYS_PER_CHANNEL) break
+	}
+	return keys
 }
 
 /**
@@ -778,6 +1106,81 @@ function isHttpUrl(value) {
 }
 
 /**
+ * Whether a URL's host matches a blocklist rule.
+ *
+ * A rule blocks its own host and every subdomain; `notcsdn.net` is not matched
+ * by `csdn.net` because the comparison is on label boundaries.
+ *
+ * @param {string} value - URL.
+ * @param {string[]} blocked - Bare hostnames.
+ * @returns {boolean} Whether the source is blocked.
+ */
+function isBlockedUrl(value, blocked) {
+	if (blocked.length === 0) return false
+	let host
+	try {
+		host = new URL(value).hostname.replace(/^www\./i, '').toLowerCase()
+	} catch {
+		return false
+	}
+	return blocked.some((domain) => host === domain || host.endsWith(`.${domain}`))
+}
+
+/**
+ * Registrable-domain approximation used for per-site caps.
+ *
+ * @param {string} value - URL.
+ * @returns {string} Site key, or an empty string.
+ */
+function siteOf(value) {
+	try {
+		const host = new URL(value).hostname.replace(/^www\./i, '').toLowerCase()
+		const parts = host.split('.')
+		if (parts.length <= 2) return host
+		const lastTwo = parts.slice(-2).join('.')
+		if (/^(?:co|com|net|org|gov|edu|ac|or|ne|go)\.[a-z]{2}$/.test(lastTwo)) return parts.slice(-3).join('.')
+		return lastTwo
+	} catch {
+		return ''
+	}
+}
+
+/**
+ * Token set for near-duplicate detection.
+ *
+ * @param {string} value - Title and snippet.
+ * @returns {Set<string>} Tokens.
+ */
+function tokenSet(value) {
+	const text = value.toLowerCase()
+	const tokens = new Set()
+	for (const word of text.split(/[^a-z0-9]+/)) if (word.length >= 3) tokens.add(word)
+	for (const run of text.match(/[\u3400-\u9fff]+/g) ?? []) {
+		if (run.length === 1) tokens.add(run)
+		for (let index = 0; index + 1 < run.length; index += 1) tokens.add(run.slice(index, index + 2))
+	}
+	return tokens
+}
+
+/**
+ * Whether two sources carry the same title/snippet text.
+ *
+ * The threshold is intentionally high so different pages on one site survive.
+ *
+ * @param {object} a - First source.
+ * @param {object} b - Second source.
+ * @returns {boolean} Whether they are near-duplicates.
+ */
+function similarSource(a, b) {
+	const left = tokenSet(`${a.title} ${a.snippet}`)
+	const right = tokenSet(`${b.title} ${b.snippet}`)
+	if (left.size < 6 || right.size < 6) return false
+	let overlap = 0
+	for (const token of left) if (right.has(token)) overlap += 1
+	return overlap / Math.max(left.size, right.size) >= 0.85
+}
+
+/**
  * Deduplication key for a URL: no fragment, normalized origin.
  *
  * @param {string} value - URL.
@@ -801,6 +1204,7 @@ function urlKey(value) {
  * @returns {string} The clipped text.
  */
 function clip(value, limit) {
-	if (value.length <= limit) return value
-	return [...value].slice(0, limit).join('') + '…'
+	const chars = Array.from(stripLoneSurrogates(value))
+	if (chars.length <= limit) return chars.join('')
+	return chars.slice(0, limit).join('') + '…'
 }

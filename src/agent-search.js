@@ -3,22 +3,30 @@
  *
  * The manager's search tab already owns the channel switches, credentials,
  * modes and failure handling. This module exposes that same engine through the
- * Host's `ctx.web` seam and registers the two tools the agent needs after the
+ * Host's `ctx.web` seams and registers the tools the agent needs after the
  * standalone free-search plugin is removed:
  *
- *   - `web_search` — merged/fallback search over the enabled channels;
- *   - `free_search_test` — a quick per-channel health check.
+ *   - the `dsh-manager` search provider and the `dsh-manager-fetch` fetch
+ *     provider (direct HTTP → Exa → Firecrawl);
+ *   - `web_search`, `advanced_search`, `multi_search` and `free_search_test`;
+ *   - `research` and `cache_search` (multi-query evidence packs plus a
+ *     full-text index over the pages they fetched);
+ *   - `platform_search`, `domain_search`, `video_search` and `weather`.
  *
- * It deliberately does not register a fetch provider, a research pipeline or
- * the platform/vertical tools: those are separate capabilities and should not
- * silently change the manager's search tab.
+ * Search state stays in the manager's settings: the tools never write to the
+ * profile or to the session, they only read the same switches, keys and
+ * cooldowns the panel shows. The system-prompt section that explains which
+ * tool to use lives in `./agent-prompt.js`.
  *
  * @module dsh-manager/agent-search
  */
 
+import { createAgentFetchProvider, FETCH_PROVIDER_ID } from './agent-fetch.js'
 import { ENGINES, searchDomain } from './domain-search.js'
 import { SEARCH_CHANNELS } from './search-providers.js'
 import { createResearchService } from './research.js'
+import { createModelRerank } from './rerank.js'
+import { sanitizeValue } from './safe-text.js'
 import { fetchWeather, formatWeather, sanitizeWeatherResult, WEATHER_OUTPUT_SCHEMA } from './weather.js'
 import { searchVideo, VIDEO_SOURCES } from './video-search.js'
 import { PLATFORM_IDS, PLATFORMS, searchPlatform } from './platform-search.js'
@@ -34,6 +42,9 @@ const AGENT_MAX_RESULTS = 20
 
 /** Provider ids that mean "nobody explicitly chose a provider". */
 const REPLACEABLE_PROVIDERS = new Set(['', 'ddg', 'deepseek-search-api', 'deepseek-official', 'http'])
+
+/** Fetch provider ids that mean "nobody explicitly chose a fetch provider". */
+const REPLACEABLE_FETCH_PROVIDERS = new Set(['', 'http', 'fs-quality-fetch'])
 
 /**
  * Convert one manager search result into the web seam's provider result.
@@ -55,13 +66,13 @@ export function toProviderResult(result, limit = AGENT_MAX_RESULTS) {
 		sources.push(item)
 	}
 	const content = typeof result?.content === 'string' ? result.content.trim() : ''
-	return {
+	return sanitizeValue({
 		provider: WEB_SEARCH_PROVIDER_ID,
 		...(content === '' ? {} : { content }),
 		sources,
 		truncated: sources.length >= limit,
 		...(result?.cached === true ? { _cache: 'hit' } : {}),
-	}
+	})
 }
 
 /**
@@ -116,7 +127,10 @@ function defineTool({ name, description, parameters, schema, render, execute, ti
 			render,
 		},
 		...(timeoutMs === undefined ? {} : { timeoutMs }),
-		execute,
+		// Every result crosses the JSON boundary on its way to the model. A lone
+		// surrogate left by a careless cut would poison the whole session, so the
+		// sanitizer runs once here instead of at each of the ten call sites.
+		execute: async (...args) => sanitizeValue(await execute(...args)),
 	}
 }
 
@@ -287,19 +301,22 @@ export function createResearchTool({ research }) {
 				question: { type: 'string' },
 				queries: { type: 'array', items: { type: 'string' } },
 				elapsedMs: { type: 'number' },
+				budgetMs: { type: 'number' },
 				sources: { type: 'array', items: RESEARCH_SOURCE_SCHEMA },
 				documents: { type: 'array', items: RESEARCH_DOCUMENT_SCHEMA },
 				notes: { type: 'array', items: { type: 'string' } },
 				quality: {
 					type: 'object',
 					additionalProperties: false,
-					required: ['level', 'note', 'sources', 'domains', 'fetched'],
+					required: ['level', 'note', 'sources', 'domains', 'fetched', 'degraded'],
 					properties: {
 						level: { type: 'string' },
 						note: { type: 'string' },
 						sources: { type: 'number' },
 						domains: { type: 'number' },
 						fetched: { type: 'number' },
+						degraded: { type: 'boolean' },
+						failed: { type: 'number' },
 					},
 				},
 			},
@@ -307,7 +324,8 @@ export function createResearchTool({ research }) {
 		render: (_args, value) => {
 			const lines = []
 			lines.push(`Research: ${stripBoundary(value.question)}`)
-			lines.push(`Quality: ${value.quality.level} — ${stripBoundary(value.quality.note)}`)
+			lines.push(`Quality: ${value.quality.level}${value.quality.degraded === true ? ' (degraded)' : ''} — ${stripBoundary(value.quality.note)}`)
+			if (Number.isFinite(value.budgetMs)) lines.push(`Elapsed: ${value.elapsedMs} ms of a ${value.budgetMs} ms budget`)
 			if (value.notes.length > 0) lines.push(`Notes:\n${value.notes.map((note) => `- ${stripBoundary(note)}`).join('\n')}`)
 			if (value.sources.length > 0) {
 				lines.push(`Sources:\n${value.sources.map((source, index) => `${index + 1}. ${stripBoundary(source.title || source.url)}\n   ${source.url}${source.snippet ? `\n   ${stripBoundary(source.snippet)}` : ''}`).join('\n\n')}`)
@@ -866,7 +884,7 @@ function currentFetchProviderId(web) {
  * @param {object} options - Web/settings services and provider id.
  * @returns {Promise<void>} Resolves after the best-effort update.
  */
-async function takeOverSearchProvider({ web, settings, providerId, logger }) {
+async function takeOverSearchProvider({ web, settings, providerId, fetchProviderId = 'http', logger }) {
 	const ops = []
 	const current = currentProviderId(web)
 	if (current !== providerId) {
@@ -876,10 +894,16 @@ async function takeOverSearchProvider({ web, settings, providerId, logger }) {
 			logger?.warn?.(`dsh-manager: web.searchProvider is "${current}"; keeping the explicit choice (manager provider is "${providerId}").`)
 		}
 	}
-	// free-search's quality fetch provider disappears with that plugin. Put the
-	// factory HTTP provider back so web_fetch does not keep a dangling id.
-	if (currentFetchProviderId(web) === 'fs-quality-fetch') {
-		ops.push({ op: 'set', path: ['fetchProvider'], value: 'http' })
+	// Registering a fetch provider replaces the factory `http` default and the
+	// dangling `fs-quality-fetch` id left by free-search. An explicit third-party
+	// choice is kept.
+	const currentFetch = currentFetchProviderId(web)
+	if (fetchProviderId !== undefined && currentFetch !== fetchProviderId) {
+		if (REPLACEABLE_FETCH_PROVIDERS.has(currentFetch)) {
+			ops.push({ op: 'set', path: ['fetchProvider'], value: fetchProviderId })
+		} else {
+			logger?.warn?.(`dsh-manager: web.fetchProvider is "${currentFetch}"; keeping the explicit choice (manager fetch provider is "${fetchProviderId}").`)
+		}
 	}
 	if (ops.length === 0) return
 	try {
@@ -901,10 +925,10 @@ async function takeOverSearchProvider({ web, settings, providerId, logger }) {
 /**
  * Register the manager's search provider and tools on the agent-facing seams.
  *
- * @param {{ctx: object, search: object, logger?: object}} options - Host context and manager service.
+ * @param {{ctx: object, search: object, cachePath?: string, credentials?: object, logger?: object}} options - Host context and manager services.
  * @returns {void}
  */
-export function registerAgentSearch({ ctx, search, logger }) {
+export function registerAgentSearch({ ctx, search, cachePath, credentials, logger }) {
 	if (ctx === undefined || ctx === null || typeof ctx.inject !== 'function') return
 
 	/**
@@ -922,6 +946,8 @@ export function registerAgentSearch({ ctx, search, logger }) {
 		}
 	}
 
+	let targetFetchProvider = 'http'
+	const fetchProvider = createAgentFetchProvider({ search, credentials, logger })
 	inject(['web'], (sctx) => {
 		const web = sctx.get('web')
 		if (web === undefined || web === null || typeof web.registerSearchProvider !== 'function') return
@@ -941,16 +967,43 @@ export function registerAgentSearch({ ctx, search, logger }) {
 			// is still the manager's own or an explicit one.
 			logger?.warn?.(`dsh-manager: web search provider was not registered (${error instanceof Error ? error.message : String(error)})`)
 		}
+		if (typeof web.registerFetchProvider === 'function') {
+			try {
+				const disposeFetch = web.registerFetchProvider(fetchProvider)
+				targetFetchProvider = FETCH_PROVIDER_ID
+				sctx.effect(() => () => {
+					try {
+						disposeFetch()
+					} catch {
+						// The provider may already be gone with the fiber.
+					}
+				})
+				logger?.info?.(`dsh-manager: registered web fetch provider "${fetchProvider.id}".`)
+			} catch (error) {
+				logger?.warn?.(`dsh-manager: web fetch provider was not registered (${error instanceof Error ? error.message : String(error)})`)
+			}
+		}
+		const settings = sctx.get('settings')
+		if (settings !== undefined && settings !== null) {
+			void takeOverSearchProvider({ web, settings, providerId: WEB_SEARCH_PROVIDER_ID, fetchProviderId: targetFetchProvider, logger })
+		}
 	})
 
 	inject(['web', 'settings'], (sctx) => {
 		const web = sctx.get('web')
 		const settings = sctx.get('settings')
 		if (web === undefined || web === null) return
-		void takeOverSearchProvider({ web, settings, providerId: WEB_SEARCH_PROVIDER_ID, logger })
+		void takeOverSearchProvider({ web, settings, providerId: WEB_SEARCH_PROVIDER_ID, fetchProviderId: targetFetchProvider, logger })
 	})
 
-	const research = createResearchService({ search })
+	const research = createResearchService({
+		search,
+		cachePath,
+		// The reranker is optional: without a key it resolves to null and the
+		// research service keeps its lexical order.
+		rerank: createModelRerank({ credentials }),
+		fetchPage: async (url) => await fetchProvider.fetch({ url }),
+	})
 	const toolFactories = [
 		() => createWebSearchTool({ search }),
 		() => createAdvancedSearchTool({ search }),

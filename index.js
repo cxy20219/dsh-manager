@@ -29,6 +29,7 @@ import { homedir } from 'node:os'
 import { isAbsolute, join, resolve } from 'node:path'
 
 import { registerAgentSearch } from './src/agent-search.js'
+import { registerSearchPrompt } from './src/agent-prompt.js'
 import { createLanAccess } from './src/lan-access.js'
 import { createMcpManager } from './src/mcp.js'
 import { createModes } from './src/modes.js'
@@ -121,7 +122,7 @@ export async function apply(ctx, config) {
 			mcp: { servers: [] },
 			lan: { enabled: false, secure: false, port: DEFAULT_LAN_PORT },
 			modes: { enabled: { simple: true } },
-			search: { channels: searchChannels, mode: 'merge', order: searchOrder },
+			search: { channels: searchChannels, mode: 'merge', order: searchOrder, freeFallbackSeeded: false },
 		},
 	})
 	const ready = settings.load()
@@ -139,8 +140,13 @@ export async function apply(ctx, config) {
 
 	await ready
 	mcp.start()
-	const search = createSearchManager({ settings, credentials, logger: ctx.logger })
-	registerAgentSearch({ ctx, search, logger: ctx.logger })
+	const search = createSearchManager({ settings, credentials, logger: ctx.logger, persistCooldowns: true })
+	ctx.effect(() => () => { void search.dispose() }, 'dsh-manager: search cooldowns')
+	await search.ensureFreeFallback().catch((error) => {
+		ctx.logger.warn(`dsh-manager: 免费搜索渠道初始化失败：${error instanceof Error ? error.message : String(error)}`)
+	})
+	registerAgentSearch({ ctx, search, cachePath: join(dataDir, 'research-cache.json'), credentials, logger: ctx.logger })
+	registerSearchPrompt({ ctx, settings, logger: ctx.logger })
 
 	// Registering a mode mounts a whole plugin tree, which waits on the Host
 	// Loader. Kicking that off detached keeps this row's own activation out of

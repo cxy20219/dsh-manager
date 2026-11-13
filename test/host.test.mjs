@@ -7,6 +7,7 @@ import test from 'node:test'
 
 import { apply } from '../index.js'
 import { ENDPOINTS } from '../src/remote.js'
+import { SEARCH_CHANNELS } from '../src/search-providers.js'
 
 const skill = (name, description) => `---\nname: ${name}\ndescription: ${description}\n---\n\n# ${name}\n`
 
@@ -148,16 +149,23 @@ test('the Host half serves skills, toggles categories, and stores MCP rows', asy
 
 		const searchStatus = await post(routes, 'search-status')
 		assert.equal(searchStatus.status, 200)
-		assert.equal(searchStatus.value.channels.length, 14)
+		assert.equal(searchStatus.value.channels.length, SEARCH_CHANNELS.length)
 		assert.equal(searchStatus.value.mode, 'merge')
-		assert.equal(searchStatus.value.order.length, 14)
-		assert.equal(searchStatus.value.enabledCount, 0)
+		assert.equal(searchStatus.value.order.length, SEARCH_CHANNELS.length)
+		// The one-time free fallback seed enables Bing and Exa.
+		assert.equal(searchStatus.value.enabledCount, 2)
+		assert.equal(searchStatus.value.channels.find((channel) => channel.id === 'bing').enabled, true)
+		assert.equal(searchStatus.value.channels.find((channel) => channel.id === 'exa').enabled, true)
 		assert.ok(searchStatus.value.channels.some((channel) => channel.id === 'exa' && channel.requiresKey === false))
 		assert.ok(searchStatus.value.channels.some((channel) => channel.id === 'bing' && channel.keyMode === 'none' && channel.free === true))
 		assert.ok(searchStatus.value.channels.some((channel) => channel.id === 'brave' && channel.requiresKey === true))
 		assert.ok(searchStatus.value.channels.some((channel) => channel.id === 'searxng' && channel.requiresKey === false))
 		assert.ok(searchStatus.value.channels.some((channel) => channel.id === 'deepseek' && channel.requiresKey === true))
 		assert.ok(searchStatus.value.channels.some((channel) => channel.id === 'minimax' && channel.requiresKey === true))
+
+		// Keep the rest of this fixture deterministic and offline.
+		await post(routes, 'search-save', { id: 'bing', enabled: false })
+		await post(routes, 'search-save', { id: 'exa', enabled: false })
 
 		const savedSearch = await post(routes, 'search-save', { id: 'brave', enabled: true })
 		assert.equal(savedSearch.status, 200)
@@ -194,7 +202,18 @@ test('the Host half serves skills, toggles categories, and stores MCP rows', asy
 		const savedMode = await post(routes, 'search-mode', { mode: 'fallback' })
 		assert.equal(savedMode.status, 200)
 		assert.equal(savedMode.value.mode, 'fallback')
+		const autoMode = await post(routes, 'search-mode', { mode: 'auto' })
+		assert.equal(autoMode.status, 200)
+		assert.equal(autoMode.value.mode, 'auto')
 		await post(routes, 'search-mode', { mode: 'merge' })
+		const safeOff = await post(routes, 'search-safe-search', { safeSearch: false })
+		assert.equal(safeOff.status, 200)
+		assert.equal(safeOff.value.safeSearch, false)
+		await post(routes, 'search-safe-search', { safeSearch: true })
+		const testedAll = await post(routes, 'search-test-all', {})
+		assert.equal(testedAll.status, 200)
+		assert.ok(Array.isArray(testedAll.value.results))
+		assert.ok(testedAll.value.results.every((entry) => typeof entry.ok === 'boolean'))
 		const cleared = await post(routes, 'search-cooldowns-clear')
 		assert.equal(cleared.status, 200)
 		assert.deepEqual(cleared.value.cooldowns, {})
@@ -227,6 +246,22 @@ test('the Host half serves skills, toggles categories, and stores MCP rows', asy
 		assert.equal(native.value.sources[0].channel, 'searxng')
 		assert.equal(native.value.channels.find((channel) => channel.id === 'searxng').ok, true)
 		assert.match(native.value.content, /native answer/u)
+
+		// The panel's time selector travels through the same endpoint.
+		const timed = await post(routes, 'search-query', { query: 'native', timeRange: 'week' })
+		assert.equal(timed.status, 200)
+		assert.equal(timed.value.timeRange, 'week')
+
+		// A blocked domain is normalized by the Host and filters the result set.
+		const blocked = await post(routes, 'search-blocked-domains', { domains: 'https://www.native.example/path?q=1\nnot a domain' })
+		assert.equal(blocked.status, 200)
+		assert.deepEqual(blocked.value.blockedDomains, ['native.example'])
+		const filtered = await post(routes, 'search-query', { query: 'native' })
+		assert.equal(filtered.status, 200)
+		assert.equal(filtered.value.sources.length, 0)
+		await post(routes, 'search-blocked-domains', { domains: [] })
+		const restored = await post(routes, 'search-query', { query: 'native' })
+		assert.equal(restored.value.sources.length, 1)
 		await post(routes, 'search-save', { id: 'searxng', enabled: false })
 
 		const rejected = await post(routes, 'mcp-save', {

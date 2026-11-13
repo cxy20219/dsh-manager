@@ -136,9 +136,20 @@ window.__ModuleLoader__.load({
 			'search.modeFallback': '顺序回退',
 			'search.modeMergeHint': '所有启用渠道同时搜，合并去重。',
 			'search.modeFallbackHint': '按下方顺序逐个试，命中即停。',
+			'search.modeAuto': '智能路由',
+			'search.modeAutoHint': '按查询语言和意图选前几个渠道，命中即停。',
+			'search.noteAuto': '按查询语言与意图排序渠道，最多试 4 个，第一个有结果的生效。',
 			'search.cached': '缓存',
 			'search.allCooling': '所有启用的渠道都在冷却中，稍后再试或点“重置冷却”。',
 			'search.resetCooldowns': '重置冷却',
+			'search.safeSearch': '安全搜索',
+			'search.testAll': '全部测试',
+			'search.testAllRunning': '测试中…',
+			'search.testAllSummary': '{ok}/{total} 个渠道可用',
+			'search.blocked': '屏蔽域名',
+			'search.blockedHint': '一行一个域名；命中的站点及其子域会从结果里剔除，留空不过滤。',
+			'search.blockedPlaceholder': 'csdn.net\n51cto.com',
+			'search.blockedSave': '保存黑名单',
 			'search.cooldown': '冷却中 {s}s',
 			'search.moveUp': '上移',
 			'search.moveDown': '下移',
@@ -181,6 +192,7 @@ window.__ModuleLoader__.load({
 			'search.channel.keyHost': '宿主凭据',
 			'search.channel.apiKeyHostKeep': '当前来自宿主凭据，留空保持',
 			'search.channel.keyMissing': '缺 Key',
+			'search.channel.apiKeyMulti': '多个 Key 用逗号或换行分隔，额度用尽自动轮换',
 			'search.channel.keyless': '无需 Key',
 			'search.channel.noCredentials': 'Host 没有凭证服务，只能用环境变量配置 Key。',
 			'search.channel.testHint': '测试使用当前查询；为空时用 DeepSeek Harness。',
@@ -361,9 +373,20 @@ window.__ModuleLoader__.load({
 			'search.modeFallback': 'Fallback',
 			'search.modeMergeHint': 'Search every enabled channel at once and merge.',
 			'search.modeFallbackHint': 'Try channels in order and stop at the first hit.',
+			'search.modeAuto': 'Auto route',
+			'search.modeAutoHint': 'Pick the top channels by query language and intent, then stop at the first hit.',
+			'search.noteAuto': 'Order channels by query language and intent, try at most four, and keep the first hit.',
 			'search.cached': 'cached',
 			'search.allCooling': 'Every enabled channel is cooling down; retry shortly or reset the cooldowns.',
 			'search.resetCooldowns': 'Reset cooldowns',
+			'search.safeSearch': 'Safe search',
+			'search.testAll': 'Test all',
+			'search.testAllRunning': 'Testing…',
+			'search.testAllSummary': '{ok}/{total} channels usable',
+			'search.blocked': 'Blocked domains',
+			'search.blockedHint': 'One domain per line; a match drops the site and its subdomains. Leave empty to filter nothing.',
+			'search.blockedPlaceholder': 'csdn.net\n51cto.com',
+			'search.blockedSave': 'Save blocklist',
 			'search.cooldown': 'cooling {s}s',
 			'search.moveUp': 'Move up',
 			'search.moveDown': 'Move down',
@@ -406,6 +429,7 @@ window.__ModuleLoader__.load({
 			'search.channel.keyHost': 'Host credentials',
 			'search.channel.apiKeyHostKeep': 'Currently from Host credentials; leave blank to keep it',
 			'search.channel.keyMissing': 'Key missing',
+			'search.channel.apiKeyMulti': 'Separate keys with commas or new lines; a spent key rotates to the next',
 			'search.channel.keyless': 'No key needed',
 			'search.channel.noCredentials': 'This Host has no credential service; configure the key through its environment variable.',
 			'search.channel.testHint': 'Tests with the current query, or DeepSeek Harness when the box is empty.',
@@ -627,6 +651,11 @@ window.__ModuleLoader__.load({
 			'.mgrSearchControls .mgrHint{flex:1;min-width:180px}',
 			'.mgrSearchTimeWrap{display:flex;align-items:center;gap:5px}',
 			'.mgrSearchTime{width:auto;min-width:96px;height:30px;padding:2px 6px;font-size:11.5px}',
+			'.mgrSearchSafeWrap{display:flex;align-items:center;gap:5px}',
+			'.mgrSearchBlocked{margin:0 0 14px;padding:10px 12px;border:1px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-1)}',
+			'.mgrSearchBlockedHead{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:6px}',
+			'.mgrSearchBlockedInput{width:100%;min-height:54px;resize:vertical;font-family:inherit;font-size:12px;line-height:1.55}',
+			'.mgrSearchBlockedFoot{display:flex;justify-content:flex-end;margin-top:8px}',
 			'.mgrSearchOrder{display:flex;align-items:center;gap:3px}',
 			'.mgrSearchOrder .mgrBtn{padding:2px 6px;min-width:0;line-height:1.5}',
 			'.mgrSearchBar{display:flex;align-items:center;gap:8px;margin-bottom:10px}',
@@ -1578,7 +1607,7 @@ window.__ModuleLoader__.load({
 					h('span', { className: 'mgrFieldHint' },
 						channel.keyWritable !== true
 							? t('search.channel.noCredentials')
-							: (channel.envName ? t('search.channel.envHint', { env: channel.envName }) : '')));
+							: (channel.envName ? t('search.channel.envHint', { env: channel.envName }) + ' · ' + t('search.channel.apiKeyMulti') : t('search.channel.apiKeyMulti'))));
 			}
 
 			return h('div', { className: 'mgrSearchChannel' },
@@ -1676,7 +1705,10 @@ window.__ModuleLoader__.load({
 			var maxResults = status !== null && Number.isFinite(status.maxResults) ? status.maxResults : 20;
 			var perChannel = status !== null && Number.isFinite(status.perChannelResults) ? status.perChannelResults : 10;
 			var available = status !== null && enabled > 0;
-			var mode = status !== null && status.mode === 'fallback' ? 'fallback' : 'merge';
+			var mode = status !== null && status.mode === 'fallback'
+				? 'fallback'
+				: status !== null && status.mode === 'auto' ? 'auto' : 'merge';
+			var safeSearch = status === null || status.safeSearch !== false;
 			var cooldowns = status !== null && status.cooldowns !== null && typeof status.cooldowns === 'object' ? status.cooldowns : {};
 			var hasCooldown = Object.keys(cooldowns).length > 0;
 			var statusError = status !== null && typeof status.error === 'string' ? status.error : '';
@@ -1776,7 +1808,7 @@ window.__ModuleLoader__.load({
 						onKeyDown: onKeyDown,
 					})),
 				h('div', { className: 'mgrHint', style: { marginBottom: '10px' } },
-					(mode === 'fallback' ? t('search.noteFallback') : t('search.noteMerge')) + ' ' + t('search.maxResults', { n: maxResults, per: perChannel })),
+					(mode === 'fallback' ? t('search.noteFallback') : mode === 'auto' ? t('search.noteAuto') : t('search.noteMerge')) + ' ' + t('search.maxResults', { n: maxResults, per: perChannel })),
 				status === null ? null : h('div', { className: 'mgrSearchControls' },
 					h('span', { className: 'mgrLabel' }, t('search.mode')),
 					h('button', {
@@ -1791,7 +1823,15 @@ window.__ModuleLoader__.load({
 						disabled: !available,
 						onClick: function () { if (mode !== 'fallback') void props.onMode('fallback'); },
 					}, t('search.modeFallback')),
-					h('span', { className: 'mgrHint' }, mode === 'fallback' ? t('search.modeFallbackHint') : t('search.modeMergeHint')),
+					h('button', {
+						type: 'button',
+						className: classes('mgrBtn', mode === 'auto' && 'mgrBtnPrimary'),
+						disabled: !available,
+						onClick: function () { if (mode !== 'auto') void props.onMode('auto'); },
+					}, t('search.modeAuto')),
+					h('span', { className: 'mgrHint' }, mode === 'fallback'
+						? t('search.modeFallbackHint')
+						: mode === 'auto' ? t('search.modeAutoHint') : t('search.modeMergeHint')),
 					h('label', { className: 'mgrSearchTimeWrap' },
 						h('span', { className: 'mgrHint' }, t('search.time')),
 						h('select', {
@@ -1805,11 +1845,35 @@ window.__ModuleLoader__.load({
 							h('option', { value: 'week' }, t('search.timeWeek')),
 							h('option', { value: 'month' }, t('search.timeMonth')),
 							h('option', { value: 'year' }, t('search.timeYear')))),
+					h('label', { className: 'mgrSearchSafeWrap' },
+						h('input', {
+							type: 'checkbox',
+							checked: safeSearch,
+							onChange: function (event) { void props.onSafeSearch(event.target.checked); },
+						}),
+						h('span', { className: 'mgrHint' }, t('search.safeSearch'))),
+					h('button', {
+						type: 'button',
+						className: 'mgrBtn',
+						disabled: !available || props.testAllBusy === true,
+						onClick: function () { void props.onTestAll(); },
+					}, props.testAllBusy === true ? t('search.testAllRunning') : t('search.testAll')),
 					hasCooldown ? h('button', {
 						type: 'button',
 						className: 'mgrBtn',
 						onClick: function () { void props.onResetCooldowns(); },
 					}, t('search.resetCooldowns')) : null),
+				props.testAll === null || props.testAll === undefined ? null : h('div', { className: 'mgrSearchChips', style: { marginBottom: '10px' } },
+					h('span', { className: 'mgrHint' }, t('search.testAllSummary', { ok: props.testAll.ok, total: props.testAll.total })),
+					props.testAll.results.map(function (entry) {
+						return h('span', {
+							className: classes('mgrSearchChip', entry.ok !== true && 'mgrSearchChipError'),
+							key: entry.id,
+							title: entry.ok === true ? '' : entry.failure ? entry.failure.message : '',
+						}, entry.ok === true
+							? t('search.chipOk', { label: entry.label, n: entry.count })
+							: t('search.chipFail', { label: entry.label, code: entry.failure ? entry.failure.code : 'error' }));
+					})),
 				status === null ? h(Loading, { label: t('state.loading') }) : null,
 				status !== null && statusError !== ''
 					? h('div', { className: 'mgrErrorBox' }, h('span', null, t('search.statusError', { error: statusError })))
@@ -1827,7 +1891,26 @@ window.__ModuleLoader__.load({
 				!busy && result === null && error === null && status !== null && available
 					? h('div', { className: 'mgrEmpty' }, t('search.emptyIdle'))
 					: null,
-				channelView);
+				channelView,
+				status === null ? null : h('div', { className: 'mgrSearchBlocked' },
+					h('div', { className: 'mgrSearchBlockedHead' },
+						h('span', { className: 'mgrLabel' }, t('search.blocked')),
+						h('span', { className: 'mgrHint' }, t('search.blockedHint'))),
+					h('textarea', {
+						className: 'mgrInput mgrSearchBlockedInput',
+						rows: 2,
+						value: props.blocked === null || props.blocked === undefined ? '' : props.blocked,
+						placeholder: t('search.blockedPlaceholder'),
+						'aria-label': t('search.blocked'),
+						onChange: function (event) { props.onBlockedChange(event.target.value); },
+					}),
+					h('div', { className: 'mgrSearchBlockedFoot' },
+						h('button', {
+							type: 'button',
+							className: 'mgrBtn',
+							onClick: function () { void props.onSaveBlocked(); },
+						}, t('search.blockedSave')))),
+);
 		}
 
 		//#endregion
@@ -2058,6 +2141,9 @@ window.__ModuleLoader__.load({
 			var [searchError, setSearchError] = useState(null);
 			var [searchBusy, setSearchBusy] = useState(false);
 			var [searchTimeRange, setSearchTimeRange] = useState('');
+			var [searchBlocked, setSearchBlocked] = useState(null);
+			var [searchTestAll, setSearchTestAll] = useState(null);
+			var [searchTestAllBusy, setSearchTestAllBusy] = useState(false);
 
 			var searchRequest = useCallback(function (payload) {
 				// Channel calls have their own 20s budget; the wider browser
@@ -2113,7 +2199,14 @@ window.__ModuleLoader__.load({
 				if (tab !== 'search') return undefined;
 				var active = true;
 				call('search-status').then(function (value) {
-					if (active) setSearchStatus(value);
+					if (!active) return;
+					setSearchStatus(value);
+					// Load the editor's text once; later refreshes must not
+					// overwrite edits the operator has not saved yet.
+					setSearchBlocked(function (current) {
+						if (current !== null) return current;
+						return Array.isArray(value.blockedDomains) ? value.blockedDomains.join('\n') : '';
+					});
 				}).catch(function (reason) {
 					if (!active) return;
 					setSearchStatus({
@@ -2277,6 +2370,47 @@ window.__ModuleLoader__.load({
 				}).catch(function (reason) {
 					notify(messageOf(reason), true);
 					throw reason;
+				});
+			}
+
+			function testAllSearchChannels() {
+				setSearchTestAllBusy(true);
+				var query = searchQuery.trim();
+				return callHost(ctx, 'search-test-all', { ...(query === '' ? {} : { query: query }) }, 60000).then(function (value) {
+					setSearchTestAll(value);
+					call('search-status').then(setSearchStatus).catch(function () {});
+					return value;
+				}).catch(function (reason) {
+					notify(messageOf(reason), true);
+					return null;
+				}).then(function (value) {
+					setSearchTestAllBusy(false);
+					return value;
+				});
+			}
+
+			function saveSafeSearch(value) {
+				return call('search-safe-search', { safeSearch: value }).then(function (status) {
+					setSearchStatus(status);
+					return status;
+				}).catch(function (reason) {
+					notify(messageOf(reason), true);
+					return null;
+				});
+			}
+
+			function saveSearchBlocked() {
+				var text = searchBlocked === null ? '' : searchBlocked;
+				return call('search-blocked-domains', { domains: text.split('\n') }).then(function (value) {
+					setSearchStatus(value);
+					setSearchBlocked(Array.isArray(value.blockedDomains) ? value.blockedDomains.join('\n') : '');
+					notify(t('state.saved'), false);
+					return value;
+				}).catch(function (reason) {
+					// The save button ignores the promise; report and stop rather
+					// than leaving an unhandled rejection in the console.
+					notify(messageOf(reason), true);
+					return null;
 				});
 			}
 
@@ -2455,6 +2589,13 @@ window.__ModuleLoader__.load({
 										onResetCooldowns: resetSearchCooldowns,
 										timeRange: searchTimeRange,
 										onTimeRange: setSearchTimeRange,
+										blocked: searchBlocked,
+										onBlockedChange: setSearchBlocked,
+										onSaveBlocked: saveSearchBlocked,
+										onSafeSearch: saveSafeSearch,
+										testAll: searchTestAll,
+										testAllBusy: searchTestAllBusy,
+										onTestAll: testAllSearchChannels,
 										busy: searchBusy,
 										result: searchResult,
 										error: searchError,

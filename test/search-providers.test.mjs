@@ -502,3 +502,19 @@ test('a required key is reported before any request', async () => {
 	})
 	assert.equal(called, false)
 })
+
+
+test('safe search reaches Bing and DuckDuckGo', async () => {
+	const bingHtml = `<html><body><li class="b_algo"><h2><a href="https://www.bing.com/ck/a?u=a1${Buffer.from('https://bing.example/1').toString('base64url')}">Hello world result</a></h2><p>hello world snippet</p></li><!-- ${'x'.repeat(600)} --></body></html>`
+	const ddgHtml = `<html><body><div class="result results_links results_links_deep"><a class="result__a" href="//duckduckgo.com/l/?uddg=${encodeURIComponent('https://ddg.example/1')}">Hello world</a><a class="result__snippet">hello world snippet</a></div></div></div><!-- ${'x'.repeat(600)} --></body></html>`
+	const bingPage = () => new Response(bingHtml, { status: 200, headers: { 'content-type': 'text/html' } })
+	const ddgPage = () => new Response(ddgHtml, { status: 200, headers: { 'content-type': 'text/html' } })
+	const strict = await runChannel('bing', bingPage, { safeSearch: true })
+	assert.match(strict.calls[0].url, /adlt=strict/)
+	const off = await runChannel('bing', bingPage, { safeSearch: false })
+	assert.match(off.calls[0].url, /adlt=off/)
+	const ddg = await runChannel('ddg', ddgPage, { safeSearch: true })
+	assert.match(ddg.calls[0].url, /kp=1/)
+	const ddgOff = await runChannel('ddg', ddgPage, { safeSearch: false })
+	assert.match(ddgOff.calls[0].url, /kp=-1/)
+})

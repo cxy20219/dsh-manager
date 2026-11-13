@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
 
-import { createSearchManager, MAX_RESULTS } from '../src/search.js'
+import { createSearchManager, MAX_RESULTS, splitSearchKeys } from '../src/search.js'
 import { SEARCH_CHANNELS } from '../src/search-providers.js'
 import { SettingsStore } from '../src/settings.js'
 
@@ -242,7 +242,7 @@ test('environment variables are the key fallback and a stored record wins', asyn
 	}
 })
 
-test('search fans out, merges round-robin, deduplicates and reports per channel', async () => {
+test('search fans out, merges by consensus, deduplicates and reports per channel', async () => {
 	const { settings, dir } = await store()
 	try {
 		const credentials = fakeCredentials()
@@ -257,8 +257,8 @@ test('search fans out, merges round-robin, deduplicates and reports per channel'
 			['tavily', true, 2],
 		])
 		assert.deepEqual(result.sources.map((source) => source.url), [
-			'https://exa.example/1',
 			'https://shared.example/1',
+			'https://exa.example/1',
 			'https://tavily.example/1',
 		])
 		assert.equal(result.sources.length, 3)
@@ -266,6 +266,53 @@ test('search fans out, merges round-robin, deduplicates and reports per channel'
 		assert.equal(result.sources[0].channelLabel, 'Exa')
 		assert.equal(result.sources[2].channel, 'tavily')
 		assert.ok(result.elapsedMs >= 0)
+	} finally {
+		await rm(dir, { recursive: true, force: true })
+	}
+})
+
+test('near-duplicate results from different URLs are collapsed', async () => {
+	const { settings, dir } = await store()
+	try {
+		const search = createSearchManager({
+			settings,
+			credentials: fakeCredentials(),
+			fetchImpl: fakeFetch({
+				'api.exa.ai': () => jsonResponse({
+					results: [
+						{ url: 'https://one.example/a', title: 'Same article title', highlights: ['same snippet text about the manager'] },
+						{ url: 'https://two.example/b', title: 'Same article title', highlights: ['same snippet text about the manager'] },
+					],
+				}),
+			}).fetch,
+		})
+		await search.save({ id: 'exa', enabled: true, apiKey: 'exa-key' })
+		const result = await search.search({ query: 'duplicate' })
+		assert.equal(result.sources.length, 1)
+		assert.equal(result.sources[0].url, 'https://one.example/a')
+	} finally {
+		await rm(dir, { recursive: true, force: true })
+	}
+})
+
+test('one site is capped when results span four or more sites', async () => {
+	const { settings, dir } = await store()
+	try {
+		const results = [
+			...Array.from({ length: 5 }, (_, index) => ({ url: `https://docs.example.com/${index}`, title: `Docs ${index}`, content: `page number ${index}` })),
+			{ url: 'https://a.example.org/1', title: 'A', content: 'a' },
+			{ url: 'https://b.example.net/1', title: 'B', content: 'b' },
+			{ url: 'https://c.example.io/1', title: 'C', content: 'c' },
+		]
+		const search = createSearchManager({
+			settings,
+			credentials: fakeCredentials(),
+			fetchImpl: fakeFetch({ 'api.exa.ai': () => jsonResponse({ results }) }).fetch,
+		})
+		await search.save({ id: 'exa', enabled: true, apiKey: 'exa-key' })
+		const result = await search.search({ query: 'docs', maxResults: 10 })
+		assert.equal(result.sources.filter((source) => source.url.includes('docs.example.com')).length, 3)
+		assert.equal(result.sources.length, 6)
 	} finally {
 		await rm(dir, { recursive: true, force: true })
 	}
@@ -479,7 +526,25 @@ test('order and mode are validated and persisted', async () => {
 		const mode = await search.saveMode({ mode: 'fallback' })
 		assert.equal(mode.mode, 'fallback')
 		assert.equal(settings.get().search.mode, 'fallback')
-		await assert.rejects(search.saveMode({ mode: 'fast' }), /merge 或 fallback/)
+		await assert.rejects(search.saveMode({ mode: 'fast' }), /merge、fallback 或 auto/)
+		const auto = await search.saveMode({ mode: 'auto' })
+		assert.equal(auto.mode, 'auto')
+		assert.equal(settings.get().search.mode, 'auto')
+	} finally {
+		await rm(dir, { recursive: true, force: true })
+	}
+})
+
+test('ensureFreeFallback seeds Bing and Exa exactly once', async () => {
+	const { settings, dir } = await store()
+	try {
+		const search = createSearchManager({ settings })
+		assert.equal(await search.ensureFreeFallback(), true)
+		const status = await search.describe()
+		assert.equal(status.channels.find((channel) => channel.id === 'bing').enabled, true)
+		assert.equal(status.channels.find((channel) => channel.id === 'exa').enabled, true)
+		assert.equal(settings.get().search.freeFallbackSeeded, true)
+		assert.equal(await search.ensureFreeFallback(), false)
 	} finally {
 		await rm(dir, { recursive: true, force: true })
 	}
@@ -535,4 +600,229 @@ test('test runs one channel regardless of its switch and maps HTTP errors', asyn
 	} finally {
 		await rm(dir, { recursive: true, force: true })
 	}
+})
+
+test('a blocked domain drops the site and its subdomains but not lookalikes', async () => {
+	const { settings, dir } = await store()
+	try {
+		const search = createSearchManager({
+			settings,
+			credentials: fakeCredentials(),
+			fetchImpl: fakeFetch({
+				'api.exa.ai': () => jsonResponse({
+					results: [
+						{ url: 'https://blog.csdn.net/a', title: 'CSDN A' },
+						{ url: 'https://notcsdn.net/b', title: 'Not CSDN' },
+						{ url: 'https://docs.example.com/c', title: 'Docs' },
+					],
+				}),
+			}).fetch,
+		})
+		await search.save({ id: 'exa', enabled: true, apiKey: 'exa-key' })
+
+		// A pasted URL and a duplicate collapse into one bare rule.
+		const saved = await search.saveBlockedDomains({ domains: 'https://www.csdn.net/some/path\nnot a domain\ncsdn.net' })
+		assert.deepEqual(saved.blockedDomains, ['csdn.net'])
+		assert.deepEqual(settings.get().search.blockedDomains, ['csdn.net'])
+
+		const first = await search.search({ query: 'hello' })
+		const firstUrls = first.sources.map((source) => source.url)
+		assert.equal(firstUrls.includes('https://blog.csdn.net/a'), false)
+		assert.equal(firstUrls.includes('https://notcsdn.net/b'), true)
+		assert.equal(firstUrls.includes('https://docs.example.com/c'), true)
+
+		// A parent-domain rule covers its subdomains.
+		await search.saveBlockedDomains({ domains: ['example.com'] })
+		const second = await search.search({ query: 'hello' })
+		const secondUrls = second.sources.map((source) => source.url)
+		assert.equal(secondUrls.includes('https://docs.example.com/c'), false)
+		assert.equal(secondUrls.includes('https://notcsdn.net/b'), true)
+	} finally {
+		await rm(dir, { recursive: true, force: true })
+	}
+})
+
+test('asking for a disabled channel names it instead of saying none are enabled', async () => {
+	const { settings, dir } = await store()
+	try {
+		const search = createSearchManager({ settings, credentials: fakeCredentials(), fetchImpl: fakeFetch().fetch })
+		await search.save({ id: 'exa', enabled: true, apiKey: 'exa-key' })
+		await assert.rejects(search.search({ query: 'x', channels: ['bing'] }), /指定的搜索渠道未启用：Bing/)
+		await assert.rejects(search.search({ query: 'x', channels: ['nope'] }), /未知的搜索渠道/)
+	} finally {
+		await rm(dir, { recursive: true, force: true })
+	}
+})
+
+test('fallback skips a channel whose only results are blocked', async () => {
+	const { settings, dir } = await store()
+	try {
+		const search = createSearchManager({
+			settings,
+			credentials: fakeCredentials(),
+			fetchImpl: fakeFetch({
+				'api.exa.ai': () => jsonResponse({
+					results: [{ url: 'https://csdn.example/a', title: 'blocked result' }],
+				}),
+			}).fetch,
+		})
+		await search.save({ id: 'exa', enabled: true, apiKey: 'exa-key' })
+		await search.save({ id: 'tavily', enabled: true, apiKey: 'tavily-key' })
+		await search.saveMode({ mode: 'fallback' })
+		await search.saveBlockedDomains({ domains: ['csdn.example'] })
+		const result = await search.search({ query: 'hello' })
+		assert.equal(result.mode, 'fallback')
+		assert.equal(result.channels[0].id, 'exa')
+		assert.ok(result.sources.length > 0)
+		assert.equal(result.sources.some((source) => source.url.includes('csdn.example')), false)
+	} finally {
+		await rm(dir, { recursive: true, force: true })
+	}
+})
+
+test('auto mode skips per-search billed model channels', async () => {
+	const { settings, dir } = await store()
+	try {
+		const search = createSearchManager({ settings, credentials: fakeCredentials(), fetchImpl: fakeFetch().fetch })
+		await search.save({ id: 'openai', enabled: true, apiKey: 'sk-openai' })
+		await search.save({ id: 'exa', enabled: true, apiKey: 'exa-key' })
+		await search.saveMode({ mode: 'auto' })
+		const result = await search.search({ query: 'deep learning' })
+		assert.equal(result.channels[0].id, 'exa')
+	} finally {
+		await rm(dir, { recursive: true, force: true })
+	}
+})
+
+test('auto mode routes by language and stops at the first usable channel', async () => {
+	const { settings, dir } = await store()
+	try {
+		const search = createSearchManager({ settings, credentials: fakeCredentials(), fetchImpl: fakeFetch().fetch })
+		await search.save({ id: 'exa', enabled: true, apiKey: 'exa-key' })
+		await search.save({ id: 'tavily', enabled: true, apiKey: 'tavily-key' })
+		await search.saveMode({ mode: 'auto' })
+		const result = await search.search({ query: 'deep learning' })
+		assert.equal(result.mode, 'auto')
+		assert.deepEqual(result.route, { language: 'en', intent: 'general' })
+		// exa is first for English and returns sources, so tavily is not called.
+		assert.equal(result.channels.length, 1)
+		assert.equal(result.channels[0].id, 'exa')
+		assert.ok(result.sources.length > 0)
+	} finally {
+		await rm(dir, { recursive: true, force: true })
+	}
+})
+
+test('a second key takes over after an auth failure', async () => {
+	const { settings, dir } = await store()
+	try {
+		const calls = []
+		const fetchImpl = async (url, init) => {
+			const target = String(url)
+			const auth = String(init?.headers?.authorization ?? '')
+			calls.push({ url: target, auth })
+			if (target.includes('api.tavily.com')) {
+				if (auth.includes('k1')) return new Response('denied', { status: 401 })
+				return jsonResponse({ results: [{ url: 'https://ok.example/1', title: 'OK', content: 'ok' }] })
+			}
+			return jsonResponse({ results: [] })
+		}
+		const search = createSearchManager({ settings, credentials: fakeCredentials(), fetchImpl })
+		await search.save({ id: 'tavily', enabled: true, apiKey: 'k1,k2' })
+		const result = await search.search({ query: 'hello' })
+		assert.equal(result.channels[0].ok, true)
+		assert.equal(result.channels[0].count, 1)
+		assert.equal(calls.length, 2)
+		assert.match(calls[0].auth, /k1/)
+		assert.match(calls[1].auth, /k2/)
+		const tavily = (await search.describe()).channels.find((channel) => channel.id === 'tavily')
+		assert.equal(tavily.keyCount, 2)
+	} finally {
+		await rm(dir, { recursive: true, force: true })
+	}
+})
+
+test('cooldowns survive a manager restart and can be cleared', async () => {
+	const { settings, dir } = await store()
+	try {
+		const denied = async () => new Response('denied', { status: 401 })
+		const first = createSearchManager({ settings, credentials: fakeCredentials(), fetchImpl: denied, persistCooldowns: true })
+		await first.save({ id: 'tavily', enabled: true, apiKey: 'bad' })
+		const attempt = await first.search({ query: 'hello' })
+		assert.equal(attempt.channels[0].ok, false)
+		assert.equal(attempt.channels[0].error.code, 'auth')
+		await first.dispose()
+		assert.ok(settings.get().search.cooldowns.tavily.until > Date.now())
+
+		const second = createSearchManager({ settings, credentials: fakeCredentials(), fetchImpl: denied, persistCooldowns: true })
+		const status = await second.describe()
+		assert.ok(status.cooldowns.tavily > 0)
+		const cooled = await second.search({ query: 'hello' })
+		assert.equal(cooled.allCooling, true)
+
+		const cleared = await second.clearCooldowns()
+		assert.deepEqual(cleared.cooldowns, {})
+		assert.deepEqual(settings.get().search.cooldowns, {})
+	} finally {
+		await rm(dir, { recursive: true, force: true })
+	}
+})
+
+test('testAll reports every enabled channel and its failure code', async () => {
+	const { settings, dir } = await store()
+	try {
+		const fetchImpl = async (url) => {
+			if (String(url).includes('api.tavily.com')) return new Response('denied', { status: 401 })
+			return jsonResponse({
+				results: [{ url: 'https://exa.example/1', title: 'Exa 1', highlights: ['exa snippet'] }],
+			})
+		}
+		const search = createSearchManager({ settings, credentials: fakeCredentials(), fetchImpl })
+		await search.save({ id: 'exa', enabled: true, apiKey: 'exa-key' })
+		await search.save({ id: 'tavily', enabled: true, apiKey: 'tavily-key' })
+		const all = await search.testAll({})
+		assert.equal(all.total, 2)
+		assert.equal(all.ok, 1)
+		assert.equal(all.failed, 1)
+		const tavily = all.results.find((entry) => entry.id === 'tavily')
+		assert.equal(tavily.ok, false)
+		assert.equal(tavily.failure.code, 'auth')
+	} finally {
+		await rm(dir, { recursive: true, force: true })
+	}
+})
+
+test('safe search is persisted and invalidates the result cache', async () => {
+	const { settings, dir } = await store()
+	try {
+		let calls = 0
+		const fetchImpl = async (url) => {
+			calls += 1
+			if (String(url).includes('api.tavily.com')) {
+				return jsonResponse({ results: [{ url: 'https://tavily.example/1', title: 'Tavily 1', content: 'snippet' }] })
+			}
+			return jsonResponse({ results: [] })
+		}
+		const search = createSearchManager({ settings, credentials: fakeCredentials(), fetchImpl })
+		await search.save({ id: 'tavily', enabled: true, apiKey: 'tavily-key' })
+		await search.search({ query: 'hello' })
+		const first = calls
+		await search.search({ query: 'hello' })
+		assert.equal(calls, first) // served from the cache
+		const saved = await search.saveSafeSearch({ safeSearch: false })
+		assert.equal(saved.safeSearch, false)
+		assert.equal(settings.get().search.safeSearch, false)
+		await search.search({ query: 'hello' })
+		assert.ok(calls > first)
+		await assert.rejects(search.saveSafeSearch({ safeSearch: 'no' }), /布尔值/)
+	} finally {
+		await rm(dir, { recursive: true, force: true })
+	}
+})
+
+
+test('keys split on commas, semicolons and newlines', () => {
+	assert.deepEqual(splitSearchKeys(' a, b\nc;;a '), ['a', 'b', 'c'])
+	assert.deepEqual(splitSearchKeys(''), [])
+	assert.equal(splitSearchKeys('k1 k2 k3 k4 k5 k6').length, 5)
 })

@@ -12,10 +12,11 @@ DeepSeek Harness Web UI 左侧的一个入口，管理 Agent 运行所需的东�
 - **MCP** — 添加、编辑、启用、停用、删除和重连本地 stdio MCP 服务。发现的工具按
   `mcp__<服务>__<工具>` 注册到 `ctx.tools`，命名约定与内置 MCP 桥一致。环境变量的值存在宿主凭证库，
   绝不写进插件的设置文件。
-- **联网搜索** — 内置 14 个搜索渠道（Bing、DuckDuckGo、AnySearch、Exa、Tavily、Firecrawl、Parallel、
-  You.com、Keenable、SearXNG、DeepSeek、MiniMax、Brave、Jina）。Bing/DDG/AnySearch 和 6 个 API 渠道的
-  keyless 档可以零 Key 使用；每个渠道单独开关、单独配置 Key 与服务地址。支持「并发合并」和「顺序回退」两种模式，
-  失败渠道会短暂冷却，结果有 5 分钟内存缓存。Key 存在宿主凭证库，面板不回显；结果只按文本和 HTTP(S) 链接渲染。
+- **联网搜索** — 内置 37 个搜索渠道：10 个免 Key 通用/免费档渠道、5 个中文 HTML 抓取渠道、18 个带 Key 的
+  通用 API（含中文与英文索引），以及 3 个按次计费的模型搜索（不参与智能路由）。每个渠道单独开关、单独配置
+  Key 与服务地址，一个渠道可放多个 Key 轮换。支持「并发合并」「顺序回退」「智能路由（语言 + 意图）」三种模式，
+  可关安全搜索、可维护域名黑名单；失败渠道会冷却且冷却跨重启保留，结果有 5 分钟内存缓存，面板可一键测试全部渠道。
+  Key 存在宿主凭证库，面板不回显；结果只按文本和 HTTP(S) 链接渲染。
   同一套渠道也注册为 agent 的 `ctx.web` provider `dsh-manager` 以及 `web_search` / `advanced_search` /
   `platform_search` / `domain_search` / `weather` / `video_search` / `research` / `cache_search` /
   `free_search_test` 工具，替代停用的 dsh-free-search 的核心搜索链路。
@@ -79,47 +80,75 @@ provider 以 rank 550 注册，低于 filesystem provider 的用户根目录（5
 凭证、服务地址和结果合并。面板和 agent 的 `web_search` 共用同一套渠道与模式；本插件把搜索注册进 `ctx.web`，
 不再需要 dsh-free-search 才能让 agent 搜索。
 
-- 渠道：Bing（HTML）、DuckDuckGo（HTML/Lite）、AnySearch（匿名 JSON）、Exa（匿名 MCP）、Tavily（keyless）、
-  Firecrawl（免 Key 档）、Parallel（匿名 MCP）、You.com（每日免费档）、Keenable（匿名 MCP）、SearXNG（自建）、
-  DeepSeek（Messages + `web_search` 原生搜索）、MiniMax（Token Plan 搜索，单次最多 10 条）、Brave、Jina。
-  Bing/DDG 不需要 Key；Exa/Tavily/Firecrawl/Parallel/You/Keenable/SearXNG/AnySearch 可以填 Key 提高额度，
-  留空走免费档。
+- 37 个渠道，分三档：
+  - **免 Key**：Bing（HTML）、DuckDuckGo（HTML/Lite）、AnySearch（匿名 JSON）、Exa（匿名 MCP）、Tavily（keyless）、
+    Firecrawl（免 Key 档）、Parallel（匿名 MCP）、You.com（每日免费档）、Keenable（匿名 MCP）、SearXNG（自建），
+    以及中文 HTML 抓取：百度网页、360 搜索、搜狗、微信文章、今日头条。
+  - **通用 API**：DeepSeek（Messages + `web_search`）、MiniMax（Token Plan）、Brave、Jina、百度千帆、Kimi、
+    Perplexity、Metaso、Google CSE（Key 填 `API_KEY:CX`）、Yandex（Key 填 `API_KEY:FOLDER_ID`）、阿里云百炼、
+    豆包、腾讯元宝、SerpBase、Serply、Outcrawl、TinyFish、DegOog（自建实例）、知乎。
+  - **按次计费的模型搜索**：OpenAI、Gemini、Claude。它们不会进入智能路由，只有显式启用并参与合并/回退时才会调用。
+  - 混填 Key 的渠道（Exa/Tavily/Firecrawl/Parallel/You/Keenable/SearXNG/AnySearch）留空走免费档。
 - 每个渠道有独立的启用开关；搜索只发给已启用的渠道。未启用的渠道仍可单独点 **测试** 验证配置。
 - API Key 存宿主凭证库，记录名 `dsh-manager/search-<渠道>`；设置文件只存开关、优先级和 `baseUrl`。面板不回显
   Key，输入框留空表示保持不变；**清除 Key** 删除记录。如果宿主凭据中心已有同名条目（例如 dsh-free-search 写入的
   `EXA_API_KEY`），管理器会复用它；管理器自己的记录优先。也支持环境变量回退：
   `EXA_API_KEY`、`TAVILY_API_KEY`、`FIRECRAWL_API_KEY`、`PARALLEL_API_KEY`、`BRAVE_API_KEY`、
   `YOU_API_KEY`、`JINA_API_KEY`、`KEENABLE_API_KEY`、`SEARXNG_API_KEY`、`ANYSEARCH_API_KEY`、
-  `DEEPSEEK_API_KEY`、`MINIMAX_API_KEY`。Bing/DuckDuckGo 没有 Key。
+  `DEEPSEEK_API_KEY`、`MINIMAX_API_KEY`、`BAIDU_API_KEY`、`MOONSHOT_API_KEY`、`PERPLEXITY_API_KEY`、
+  `METASO_API_KEY`、`GOOGLE_CSE_API_KEY`、`YANDEX_API_KEY`、`DASHSCOPE_API_KEY`、`DOUBAO_SEARCH_API_KEY`、
+  `TENCENTCLOUD_WSA_APIKEY`、`SERPBASE_API_KEY`、`SERPLY_API_KEY`、`OUTCRAWL_API_KEY`、`TINYFISH_API_KEY`、
+  `DEGOOG_API_KEY`、`OPENAI_API_KEY`、`GEMINI_API_KEY`、`ANTHROPIC_API_KEY`、`ZHIHU_API_KEY`。
+  Bing/DuckDuckGo/中文 HTML 渠道没有 Key。
+- 一个渠道可以填多个 Key（逗号、分号或换行分隔，最多 5 个）。搜索按轮转顺序使用，遇到鉴权失败或额度用尽会自动换下一个 Key。
 - 服务地址填渠道根地址，留空用默认。SearXNG 默认 `http://127.0.0.1:8080`；它的 API Key 可填
   `user:password` 走 Basic Auth，或者填裸 key 走 `api_key` 查询参数。实例需要在 `settings.yml` 里开启
   JSON 输出（例如 `formats: [html, json]`），否则收到的是 HTML，适配器会报非 JSON 响应。
-- **并发合并**（默认）：每次搜索并发请求所有启用渠道，每渠道最多 10 条，按 URL 去重、轮转合并后最多 20 条；
+- **并发合并**（默认）：每次搜索并发请求所有启用渠道，每渠道最多 10 条，按 URL 去重、跨渠道共识排序，
+  折叠近似重复的标题/摘要；结果跨 4 个以上站点时单站最多 3 条，最终最多 20 条；
   单个渠道 20 秒超时。某个渠道失败只影响它自己，结果页会逐渠道显示条数或错误码。
 - **顺序回退**：按渠道优先级逐个尝试，第一个返回结果的渠道生效；某个渠道成功后停止，后面的渠道不再请求。
-  优先级用渠道行的 ↑/↓ 调整，两种模式都生效。
+  优先级用渠道行的 ↑/↓ 调整，三种模式都生效。
+- **智能路由**：按查询语言（中文/英文）与意图（代码、学术、新闻、金融、购物）给渠道排序，最多试 4 个，第一个
+  有结果的生效。中文查询优先中文原生渠道，英文查询优先英文索引；OpenAI/Gemini/Claude 这类按次计费的渠道
+  不会被自动选中。
 - **冷却与缓存**：鉴权/额度失败冷却 5 分钟，限流/反爬冷却 1 分钟；冷却中的渠道会被跳过，可点「重置冷却」立即恢复。
-  成功结果在内存里缓存 5 分钟（最多 50 条），改配置或换渠道会清空缓存；测试请求不走缓存。
+  冷却状态会写入设置文件，重启后仍然生效（最多延迟约 0.6 秒落盘）。成功结果在内存里缓存 5 分钟（最多 50 条），
+  改配置或换渠道会清空缓存；测试请求不走缓存。
+- **安全搜索**：默认开启，作用于 Bing（`adlt`）、DuckDuckGo（`kp`）和 Google CSE（`safe`）；关掉后回到原始结果。
+- **全部测试**：搜索页的「全部测试」并发测试所有已启用渠道，逐渠道显示可用条数或错误码，用来快速判断
+  “是渠道坏了还是查询没结果”。
+- **域名黑名单**：面板里一行一个域名，命中的站点及其所有子域会在合并（或回退）之前被剔除，所以结果仍能填满
+  `maxResults`。可以直接粘贴完整网址，scheme、路径、端口和 `www.` 会被自动去掉；重复项和无法识别的行会被丢弃。
+  规则对面板和 agent 工具同时生效，保存后清空结果缓存。
 - **免 Key 渠道**：Bing/DDG 抓公开结果页，AnySearch 走匿名 JSON，Exa/Parallel/Keenable 走匿名 MCP，Tavily 用
   keyless 头，Firecrawl/You 走官方免费档。HTML 渠道依赖当前出口 IP，可能被反爬或直接连不上；不需要时单独关掉即可，
   不会影响其他渠道。
 - 结果只作为纯文本和 HTTP(S) 链接渲染；非 http(s) URL 在 Host 侧就被丢弃，外部内容不会被当成指令。
-- 搜索状态与结果不写入设置、会话或卡片库；只有开关、服务地址和凭证持久化。
+- 搜索状态与结果不写入设置、会话或卡片库；只有开关、服务地址、域名黑名单和凭证持久化。
 
 ### Agent 侧
 
-- 注册 `ctx.web` 搜索 provider `dsh-manager`；如果 `web.searchProvider` 为空、是出厂默认，或还指向
-  free-search 留下的 `ddg`，会自动接管。已经显式选择其他 provider 时只警告，不抢占。
+- 注册 `ctx.web` 搜索 provider `dsh-manager` 和抓取 provider `dsh-manager-fetch`；如果对应的 provider id 为空、
+  是 `http`/出厂默认，或还指向 free-search 留下的 `ddg`/`fs-quality-fetch`，会自动接管。已经显式选择其他
+  provider 时只警告，不抢占。
+- 抓取质量链：直连（校验每跳重定向、拒绝内网地址）→ Exa contents（复用 Exa 渠道 Key）→ Firecrawl scrape
+  （复用 Firecrawl 渠道 Key）→ Crawl4AI（`CRAWL4AI_API_KEY`，宿主凭据或环境变量）。无头浏览器层没有搬：
+  它要 spawn 本机 Chrome/Edge，属于单独的安全决定，也需要本地 CLI 二进制。
 - 注册十个 agent 工具：`web_search`（`queries` 数组，合并去重，最多 3 个查询）、`advanced_search`
   （单个查询 + 固定时间过滤）、`multi_search`（指定渠道并发合并）、`platform_search`（13 个平台站内搜索）、
   `domain_search`（41 个垂直源直查）、
   `weather`（Open-Meteo 当前天气 + 1-7 天预报）、`video_search`（Bing Videos + DuckDuckGo Videos）和
   `research`（多查询 + 直接抓正文 + 质量分级）、`cache_search`（全文检索 research 抓过的正文）和
   `free_search_test`（按渠道测试）。新会话或重新加载后可见；已经打开的会话不会自动刷新工具表。
+- 注入一段系统提示词段「联网搜索（dsh-manager）」：说明当前搜索模式、已启用的渠道，以及「搜索只返回候选、
+  要正文用 web_fetch 或 research」的分工。渠道开关变化时重新注册；文本里没有每次搜索都会变的计数，
+  长会话的提示词前缀缓存不会因此反复失效。
 - `platform_search` 支持 GitHub / V2EX / Bilibili / Reddit / Hacker News / Stack Overflow / Wikipedia / npm /
   YouTube / Vimeo / 掘金 / 豆瓣 / Qiita。X (Twitter) 需要本地 Grok Build CLI，暂未搬。
 - agent 侧和面板共用同一份开关、优先级、Key、冷却和缓存。停用 dsh-free-search 后，至少要在面板启用一个渠道，
-  否则 `web_search` 会报“没有启用的搜索渠道”。建议先启用 Bing + Exa 两个零 Key 渠道。
+  否则 `web_search` 会报“没有启用的搜索渠道”。首次启动且没有任何免费渠道启用时，插件会一次性启用 Bing + Exa
+  作为零 Key 兜底；之后手动关闭不会被重新打开。
 - `advanced_search` 和面板的时间下拉支持 `day` / `week` / `month` / `year` 四档；会把过滤参数映射到
   Bing、DuckDuckGo、Tavily、Firecrawl、Parallel、Keenable、SearXNG、Brave，以及有 Key 的 Exa。Exa 的
   免 Key MCP 档、You/AnySearch/Jina/DeepSeek/MiniMax 暂不支持；Bing 没有“一年”档。不支持的渠道仍会返回
@@ -128,15 +157,18 @@ provider 以 rank 550 注册，低于 filesystem provider 的用户根目录（5
   （Crossref、OpenAlex、Semantic Scholar、arXiv、PubMed、dblp 等）、安全（NVD、OSV、CISA KEV）、
   金融（SEC、IMF、World Bank、CFETS 等）、新闻（Google News、GDELT）、法律和中文站等 41 个源。
 - `video_search` 跨站搜视频；要按站点搜 YouTube / Vimeo / B 站，用 `platform_search`。
-- `research` 是精简移植：规则生成 1/3/5 个查询、合并搜索结果、直接抓前 2/4/6 个页面、提取正文并给出
-  `high/medium/low` 证据分级；带 SSRF 防护（只抓公网 http/https）。没有搬 free-search 的语义重排、
-  模型证据闸门和 SQLite 缓存；`cache_search` 只检索当前 Host 进程内抓过的正文，7 天过期，重启清空。
-- 没有搬过来的能力：free-search 的 web_fetch 质量链、系统提示词注入和独立 MCP server。需要这些时再接，
-  不要假装 `web_search` / `platform_search` / `domain_search` / `weather` / `video_search` / `research`
-  已经覆盖它们。
-- `web.searchProvider` 的接管会写 profile 的 `web` 配置；这是为了修掉 free-search 停用后残留的 `ddg` 指针。
-  如果 `web.fetchProvider` 还指向 free-search 的 `fs-quality-fetch`，会重置回 `http`，否则 `web_fetch` 会因为
-  找不到 provider 而失败。如果你明确指定了别的 provider，本插件不会覆盖。
+- `research`：按中英文生成 1/3/5 个查询变体、合并搜索结果（同一站点最多 3 个来源，质量域按 eTLD+1 计数），
+  先做词法重排；配置了 `SILICONFLOW_API_KEY`（宿主凭据或环境变量）时再用 `BAAI/bge-reranker-v2-m3` 重排，
+  失败静默回退。整个运行共享 90 秒预算；第一轮证据偏薄且还有时间时，会再抓 2 个页面（升级检索）。
+  正文通过 `dsh-manager-fetch` 质量链抓取，最后给出 `high/medium/low` 证据分级，预算耗尽或抓取全失败会降级为
+  `low` 并标注 `degraded`。带 SSRF 防护（只抓公网 http/https）。
+  `cache_search` 检索 research 抓过的正文，7 天过期，持久化到 manager 数据目录的 `research-cache.json`
+  （最多 200 篇，重启保留）。
+- 没有搬过来的能力：free-search 的无头浏览器抓取层（需要本机 Chrome/Edge CLI）、独立 MCP server，
+  以及依赖 Grok Build CLI 的 X 搜索。除此之外，free-search 的搜索、路由、冷却、缓存、research 与抓取链都已接上。
+- `web.searchProvider` / `web.fetchProvider` 的接管会写 profile 的 `web` 配置；这是为了修掉 free-search
+  停用后残留的 `ddg` / `fs-quality-fetch` 指针。抓取 provider 会切到 `dsh-manager-fetch`（直连 → Exa →
+  Firecrawl）；注册失败时回退 `http`。如果你明确指定了别的 provider，本插件不会覆盖。
 
 ## 模式
 
@@ -254,13 +286,18 @@ npm test          # frontmatter、分类扫描、MCP 客户端、二维码编码
 | `src/qr.js` | 无依赖的二维码编码器 |
 | `src/settings.js` | 原子写入的管理器设置存储 |
 | `src/search.js` | 渠道开关、优先级与模式、凭证解析、并发/回退、冷却、缓存、合并去重与超时 |
-| `src/search-providers.js` | 14 个渠道的 HTTP/HTML/MCP 请求、响应解析与错误分类 |
+| `src/search-providers.js` | 37 个渠道的注册表与 HTTP/HTML/MCP 适配器 |
+| `src/search-engines.js` | 18 个带 Key 渠道的请求/解析与 `KEY:ID` 约定 |
+| `src/serp-engines.js` | 5 个中文 HTML 渠道的抓取、解析与反爬分类 |
+| `src/search-route.js` | 智能路由：语言、意图、按次计费渠道排除 |
+| `src/rerank.js` | 可选的 SiliconFlow 重排（无 Key 自动关闭） |
 | `src/agent-search.js` | `ctx.web` provider 与 `web_search` / `advanced_search` / `platform_search` / `free_search_test` agent 工具 |
 | `src/platform-search.js` | 13 个平台的 keyless 站内搜索适配器 |
 | `src/domain-search.js` | 41 个垂直源的 keyless 直查适配器 |
 | `src/weather.js` | Open-Meteo 地理编码、当前天气与预报 |
 | `src/video-search.js` | Bing Videos / DuckDuckGo Videos 免 Key 视频搜索 |
 | `src/research.js` | 多查询 research、直接抓正文、SSRF 防护、证据分级与内存 cache_search |
+| `src/agent-fetch.js` | web_fetch 质量链：直连 → Exa → Firecrawl |
 | `src/modes.js` | 内置模式的行清单，以及注册 / 注销的生命周期与失败上抛 |
 | `src/remote.js` | 面板端点与合并后的 Agent 目录视图 |
 | `client.js` | 侧边栏入口与管理页面（技能、MCP、联网搜索、模式、局域网） |

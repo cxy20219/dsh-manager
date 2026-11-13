@@ -29,8 +29,11 @@ export const ENDPOINTS = [
 	'search-save',
 	'search-order',
 	'search-mode',
+	'search-safe-search',
+	'search-blocked-domains',
 	'search-cooldowns-clear',
 	'search-test',
+	'search-test-all',
 	'search-query',
 	'mode-toggle',
 ]
@@ -214,6 +217,14 @@ export function createManagerHandler({ skills, mcp, modes, lan, settings, versio
 					if (search === undefined) throw new Error('当前 Host 没有联网搜索服务')
 					return { ok: true, value: await search.saveMode({ mode: payload?.mode }) }
 				}
+				case 'search-safe-search': {
+					if (search === undefined) throw new Error('当前 Host 没有联网搜索服务')
+					return { ok: true, value: await search.saveSafeSearch({ safeSearch: payload?.safeSearch }) }
+				}
+				case 'search-blocked-domains': {
+					if (search === undefined) throw new Error('当前 Host 没有联网搜索服务')
+					return { ok: true, value: await search.saveBlockedDomains({ domains: payload?.domains }) }
+				}
 				case 'search-cooldowns-clear': {
 					if (search === undefined) throw new Error('当前 Host 没有联网搜索服务')
 					return { ok: true, value: await search.clearCooldowns() }
@@ -228,6 +239,16 @@ export function createManagerHandler({ skills, mcp, modes, lan, settings, versio
 						}),
 					}
 				}
+				case 'search-test-all': {
+					if (search === undefined) throw new Error('当前 Host 没有联网搜索服务')
+					return {
+						ok: true,
+						value: await search.testAll({
+							query: text(payload, 'query'),
+							all: payload?.all === true,
+						}),
+					}
+				}
 				case 'search-query': {
 					if (search === undefined) throw new Error('当前 Host 没有联网搜索服务')
 					return {
@@ -235,6 +256,7 @@ export function createManagerHandler({ skills, mcp, modes, lan, settings, versio
 						value: await search.search({
 							query: text(payload, 'query'),
 							maxResults: payload?.maxResults,
+							timeRange: text(payload, 'timeRange'),
 						}),
 					}
 				}

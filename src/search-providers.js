@@ -17,6 +17,28 @@
 
 import { createHash } from 'node:crypto'
 
+import {
+	searchAliyun,
+	searchBaiduQianfan,
+	searchClaude,
+	searchDegoog,
+	searchDoubao,
+	searchGemini,
+	searchGoogleCse,
+	searchKimi,
+	searchMetaso,
+	searchOpenai,
+	searchOutcrawl,
+	searchPerplexity,
+	searchSerpbase,
+	searchSerply,
+	searchTinyfish,
+	searchYandex,
+	searchYuanbao,
+	searchZhihu,
+} from './search-engines.js'
+import { SERP_ENGINE_BY_ID, searchSerp } from './serp-engines.js'
+
 /** Per-source snippet cap, matching the manager's result cards. */
 const SNIPPET_MAX_CHARS = 1200
 
@@ -63,20 +85,9 @@ function isoDaysAgo(days) {
 	return new Date(Date.now() - days * 86_400_000).toISOString().slice(0, 10)
 }
 
-/** A classified channel failure. */
-export class SearchChannelError extends Error {
-	/**
-	 * @param {string} code - `auth`, `quota`, `rate-limit`, `bot-wall`, `timeout`, `server`, `bad-request`, `network`, `config`, or `invalid-response`.
-	 * @param {string} message - Operator-facing message; never contains an API key.
-	 * @param {number} [status] - HTTP status when one applied.
-	 */
-	constructor(code, message, status) {
-		super(message)
-		this.name = 'SearchChannelError'
-		this.code = code
-		if (typeof status === 'number') this.status = status
-	}
-}
+import { SearchChannelError } from './search-error.js'
+
+export { SearchChannelError }
 
 /**
  * The channels the panel can configure.
@@ -87,6 +98,8 @@ export class SearchChannelError extends Error {
 export const SEARCH_CHANNELS = [
 	{
 		id: 'minimax',
+		langs: ['zh', 'en'],
+		primary: 'zh',
 		label: 'MiniMax',
 		description: 'MiniMax Token Plan 网页搜索，单次最多 10 条；默认 global，CN Key 自动回退 api.minimaxi.com。',
 		envName: 'MINIMAX_API_KEY',
@@ -97,6 +110,8 @@ export const SEARCH_CHANNELS = [
 	},
 	{
 		id: 'deepseek',
+		langs: ['zh', 'en'],
+		primary: 'zh',
 		label: 'DeepSeek',
 		description: 'DeepSeek 原生联网搜索（Messages + web_search，按对话调用计费）。',
 		envName: 'DEEPSEEK_API_KEY',
@@ -107,6 +122,8 @@ export const SEARCH_CHANNELS = [
 	},
 	{
 		id: 'bing',
+		langs: ['zh', 'en'],
+		primary: '',
 		label: 'Bing',
 		description: 'Bing 网页搜索，无需 Key；HTML 抓取，可能被反爬限流。',
 		envName: '',
@@ -117,6 +134,8 @@ export const SEARCH_CHANNELS = [
 	},
 	{
 		id: 'ddg',
+		langs: ['zh', 'en'],
+		primary: '',
 		label: 'DuckDuckGo',
 		description: 'DuckDuckGo HTML/Lite，无需 Key；反爬时自动切换 Lite。',
 		envName: '',
@@ -127,6 +146,8 @@ export const SEARCH_CHANNELS = [
 	},
 	{
 		id: 'anysearch',
+		langs: ['zh', 'en'],
+		primary: '',
 		label: 'AnySearch',
 		description: 'AnySearch 匿名搜索，无需 Key；可选 Key 提高额度。',
 		envName: 'ANYSEARCH_API_KEY',
@@ -137,6 +158,8 @@ export const SEARCH_CHANNELS = [
 	},
 	{
 		id: 'exa',
+		langs: ['en'],
+		primary: 'en',
 		label: 'Exa',
 		description: '语义搜索与 highlights，适合资料和论文；不填 Key 走匿名 MCP。',
 		envName: 'EXA_API_KEY',
@@ -147,6 +170,8 @@ export const SEARCH_CHANNELS = [
 	},
 	{
 		id: 'tavily',
+		langs: ['en'],
+		primary: 'en',
 		label: 'Tavily',
 		description: 'AI 优化搜索，正文摘要密度高；不填 Key 走 keyless 档。',
 		envName: 'TAVILY_API_KEY',
@@ -157,6 +182,8 @@ export const SEARCH_CHANNELS = [
 	},
 	{
 		id: 'firecrawl',
+		langs: ['en'],
+		primary: 'en',
 		label: 'Firecrawl',
 		description: '带正文片段的搜索引擎，适合资料聚合；不填 Key 走免 Key 档。',
 		envName: 'FIRECRAWL_API_KEY',
@@ -167,6 +194,8 @@ export const SEARCH_CHANNELS = [
 	},
 	{
 		id: 'parallel',
+		langs: ['en'],
+		primary: 'en',
 		label: 'Parallel',
 		description: 'Agent 优化的搜索与摘录；不填 Key 走匿名 MCP。',
 		envName: 'PARALLEL_API_KEY',
@@ -177,6 +206,8 @@ export const SEARCH_CHANNELS = [
 	},
 	{
 		id: 'brave',
+		langs: ['en'],
+		primary: 'en',
 		label: 'Brave',
 		description: '独立搜索索引，优先使用 LLM Context。',
 		envName: 'BRAVE_API_KEY',
@@ -187,6 +218,8 @@ export const SEARCH_CHANNELS = [
 	},
 	{
 		id: 'you',
+		langs: ['en'],
+		primary: 'en',
 		label: 'You.com',
 		description: 'AI 搜索，支持 highlights 与新闻结果；不填 Key 走每日免费档。',
 		envName: 'YOU_API_KEY',
@@ -197,6 +230,8 @@ export const SEARCH_CHANNELS = [
 	},
 	{
 		id: 'jina',
+		langs: ['zh', 'en'],
+		primary: '',
 		label: 'Jina',
 		description: 'Reader 体系里的搜索接口，按 token 计费。',
 		envName: 'JINA_API_KEY',
@@ -207,6 +242,8 @@ export const SEARCH_CHANNELS = [
 	},
 	{
 		id: 'keenable',
+		langs: ['en'],
+		primary: 'en',
 		label: 'Keenable',
 		description: '通用 Web 搜索 API，description 优先；不填 Key 走匿名 MCP。',
 		envName: 'KEENABLE_API_KEY',
@@ -217,6 +254,8 @@ export const SEARCH_CHANNELS = [
 	},
 	{
 		id: 'searxng',
+		langs: ['zh', 'en'],
+		primary: '',
 		label: 'SearXNG',
 		description: '自建元搜索；填实例地址即可，无需 API Key（需开启 JSON 输出）。',
 		envName: 'SEARXNG_API_KEY',
@@ -225,7 +264,297 @@ export const SEARCH_CHANNELS = [
 		defaultBaseUrl: 'http://127.0.0.1:8080',
 		search: searchSearxng,
 	},
+	{
+		id: 'baidu-html',
+		langs: ['zh'],
+		primary: 'zh',
+		label: '百度网页',
+		description: '百度网页搜索 HTML 抓取，无需 Key；可能触发安全验证，作为中文兜底。',
+		envName: '',
+		keyMode: 'none',
+		free: true,
+		defaultBaseUrl: 'https://www.baidu.com',
+		search: serpSearch('baidu-html'),
+	},
+	{
+		id: 'so360',
+		langs: ['zh'],
+		primary: 'zh',
+		label: '360 搜索',
+		description: '360 网页搜索 HTML 抓取，无需 Key；中文结果覆盖较好。',
+		envName: '',
+		keyMode: 'none',
+		free: true,
+		defaultBaseUrl: 'https://www.so.com',
+		search: serpSearch('so360'),
+	},
+	{
+		id: 'sogou',
+		langs: ['zh'],
+		primary: 'zh',
+		label: '搜狗',
+		description: '搜狗网页搜索 HTML 抓取，无需 Key；链接多为跳转地址。',
+		envName: '',
+		keyMode: 'none',
+		free: true,
+		defaultBaseUrl: 'https://www.sogou.com',
+		search: serpSearch('sogou'),
+	},
+	{
+		id: 'wechat',
+		langs: ['zh'],
+		primary: 'zh',
+		label: '微信文章',
+		description: '搜狗微信文章搜索，无需 Key；结果链接是单次签名跳转。',
+		envName: '',
+		keyMode: 'none',
+		free: true,
+		defaultBaseUrl: 'https://wx.sogou.com',
+		search: serpSearch('wechat'),
+	},
+	{
+		id: 'toutiao',
+		langs: ['zh'],
+		primary: 'zh',
+		label: '今日头条',
+		description: '今日头条站内搜索，无需 Key；结果来自页面内嵌 JSON。',
+		envName: '',
+		keyMode: 'none',
+		free: true,
+		defaultBaseUrl: 'https://so.toutiao.com',
+		search: serpSearch('toutiao'),
+	},
+	{
+		id: 'baidu',
+		langs: ['zh', 'en'],
+		primary: 'zh',
+		label: '百度千帆',
+		description: '百度千帆 AI 搜索，需要 BAIDU_API_KEY；web_search 与 chat 两个端点分开计额度。',
+		envName: 'BAIDU_API_KEY',
+		keyMode: 'required',
+		free: false,
+		defaultBaseUrl: 'https://qianfan.baidubce.com',
+		search: searchBaiduQianfan,
+	},
+	{
+		id: 'kimi',
+		langs: ['zh', 'en'],
+		primary: 'zh',
+		label: 'Kimi',
+		description: 'Moonshot 搜索工具，需要 MOONSHOT_API_KEY；返回带正文片段的搜索结果。',
+		envName: 'MOONSHOT_API_KEY',
+		keyMode: 'required',
+		free: false,
+		defaultBaseUrl: 'https://api.moonshot.cn',
+		search: searchKimi,
+	},
+	{
+		id: 'perplexity',
+		langs: ['en'],
+		primary: 'en',
+		label: 'Perplexity',
+		description: 'Perplexity sonar，需要 PERPLEXITY_API_KEY；带答案与引用链接，按次计费。',
+		envName: 'PERPLEXITY_API_KEY',
+		keyMode: 'required',
+		free: false,
+		defaultBaseUrl: 'https://api.perplexity.ai',
+		search: searchPerplexity,
+	},
+	{
+		id: 'metaso',
+		langs: ['zh'],
+		primary: 'zh',
+		label: 'Metaso',
+		description: '秘塔搜索，需要 METASO_API_KEY；按次计费，中文资料覆盖好。',
+		envName: 'METASO_API_KEY',
+		keyMode: 'required',
+		free: false,
+		defaultBaseUrl: 'https://metaso.cn',
+		search: searchMetaso,
+	},
+	{
+		id: 'google',
+		langs: ['zh', 'en'],
+		primary: '',
+		label: 'Google CSE',
+		description: 'Google 可编程搜索；Key 填 API_KEY:CX，免费额度 100 次/天。',
+		envName: 'GOOGLE_CSE_API_KEY',
+		keyMode: 'required',
+		free: false,
+		defaultBaseUrl: 'https://www.googleapis.com',
+		search: searchGoogleCse,
+	},
+	{
+		id: 'yandex',
+		langs: ['zh', 'en'],
+		primary: '',
+		label: 'Yandex',
+		description: 'Yandex Cloud 搜索；Key 填 API_KEY:FOLDER_ID，返回 XML 文档。',
+		envName: 'YANDEX_API_KEY',
+		keyMode: 'required',
+		free: false,
+		defaultBaseUrl: 'https://searchapi.api.cloud.yandex.net',
+		search: searchYandex,
+	},
+	{
+		id: 'aliyun',
+		langs: ['zh', 'en'],
+		primary: 'zh',
+		label: '阿里云百炼',
+		description: 'DashScope EnhancedSearch（MCP over HTTP），需要 DASHSCOPE_API_KEY。',
+		envName: 'DASHSCOPE_API_KEY',
+		keyMode: 'required',
+		free: false,
+		defaultBaseUrl: 'https://dashscope.aliyuncs.com',
+		search: searchAliyun,
+	},
+	{
+		id: 'doubao',
+		langs: ['zh'],
+		primary: 'zh',
+		label: '豆包',
+		description: '火山引擎豆包网页搜索，需要 DOUBAO_SEARCH_API_KEY；免费档每月 500 次。',
+		envName: 'DOUBAO_SEARCH_API_KEY',
+		keyMode: 'required',
+		free: false,
+		defaultBaseUrl: 'https://open.feedcoopapi.com',
+		search: searchDoubao,
+	},
+	{
+		id: 'yuanbao',
+		langs: ['zh'],
+		primary: 'zh',
+		label: '腾讯元宝',
+		description: '腾讯元宝 SearchPro，需要 TENCENTCLOUD_WSA_APIKEY。',
+		envName: 'TENCENTCLOUD_WSA_APIKEY',
+		keyMode: 'required',
+		free: false,
+		defaultBaseUrl: 'https://api.wsa.cloud.tencent.com',
+		search: searchYuanbao,
+	},
+	{
+		id: 'serpbase',
+		langs: ['en'],
+		primary: 'en',
+		label: 'SerpBase',
+		description: 'SerpBase Google SERP API，需要 SERPBASE_API_KEY。',
+		envName: 'SERPBASE_API_KEY',
+		keyMode: 'required',
+		free: false,
+		defaultBaseUrl: 'https://api.serpbase.dev',
+		search: searchSerpbase,
+	},
+	{
+		id: 'serply',
+		langs: ['en'],
+		primary: 'en',
+		label: 'Serply',
+		description: 'Serply Google SERP API，需要 SERPLY_API_KEY。',
+		envName: 'SERPLY_API_KEY',
+		keyMode: 'required',
+		free: false,
+		defaultBaseUrl: 'https://api.serply.io',
+		search: searchSerply,
+	},
+	{
+		id: 'outcrawl',
+		langs: ['en'],
+		primary: 'en',
+		label: 'Outcrawl',
+		description: 'Outcrawl 搜索 API，需要 OUTCRAWL_API_KEY。',
+		envName: 'OUTCRAWL_API_KEY',
+		keyMode: 'required',
+		free: false,
+		defaultBaseUrl: 'https://api.outcrawl.ai',
+		search: searchOutcrawl,
+	},
+	{
+		id: 'tinyfish',
+		langs: ['en'],
+		primary: 'en',
+		label: 'TinyFish',
+		description: 'TinyFish 搜索 API，需要 TINYFISH_API_KEY；支持 after_date。',
+		envName: 'TINYFISH_API_KEY',
+		keyMode: 'required',
+		free: false,
+		defaultBaseUrl: 'https://api.search.tinyfish.ai',
+		search: searchTinyfish,
+	},
+	{
+		id: 'degoog',
+		langs: ['zh', 'en'],
+		primary: '',
+		label: 'DegOog',
+		description: '自建 DegOog/MetaGer 实例；填实例地址即可，Key 可选。',
+		envName: 'DEGOOG_API_KEY',
+		keyMode: 'optional',
+		free: true,
+		defaultBaseUrl: '',
+		search: searchDegoog,
+	},
+	{
+		id: 'openai',
+		langs: ['en'],
+		primary: 'en',
+		label: 'OpenAI',
+		description: 'OpenAI Responses 内置 web_search；按次计费，不参与智能路由。',
+		envName: 'OPENAI_API_KEY',
+		keyMode: 'required',
+		free: false,
+		autoExcluded: true,
+		defaultBaseUrl: 'https://api.openai.com/v1',
+		search: searchOpenai,
+	},
+	{
+		id: 'gemini',
+		langs: ['en'],
+		primary: 'en',
+		label: 'Gemini',
+		description: 'Gemini google_search grounding；按次计费，不参与智能路由。',
+		envName: 'GEMINI_API_KEY',
+		keyMode: 'required',
+		free: false,
+		autoExcluded: true,
+		defaultBaseUrl: 'https://generativelanguage.googleapis.com/v1beta',
+		search: searchGemini,
+	},
+	{
+		id: 'claude',
+		langs: ['en'],
+		primary: 'en',
+		label: 'Claude',
+		description: 'Claude 服务端 web_search；按次计费，不参与智能路由。',
+		envName: 'ANTHROPIC_API_KEY',
+		keyMode: 'required',
+		free: false,
+		autoExcluded: true,
+		defaultBaseUrl: 'https://api.anthropic.com/v1',
+		search: searchClaude,
+	},
+	{
+		id: 'zhihu',
+		langs: ['zh'],
+		primary: 'zh',
+		label: '知乎',
+		description: '知乎开放平台全网搜索（MCP），需要 ZHIHU_API_KEY。',
+		envName: 'ZHIHU_API_KEY',
+		keyMode: 'required',
+		free: false,
+		defaultBaseUrl: 'https://developer.zhihu.com',
+		search: searchZhihu,
+	},
 ]
+
+/**
+ * Build the adapter for one HTML SERP engine.
+ *
+ * @param {string} id - Engine id.
+ * @returns {Function} Channel search function.
+ */
+function serpSearch(id) {
+	const engine = SERP_ENGINE_BY_ID.get(id)
+	return async (options) => await searchSerp(engine, options)
+}
 
 /** Channel lookup by id. */
 export const SEARCH_CHANNEL_BY_ID = new Map(SEARCH_CHANNELS.map((channel) => [channel.id, channel]))
@@ -1049,12 +1378,12 @@ function parseParallelMcpSources(text, limit) {
  * @param {object} options - Query, base URL, signal, fetch.
  * @returns {Promise<{sources: object[]}>} Sources.
  */
-async function searchBing({ query, maxResults, timeRange = '', baseUrl, signal, fetchImpl }) {
+async function searchBing({ query, maxResults, timeRange = '', safeSearch = true, baseUrl, signal, fetchImpl }) {
 	const limit = clampCount(maxResults, 10, 1, 20)
 	const url = new URL(joinUrl(baseOf(baseUrl, 'https://www.bing.com'), '/search'))
 	url.searchParams.set('q', query)
 	url.searchParams.set('count', String(limit))
-	url.searchParams.set('adlt', 'off')
+	url.searchParams.set('adlt', safeSearch === false ? 'off' : 'strict')
 	const ez = { day: 'ez1', week: 'ez2', month: 'ez3' }[timeRange]
 	if (ez !== undefined) url.searchParams.set('filters', `ex1:"${ez}"`)
 	const html = await fetchHtmlWithRetry(fetchImpl, url, 'Bing', signal)
@@ -1131,12 +1460,12 @@ function parseDdgLite(html, limit) {
  * @param {object} options - Query, base URL, signal, fetch.
  * @returns {Promise<{sources: object[]}>} Sources.
  */
-async function searchDdg({ query, maxResults, timeRange = '', baseUrl, signal, fetchImpl }) {
+async function searchDdg({ query, maxResults, timeRange = '', safeSearch = true, baseUrl, signal, fetchImpl }) {
 	const limit = clampCount(maxResults, 10, 1, 20)
 	const base = baseOf(baseUrl, 'https://html.duckduckgo.com')
 	const htmlUrl = new URL(joinUrl(base, '/html/'))
 	htmlUrl.searchParams.set('q', query)
-	htmlUrl.searchParams.set('adlt', '-1')
+	htmlUrl.searchParams.set('kp', safeSearch === false ? '-1' : '1')
 	const df = { day: 'd', week: 'w', month: 'm', year: 'y' }[timeRange]
 	if (df !== undefined) htmlUrl.searchParams.set('df', df)
 	let htmlError
@@ -1153,7 +1482,7 @@ async function searchDdg({ query, maxResults, timeRange = '', baseUrl, signal, f
 		const liteBase = textOf(baseUrl) === '' ? 'https://lite.duckduckgo.com' : base
 		const liteUrl = new URL(joinUrl(liteBase, '/lite/'))
 		liteUrl.searchParams.set('q', query)
-		liteUrl.searchParams.set('adlt', '-1')
+		liteUrl.searchParams.set('kp', safeSearch === false ? '-1' : '1')
 		if (df !== undefined) liteUrl.searchParams.set('df', df)
 		try {
 			const html = await fetchHtmlWithRetry(fetchImpl, liteUrl, 'DuckDuckGo Lite', signal)

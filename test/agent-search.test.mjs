@@ -5,6 +5,7 @@ import {
 	createAdvancedSearchTool,
 	createMultiSearchTool,
 	createFreeSearchTestTool,
+	createResearchTool,
 	createWebSearchProvider,
 	createWebSearchTool,
 	registerAgentSearch,
@@ -128,7 +129,7 @@ test('free_search_test reports each channel and honours the engine filter', asyn
 })
 
 test('registerAgentSearch registers the provider, tools and provider takeover', async () => {
-	const registered = { providers: [], tools: [], mutations: [] }
+	const registered = { providers: [], fetchProviders: [], tools: [], mutations: [] }
 	const web = {
 		config: { searchProvider: { get: () => 'deepseek-search-api' } },
 		fetchProviderId: 'fs-quality-fetch',
@@ -136,10 +137,18 @@ test('registerAgentSearch registers the provider, tools and provider takeover', 
 			registered.providers.push(provider)
 			return () => {}
 		},
+		registerFetchProvider(provider) {
+			registered.fetchProviders.push(provider)
+			return () => {}
+		},
 	}
 	const settings = {
 		async mutate(namespace, ops) {
 			registered.mutations.push({ namespace, ops })
+			for (const op of ops) {
+				if (op.path[0] === 'searchProvider') web.config.searchProvider = { get: () => op.value }
+				if (op.path[0] === 'fetchProvider') web.fetchProviderId = op.value
+			}
 		},
 	}
 	const tools = {
@@ -177,12 +186,14 @@ test('registerAgentSearch registers the provider, tools and provider takeover', 
 	await new Promise((resolve) => setTimeout(resolve, 0))
 	assert.equal(registered.providers.length, 1)
 	assert.equal(registered.providers[0].id, WEB_SEARCH_PROVIDER_ID)
+	assert.equal(registered.fetchProviders.length, 1)
+	assert.equal(registered.fetchProviders[0].id, 'dsh-manager-fetch')
 	assert.deepEqual(registered.tools.map((tool) => tool.name), ['web_search', 'advanced_search', 'multi_search', 'platform_search', 'domain_search', 'weather', 'video_search', 'research', 'cache_search', 'free_search_test'])
 	assert.deepEqual(registered.mutations, [{
 		namespace: 'web',
 		ops: [
 			{ op: 'set', path: ['searchProvider'], value: WEB_SEARCH_PROVIDER_ID },
-			{ op: 'set', path: ['fetchProvider'], value: 'http' },
+			{ op: 'set', path: ['fetchProvider'], value: 'dsh-manager-fetch' },
 		],
 	}])
 
@@ -192,4 +203,68 @@ test('registerAgentSearch registers the provider, tools and provider takeover', 
 	await assert.rejects(byName.get('platform_search').execute({ platform: 'nope', query: 'x' }), /unknown platform/)
 	const domain = await byName.get('domain_search').execute({ engine: 'nope', query: 'x' })
 	assert.match(domain.error, /unknown engine/)
+})
+
+test('a tool value never carries a lone surrogate', async () => {
+	const search = {
+		async search() {
+			return {
+				sources: [{ url: 'https://a.example/1', title: 'bad \ud83d title', snippet: 'x \udc00' }],
+				content: '',
+			}
+		},
+	}
+	const tool = createWebSearchTool({ search })
+	const value = await tool.execute({ queries: ['x'] })
+	assert.equal(value.sources[0].title.includes('\ud83d'), false)
+	assert.equal(value.sources[0].snippet.includes('\udc00'), false)
+	assert.match(value.sources[0].title, /\uFFFD/)
+})
+
+/**
+ * Walk a value against a JSON Schema and fail on undeclared fields.
+ *
+ * The Host validates tool output strictly, so a field the service adds without
+ * a schema entry makes every call fail at runtime. This catches that drift.
+ *
+ * @param {object} schema - JSON Schema.
+ * @param {unknown} value - Tool value.
+ * @param {string} [path] - Where the walker is.
+ * @returns {void}
+ */
+function assertSchemaAllows(schema, value, path = 'value') {
+	if (value === null || typeof value !== 'object') return
+	if (Array.isArray(value)) {
+		for (let index = 0; index < value.length; index += 1) {
+			if (schema?.items !== undefined) assertSchemaAllows(schema.items, value[index], `${path}[${index}]`)
+		}
+		return
+	}
+	const properties = schema?.properties ?? {}
+	for (const [key, item] of Object.entries(value)) {
+		assert.ok(properties[key] !== undefined, `${path}.${key} is not declared in the tool schema`)
+		assertSchemaAllows(properties[key], item, `${path}.${key}`)
+	}
+}
+
+test('the research tool schema declares every field the service returns', async () => {
+	const { createResearchService } = await import('../src/research.js')
+	const research = createResearchService({
+		search: {
+			async search() {
+				return {
+					sources: [
+						{ url: 'https://example.com/1', title: 'One', snippet: 's' },
+						{ url: 'https://example.org/2', title: 'Two', snippet: 's', publishedAt: '2026-01-01' },
+					],
+				}
+			},
+		},
+		fetchPage: async () => { throw new Error('blocked') },
+	})
+	const tool = createResearchTool({ research })
+	const value = await tool.execute({ question: 'schema drift', depth: 1 })
+	assertSchemaAllows(tool.output.schema, value)
+	assert.equal(value.quality.failed, 2)
+	assert.equal(value.quality.degraded, true)
 })

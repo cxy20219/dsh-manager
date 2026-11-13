@@ -14,6 +14,9 @@ import { dirname } from 'node:path'
 /** The port the LAN listener uses when the settings name none. */
 export const DEFAULT_LAN_PORT = 8443
 
+/** Most domain rules the settings keep. */
+export const MAX_BLOCKED_DOMAINS = 200
+
 /**
  * Turn arbitrary JSON into the settings shape the manager assumes.
  *
@@ -56,8 +59,12 @@ export function normalizeSettings(raw, defaults) {
 			// One row per search channel: the switch and an optional base URL.
 			// API keys are credentials, never settings, so they are not here.
 			channels: normalizeSearchChannels(search.channels, defaults.search?.channels),
-			mode: search.mode === 'fallback' ? 'fallback' : 'merge',
+			mode: search.mode === 'fallback' || search.mode === 'auto' ? search.mode : 'merge',
 			order: normalizeSearchOrder(search.order, defaults.search?.order),
+			safeSearch: search.safeSearch !== false,
+			cooldowns: normalizeCooldowns(search.cooldowns),
+			blockedDomains: normalizeBlockedDomains(search.blockedDomains),
+			freeFallbackSeeded: search.freeFallbackSeeded === true,
 		},
 	}
 }
@@ -114,6 +121,67 @@ function normalizeSearchOrder(stored, defaults) {
 		order.push(id)
 	}
 	return order
+}
+
+/**
+ * Normalize persisted channel cooldowns.
+ *
+ * The manager keeps cooldowns in memory for fast reads and mirrors the live
+ * ones here so a restart does not immediately re-hit a channel that just
+ * failed. Expired and malformed entries are dropped instead of resurfacing.
+ *
+ * @param {unknown} value - Stored cooldown map.
+ * @returns {Record<string, {until: number, code: string}>} The live entries.
+ */
+export function normalizeCooldowns(value) {
+	if (value === null || typeof value !== 'object' || Array.isArray(value)) return {}
+	const now = Date.now()
+	const cooldowns = {}
+	for (const [id, entry] of Object.entries(value)) {
+		if (!/^[a-z][a-z0-9-]*$/.test(id)) continue
+		const until = Number(entry?.until)
+		if (!Number.isFinite(until) || until <= now) continue
+		cooldowns[id] = {
+			until: Math.floor(until),
+			code: typeof entry?.code === 'string' ? entry.code.slice(0, 40) : 'unknown',
+		}
+	}
+	return cooldowns
+}
+
+/**
+ * Normalize the operator's domain blocklist into bare hostnames.
+ *
+ * Pasting a full URL is the common mistake; accept it and strip the scheme,
+ * path, port and a leading `www.` so matching stays a plain suffix test. Rules
+ * that are not plausible hostnames are dropped rather than kept as dead
+ * entries. Matching semantics live in the search manager: a rule blocks its
+ * own host and every subdomain.
+ *
+ * @param {unknown} value - Stored rules.
+ * @returns {string[]} Unique bare hostnames, in the entered order.
+ */
+export function normalizeBlockedDomains(value) {
+	if (!Array.isArray(value)) return []
+	const domains = []
+	const seen = new Set()
+	for (const raw of value) {
+		if (typeof raw !== 'string') continue
+		let host = raw.trim().toLowerCase()
+		if (host === '') continue
+		host = host.replace(/^[a-z][a-z0-9+.-]*:\/\//, '')
+		const cut = host.search(/[/?#]/)
+		if (cut >= 0) host = host.slice(0, cut)
+		const colon = host.lastIndexOf(':')
+		if (colon >= 0 && /^\d+$/.test(host.slice(colon + 1))) host = host.slice(0, colon)
+		host = host.replace(/^www\./, '').replace(/\.+$/, '')
+		if (host === '' || host.startsWith('.') || !/^[a-z0-9][a-z0-9.-]*$/.test(host)) continue
+		if (seen.has(host)) continue
+		seen.add(host)
+		domains.push(host)
+		if (domains.length >= MAX_BLOCKED_DOMAINS) break
+	}
+	return domains
 }
 
 /**
@@ -211,6 +279,7 @@ export class SettingsStore {
 	#state
 	#loaded = false
 	#chain = Promise.resolve()
+	#listeners = new Set()
 
 	/**
 	 * @param {{path: string, defaults: object, logger?: object}} options - Store options.
@@ -250,6 +319,37 @@ export class SettingsStore {
 	}
 
 	/**
+	 * Subscribe to committed changes.
+	 *
+	 * Listeners run after the document is persisted, so a throwing listener
+	 * cannot leave memory and disk disagreeing. The manager's system-prompt
+	 * section uses this to follow the search switches.
+	 *
+	 * @param {(state: object) => void} listener - Called with the new state.
+	 * @returns {() => void} Unsubscribe.
+	 */
+	onChange(listener) {
+		if (typeof listener !== 'function') return () => {}
+		this.#listeners.add(listener)
+		return () => { this.#listeners.delete(listener) }
+	}
+
+	/**
+	 * Notify subscribers; one failing listener must not stop the rest.
+	 *
+	 * @returns {void}
+	 */
+	#notify() {
+		for (const listener of this.#listeners) {
+			try {
+				listener(this.#state)
+			} catch (error) {
+				this.#logger?.warn?.(`dsh-manager: 设置变更回调失败（${error instanceof Error ? error.message : String(error)}）`)
+			}
+		}
+	}
+
+	/**
 	 * Apply one change and persist it, serialized with other writes.
 	 *
 	 * @param {(draft: object) => object | Promise<object>} mutate - Mutates a draft; returning a value replaces the draft.
@@ -261,6 +361,7 @@ export class SettingsStore {
 			const next = (await mutate(draft)) ?? draft
 			this.#state = normalizeSettings(next, this.#defaults)
 			await this.#save()
+			this.#notify()
 			return this.#state
 		})
 		this.#chain = run.catch(() => {})
