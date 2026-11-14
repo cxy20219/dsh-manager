@@ -8,7 +8,8 @@
  * @module dsh-manager/remote
  */
 
-import { PROVIDER_NAME } from './skills.js'
+import { legacyCreate, legacyRead, legacySnapshot, legacyToggle } from './skills-adapter.js'
+import { KERNEL_EXTERNAL_PROVIDER } from './skills-kernel.js'
 
 /** The endpoints the panel may call. */
 export const ENDPOINTS = [
@@ -41,10 +42,10 @@ export const ENDPOINTS = [
 /**
  * Build the endpoint handler.
  *
- * @param {{skills: object, mcp: object, modes?: object, lan?: object, settings?: object, version: string, dataDir: string, registry?: object, search?: object}} deps - Services the endpoints use.
+ * @param {{mcp: object, modes?: object, lan?: object, settings?: object, version: string, dataDir: string, registry?: object, search?: object}} deps - Services the endpoints use.
  * @returns {(endpoint: string, payload: unknown) => Promise<object>} The handler.
  */
-export function createManagerHandler({ skills, mcp, modes, lan, settings, version, dataDir, registry, search }) {
+export function createManagerHandler({ mcp, modes, lan, settings, version, dataDir, registry, search, kernel }) {
 	/**
 	 * The catalog the agent is actually offered, projected against this scan.
 	 *
@@ -66,7 +67,9 @@ export function createManagerHandler({ skills, mcp, modes, lan, settings, versio
 			const present = new Set()
 			for (const summary of summaries) {
 				present.add(summary.name)
-				if (summary.provider === PROVIDER_NAME) managed += 1
+				// Both the kernel's overlay provider and its agent-scoped twin count
+				// as "managed by this plugin"; anything else is another provider's.
+				if (summary.provider === KERNEL_EXTERNAL_PROVIDER) managed += 1
 				else external.push(summary.name)
 				if (summary.invocation?.modelInvocable !== false) visible += 1
 			}
@@ -99,12 +102,16 @@ export function createManagerHandler({ skills, mcp, modes, lan, settings, versio
 	 * @returns {Promise<object>} The overview.
 	 */
 	async function overview() {
-		const snapshot = await skills.snapshot()
+		const snapshot = await legacySnapshot()
 		return {
 			version,
 			dataDir,
 			skills: snapshot,
 			catalog: await catalogOf(snapshot),
+			// Whether the vendored skill kernel mounted and how many routes it
+			// handed to the Host. A mounted kernel with zero routes is the failure
+			// mode that would otherwise look like "no skills".
+			kernel: kernel === undefined ? { mounted: false, routes: 0, error: 'not wired' } : { mounted: kernel.mounted, routes: kernel.routes, error: kernel.error },
 			mcp: mcp.describe(),
 			modes: modes === undefined ? { available: false, modes: [] } : modes.status(),
 			lan: lan === undefined ? { enabled: false, running: false, address: '', port: 0, upstream: '', error: '' } : lan.summary(),
@@ -118,26 +125,25 @@ export function createManagerHandler({ skills, mcp, modes, lan, settings, versio
 					return { ok: true, value: await overview() }
 				}
 				case 'skills-refresh': {
-					skills.refresh()
+					// The kernel rescans on every read, so a refresh is just a re-read.
 					return { ok: true, value: await overview() }
 				}
 				case 'skill-toggle': {
-					const category = text(payload, 'category')
-					const name = text(payload, 'name')
-					const enabled = payload?.enabled !== false
-					if (category === '') throw new Error('缺少分类名')
-					if (name === '') await skills.setCategoryEnabled(category, enabled)
-					else await skills.setSkillEnabled(category, name, enabled)
+					await legacyToggle({
+						category: text(payload, 'category'),
+						name: text(payload, 'name'),
+						enabled: payload?.enabled !== false,
+					})
 					return { ok: true, value: await overview() }
 				}
 				case 'skill-read': {
 					return {
 						ok: true,
-						value: await skills.read({ category: text(payload, 'category'), name: text(payload, 'name') }),
+						value: await legacyRead({ category: text(payload, 'category'), name: text(payload, 'name') }),
 					}
 				}
 				case 'skill-create': {
-					const created = await skills.create({
+					const created = await legacyCreate({
 						category: text(payload, 'category'),
 						name: text(payload, 'name'),
 						description: text(payload, 'description'),

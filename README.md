@@ -3,9 +3,12 @@
 DeepSeek Harness Web UI 左侧的一个入口，管理 Agent 运行所需的东西，以及你怎么访问它：
 **技能**、**MCP 服务**、**联网搜索**、**模式**、**局域网访问**。
 
-- **技能** — 扫描 `~/.agents/skills/`，比内置的 filesystem provider 多深入一层：每个目录是一个分类，
-  其下每个子目录是一个技能（`<分类>/<技能>/SKILL.md`）。分类和单个技能都可以单独关闭；被关闭的分类
-  永远不会进入 Agent 的技能目录。技能正文仍按需加载，所以一条目录项只占一个名字和一段描述。
+- **技能** — 自带一套完整的技能管理内核（`skills/`，派生自 `@michengai/dsh-skills-manager`，Apache-2.0）。
+  **不依赖任何其他技能插件**，装这一个就够。内核发现本机 20+ 个 Agent 技能来源（`~/.dsh/skills`、
+  `~/.agents/skills`、Claude Code、Codex、Cursor、Windsurf、Trae、Copilot、Qoder、OpenClaw 等），
+  每个来源可整体启停，单个技能也可启停；同名技能按来源 rank 决胜，其余记为副本而不是重复列出。
+- **技能界面** — 三栏工作台：左栏来源、中栏技能列表（同名副本自动折叠成 `+N`）、右栏详情
+  （简介、token 估算、自定义备注、SKILL.md 正文、源文件路径）。备注只存在本插件，绝不写回 `SKILL.md`。
 - **目录核对** — 技能页还会报告 Agent 的注册表实际提供了什么，把所有 provider 合并后统计
   （`ctx.skills.list`）。顶层技能和内置 provider 因此也会计入总数；管理器认为生效、但注册表里没有的
   技能，会被明确标成「被遮蔽」或「缺失」，而不是悄悄算成已加载。
@@ -30,34 +33,45 @@ DeepSeek Harness Web UI 左侧的一个入口，管理 Agent 运行所需的东�
 
 ## 安装
 
-在本目录下执行：
+在本仓库根目录下执行（把路径换成你自己的检出位置）：
 
 ```bash
-dsh plugin --profile desktop add /Users/chengxinyu/Desktop/AI-work/dsh-manger
+dsh plugin --profile desktop add .
 ```
 
-也可以用 Web UI 里的插件管理器安装。这个 bundle 会插入一行宿主配置（`dsh-manager`）和一个客户端模块；
-不安装任何依赖，所以离线也能装。
+也可以用 Web UI 里的插件管理器安装：先 `npm pack` 打包，再选中生成的 `.tgz`。
+这个 bundle 会插入一行宿主配置（`dsh-manager`）和一个客户端模块。
+运行时只有一个依赖 `fflate`（ZIP 导入用），`pnpm` 会一并装好。
 
 装完后刷新一次网页，入口就出现在左侧栏的其他全局面板旁边。
 
-## 技能目录结构
+## 技能来源与结构
+
+内核自己发现来源，不需要你配置扫描根。用户级来源包括：
 
 ```text
-~/.agents/skills/
-  dev/
-    webapp-testing/SKILL.md
-    flat-skill.md            # 扁平文件也可以
-  office/
-    docx/SKILL.md
-  ego-browser -> …           # 顶层技能，由 filesystem provider 负责
+~/.dsh/skills/            DSH 自己的技能目录（可写、可建、进回收站）
+~/.agents/skills/         公共 Agent 目录（可写）
+~/.claude/skills/         Claude Code
+~/.codex/skills/          Codex
+~/.cursor/skills/         Cursor
+~/.gemini/skills/         Gemini
+~/.copilot/skills/        GitHub Copilot
+~/.windsurf/skills/       Windsurf
+~/.trae/skills/           Trae
+~/.qoder/skills/          Qoder
+~/.openclaw/skills/       OpenClaw
+… 共 20+ 个
 ```
 
-带自己 `SKILL.md` 的目录（顶层技能）和隐藏目录会被跳过。某个技能的 frontmatter 不合法时，面板会跳过它
-并给出解析器的具体原因。如果两个分类里有同名技能，先出现的那个（先按分类顺序，再按文件夹顺序）注册，
-其余显示 `重名，未注册`。
+每个来源下 `<名字>/SKILL.md` 是一个技能，`<名字>.md` 是扁平技能。项目级来源（工作区里的
+`.dsh/skills`、`.agents/skills` 等）由内核单独发现。
 
-provider 以 rank 550 注册，低于 filesystem provider 的用户根目录（500），所以顶层覆盖仍然能赢得重名。
+- **目录不存在就不显示**：面板左栏把未安装的来源单独归到「未安装」，不占主列表。
+- **同名技能只显示生效的那一个**：多个来源有同名副本时，按来源 rank 决胜，其余折叠成 `+N` 标记，
+  不重复占行。内核以 overlay provider 注册（rank 399–500），确保停用动作真的生效。
+- **解析失败的技能默认不显示**：想看到它们就勾选「显示异常项」。
+- **状态目录**：`~/.dsh/manager/skills/`（`state.json` 与 `trash/`），与任何其他技能插件的状态分开。
 
 ## MCP 服务
 
@@ -225,12 +239,15 @@ Harness 的 web 服务只拥有一个监听器，并且绑定回环地址；内�
 | 内容 | 位置 |
 |---|---|
 | 管理器设置（0600） | `<DSH_HOME>/manager/settings.json`，默认 `~/.dsh/manager/settings.json` |
+| 技能内核状态（启停、分类、备注） | `<DSH_HOME>/manager/skills/state.json` |
+| 技能回收站 | `<DSH_HOME>/manager/skills/trash/` |
+| 技能操作日志 | `<DSH_HOME>/manager/skills/skills.log` |
 | 局域网开关、端口与加密开关 | 同一个文件里的 `lan` 段 |
 | TLS 材质（私钥 0600） | `<DSH_HOME>/manager/lan-access/tls/` |
 | 局域网访问日志 | `<DSH_HOME>/manager/lan-access/access.log` |
 | MCP 环境变量值 | 宿主凭证库，记录 `dsh-manager/<服务 id>` |
 | 搜索渠道 API Key | 宿主凭证库，记录 `dsh-manager/search-<渠道>` |
-| 技能文件 | `~/.agents/skills/`（已配置的扫描根目录的顶层） |
+| 技能文件 | 内核发现的各 Agent 来源（`~/.dsh/skills/`、`~/.agents/skills/` 等），只在可写来源里创建 |
 
 在该行配置里填一个绝对路径 `dataDir` 可以改设置目录的位置。插件不会改写 profile 的 patch 文件。
 
@@ -278,16 +295,19 @@ Harness 的 web 服务只拥有一个监听器，并且绑定回环地址；内�
 ## 开发
 
 ```bash
-npm test          # frontmatter、分类扫描、MCP 客户端、二维码编码器、局域网代理、联网搜索、模式、宿主接线、面板渲染
+npm test                 # frontmatter、技能内核接线与投影、MCP 客户端、二维码编码器、局域网代理、联网搜索、模式、宿主接线、面板渲染
+npm run check:vendored   # 校验 skills/ 与钉住的哈希一致（手改或升级上游后跑 --update 重钉）
 ```
 
 源码地图：
 
 | 文件 | 职责 |
 |---|---|
-| `index.js` | 宿主入口：技能 provider、MCP、模式、搜索、局域网监听与 `/api/manager` 路由 |
+| `index.js` | 宿主入口：技能内核挂载、MCP、模式、搜索、局域网监听与 `/api/manager` 路由 |
 | `src/frontmatter.js` | `SKILL.md` frontmatter 子集解析器 |
-| `src/skills.js` | 分类扫描、`ctx.skills` provider、开关、创建 |
+| `skills/` | **自带的技能内核**（派生自 `@michengai/dsh-skills-manager`，见 `skills/NOTICE`）：来源发现、扫描、虚拟分类、回收站、导入导出、仓库订阅、项目作用域。44 条内核路由与下面的面板端点共用 `/api/manager` |
+| `src/skills-kernel.js` | 把内核挂到这个插件的上下文上：收窄可见服务、补齐 Host 要求的 `requestBody`、`create_skill` 撞名时降级而不是中断挂载 |
+| `src/skills-adapter.js` | 把内核的按来源快照投影成面板沿用的 `categories` 形状，旧端点因此不必知道内核的数据结构 |
 | `src/mcp-client.js` | 无依赖的 stdio MCP 客户端与工具命名约定 |
 | `src/mcp.js` | 服务行、连接、工具注册、基于凭证库的环境变量 |
 | `src/lan-access.js` | 局域网地址探测、自签证书、HTTPS 反向代理 |

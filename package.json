@@ -2,7 +2,7 @@
   "name": "dsh-manager",
   "version": "0.1.0",
   "private": true,
-  "description": "Manager panel for the DeepSeek Harness: hierarchical skill categories under ~/.agents/skills, stdio MCP servers, per-channel web search (keyless engines, independent switches and keys, merge/fallback modes, cooldowns and cache), agent modes, and LAN access.",
+  "description": "Manager panel for the DeepSeek Assistant: one self-contained skill workspace over every agent on this machine (vendored kernel, no extra plugin required), stdio MCP servers, per-channel web search (keyless engines, independent switches and keys, merge/fallback modes, cooldowns and cache), agent modes, and LAN access.",
   "type": "module",
   "main": "./index.js",
   "exports": {
@@ -16,13 +16,15 @@
     "index.js",
     "client.js",
     "src",
+    "skills",
     "cordis.patch.yml",
     "locale/*.json",
     "icon.svg",
     "README.md"
   ],
   "scripts": {
-    "test": "node --test \"test/*.test.mjs\""
+    "test": "node --test \"test/*.test.mjs\"",
+    "check:vendored": "node scripts/check-vendored.mjs"
   },
   "engines": {
     "node": ">=22"
@@ -42,5 +44,8 @@
         "@deepseek-ai/dsh-client-connection"
       ]
     }
+  },
+  "dependencies": {
+    "fflate": "^0.8.3"
   }
 }

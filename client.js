@@ -33,6 +33,73 @@ window.__ModuleLoader__.load({
 			'tab.skills': '技能',
 			'tab.mcp': 'MCP',
 			'tab.search': '联网搜索',
+			'skx.tab.installed': '已安装',
+			'skx.tab.project': '项目技能',
+			'skx.tab.discover': '发现技能',
+			'skx.tab.trash': '回收站',
+			'skx.sources': '来源',
+			'skx.missingSources': '未安装的来源',
+			'skx.noSources': '没有检测到任何技能目录。',
+			'skx.noWorkspaces': '还没有登记的工作区。先在侧栏添加一个工作区。',
+			'skx.workspaceNoSkills': '这个工作区里还没有技能。',
+			'skx.workspaceUnavailable': '目录不可用',
+			'skx.projectHint': '按工作区查看项目级技能，只读。',
+			'skx.projectReadOnly': '项目技能在项目目录里维护，这里只做浏览。',
+			'skx.search': '搜索名称、简介或备注',
+			'skx.searchAction': '搜索',
+			'skx.showBroken': '显示异常项',
+			'skx.toggleSource': '开启或关闭整个来源',
+			'skx.toggleSkill': '开启或关闭这个技能',
+			'skx.enabled': '已启用',
+			'skx.disabled': '已停用',
+			'skx.noSkills': '这个来源里还没有技能。',
+			'skx.noMatch': '没有匹配的技能。',
+			'skx.pickSkill': '从左侧选择一个技能，这里显示它的简介、备注和正文。',
+			'skx.copiesTip': '另有 {n} 处同名副本（来自其他来源，未重复列出）',
+			'skx.manualOnly': '仅手动',
+			'skx.broken': '解析失败',
+			'skx.noDescription': '未提供简介',
+			'skx.description': '简介',
+			'skx.tokenDesc': '简介 token',
+			'skx.tokenBody': '正文 token',
+			'skx.descTokensTip': '简介常驻系统提示词，按估算值显示',
+			'skx.bodyTokensTip': '正文只在调用技能时加载，按估算值显示',
+			'skx.note': '自定义备注',
+			'skx.editNote': '编辑',
+			'skx.notePlaceholder': '记录这个技能是做什么的、什么时候用…',
+			'skx.noNote': '还没有备注。备注只存在本插件里，不会写回 SKILL.md。',
+			'skx.save': '保存',
+			'skx.body': 'SKILL.md 正文',
+			'skx.copyBody': '复制正文',
+			'skx.copied': '已复制',
+			'skx.path': '源文件',
+			'skx.discoverHint': '从 ClawHub 榜单或搜索安装技能。',
+			'skx.sortDownloads': '按下载',
+			'skx.sortInstalls': '按安装',
+			'skx.sortStars': '按星标',
+			'skx.sortRecent': '最近更新',
+			'skx.backToChart': '回到榜单',
+			'skx.trash': '移到回收站',
+			'skx.trashConfirm': '确认移入',
+			'skx.confirmTrashTitle': '把「{name}」移到回收站？',
+			'skx.confirmTrashDesc': '技能会从当前来源移入回收站，之后可以在回收站里恢复到原位。源文件不会被直接删除。',
+			'skx.deleteUnavailable': '这个来源是只读的，不能删除里面的技能。',
+			'skx.discoverSearch': '搜索技能名、关键词…',
+			'skx.discoverEmpty': '还没有结果。换一个关键词，或在上方搜索。',
+			'skx.discoverNone': '没有搜索到匹配的技能。',
+			'skx.discoverPick': '选择一个技能查看它的简介和正文，然后安装。',
+			'skx.install': '安装',
+			'skx.installTo': '安装到',
+			'skx.installed': '已安装：{name}',
+			'skx.preview': '预览',
+			'skx.downloads': '{n} 次下载',
+			'skx.installs': '{n} 次安装',
+			'skx.trashHint': '删除的技能先进回收站，可以恢复。',
+			'skx.trashEmpty': '回收站是空的。',
+			'skx.trashFrom': '来自 {root}',
+			'skx.restore': '恢复',
+			'skx.purge': '永久删除',
+			'skx.footer': '{n} 个来源已安装 · {m} 个未安装',
 			'action.refresh': '重新扫描',
 			'action.close': '关闭',
 			'action.cancel': '取消',
@@ -284,6 +351,73 @@ window.__ModuleLoader__.load({
 			'tab.skills': 'Skills',
 			'tab.mcp': 'MCP',
 			'tab.search': 'Web search',
+			'skx.tab.installed': 'Installed',
+			'skx.tab.project': 'Project skills',
+			'skx.tab.discover': 'Discover',
+			'skx.tab.trash': 'Trash',
+			'skx.sources': 'Sources',
+			'skx.missingSources': 'Not installed',
+			'skx.noSources': 'No skill directory was found.',
+			'skx.noWorkspaces': 'No workspace is registered yet. Add one in the sidebar first.',
+			'skx.workspaceNoSkills': 'This workspace has no skills yet.',
+			'skx.workspaceUnavailable': 'Directory unavailable',
+			'skx.projectHint': 'Browse project-scoped skills per workspace. Read-only.',
+			'skx.projectReadOnly': 'Project skills are maintained in the project directory; this view only browses them.',
+			'skx.search': 'Search name, description or note',
+			'skx.searchAction': 'Search',
+			'skx.showBroken': 'Show broken',
+			'skx.toggleSource': 'Turn the whole source on or off',
+			'skx.toggleSkill': 'Turn this skill on or off',
+			'skx.enabled': 'On',
+			'skx.disabled': 'Off',
+			'skx.noSkills': 'This source has no skills yet.',
+			'skx.noMatch': 'No matching skills.',
+			'skx.pickSkill': 'Pick a skill on the left to see its description, note and body.',
+			'skx.copiesTip': '{n} more copies exist in other sources and are not repeated here',
+			'skx.manualOnly': 'Manual only',
+			'skx.broken': 'Unparseable',
+			'skx.noDescription': 'No description',
+			'skx.description': 'Description',
+			'skx.tokenDesc': 'description tokens',
+			'skx.tokenBody': 'body tokens',
+			'skx.descTokensTip': 'The description stays in the system prompt; shown as an estimate',
+			'skx.bodyTokensTip': 'The body loads only when the skill is invoked; shown as an estimate',
+			'skx.note': 'Custom note',
+			'skx.editNote': 'Edit',
+			'skx.notePlaceholder': 'Record what this skill does and when to use it…',
+			'skx.noNote': 'No note yet. Notes stay in this plugin and never touch SKILL.md.',
+			'skx.save': 'Save',
+			'skx.body': 'SKILL.md body',
+			'skx.copyBody': 'Copy body',
+			'skx.copied': 'Copied',
+			'skx.path': 'Source file',
+			'skx.discoverHint': 'Install skills from the ClawHub chart or a search.',
+			'skx.sortDownloads': 'Downloads',
+			'skx.sortInstalls': 'Installs',
+			'skx.sortStars': 'Stars',
+			'skx.sortRecent': 'Recent',
+			'skx.backToChart': 'Back to chart',
+			'skx.trash': 'Move to trash',
+			'skx.trashConfirm': 'Move to trash',
+			'skx.confirmTrashTitle': 'Move “{name}” to the trash?',
+			'skx.confirmTrashDesc': 'The skill moves from its source into the trash and can be restored to the same place later. The source file is not deleted outright.',
+			'skx.deleteUnavailable': 'This source is read-only, so its skills cannot be deleted.',
+			'skx.discoverSearch': 'Search skill name or keyword…',
+			'skx.discoverEmpty': 'No results yet. Try another keyword or search above.',
+			'skx.discoverNone': 'No matching skill was found.',
+			'skx.discoverPick': 'Pick a skill to preview its description and body, then install it.',
+			'skx.install': 'Install',
+			'skx.installTo': 'Install to',
+			'skx.installed': 'Installed: {name}',
+			'skx.preview': 'Preview',
+			'skx.downloads': '{n} downloads',
+			'skx.installs': '{n} installs',
+			'skx.trashHint': 'A deleted skill goes to the trash first and can be restored.',
+			'skx.trashEmpty': 'The trash is empty.',
+			'skx.trashFrom': 'From {root}',
+			'skx.restore': 'Restore',
+			'skx.purge': 'Delete forever',
+			'skx.footer': '{n} sources installed · {m} not installed',
 			'action.refresh': 'Rescan',
 			'action.close': 'Close',
 			'action.cancel': 'Cancel',
@@ -741,6 +875,135 @@ window.__ModuleLoader__.load({
 			'.mgrSearchAnswer{margin-bottom:14px;padding:10px 12px;border:1px solid var(--dsw-alias-border-l2);border-left:3px solid var(--dsw-alias-state-business-primary);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-1)}',
 			'.mgrSearchAnswerTitle{margin-bottom:4px;font-size:11.5px;font-weight:600;color:var(--dsw-alias-label-secondary)}',
 			'.mgrSearchAnswerBody{max-height:220px;overflow:auto;font-size:12px;line-height:1.65;color:var(--dsw-alias-label-secondary);white-space:pre-wrap;word-break:break-word}',
+
+			/* ---- skill workspace: GitHub-flavoured, larger type ---------- */
+			'.skxRoot{--skx-line:#30363d;--skx-line-soft:#21262d;--skx-canvas:#0d1117;--skx-surface:#161b22;--skx-raised:#1c2128;--skx-fg:#e6edf3;--skx-fg-muted:#8b949e;--skx-fg-subtle:#6e7681;--skx-accent:#2f81f7;--skx-accent-soft:rgba(47,129,247,.14);--skx-green:#3fb950;--skx-red:#f85149;--skx-amber:#d29922;--skx-shadow:0 1px 0 rgba(255,255,255,.03) inset,0 8px 24px rgba(1,4,9,.5);--skx-shadow-sm:0 1px 3px rgba(1,4,9,.4);display:flex;flex-direction:column;gap:14px;height:100%;min-height:0;color:var(--skx-fg);font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}',
+			'.skxShell{display:grid;grid-template-columns:260px minmax(0,1fr);gap:14px;flex:1;min-height:0}',
+			'.skxRail{display:flex;flex-direction:column;gap:2px;min-height:0;overflow-y:auto;padding:10px;border:1px solid var(--skx-line);border-radius:12px;background:var(--skx-surface);box-shadow:var(--skx-shadow)}',
+			'.skxRailLabel{padding:10px 10px 6px;font-size:12.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--skx-fg-subtle)}',
+			'.skxRailDivider{height:1px;margin:8px 4px;background:var(--skx-line-soft)}',
+			'.skxNav{display:flex;align-items:center;gap:8px;width:100%;padding:9px 11px;border:0;border-radius:7px;background:transparent;color:var(--skx-fg);font:inherit;font-size:15px;text-align:left;cursor:pointer}',
+			'.skxNav:hover{background:var(--skx-raised)}',
+			'.skxNavOn{background:var(--skx-accent-soft);color:#79c0ff;font-weight:600;box-shadow:inset 3px 0 0 var(--skx-accent)}',
+			'.skxNavCount{margin-left:auto;font-size:12.5px;color:var(--skx-fg-subtle)}',
+			'.skxSourceRow{display:flex;align-items:center;gap:8px;width:100%;padding:8px 11px;border:0;border-radius:7px;background:transparent;color:var(--skx-fg);font:inherit;font-size:15px;text-align:left;cursor:pointer}',
+			'.skxSourceRow:hover{background:var(--skx-raised)}',
+			'.skxSourceRowOn{background:var(--skx-accent-soft);color:#79c0ff;font-weight:600;box-shadow:inset 3px 0 0 var(--skx-accent)}',
+			'.skxSourceRowOff{opacity:.55}',
+			'.skxSourceDot{width:7px;height:7px;border-radius:50%;background:var(--skx-green);flex:none}',
+			'.skxSourceRowOff .skxSourceDot{background:var(--skx-fg-subtle)}',
+			'.skxSourceName{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+			'.skxSourceCount{font-size:12.5px;color:var(--skx-fg-subtle);flex:none}',
+			'.skxMissingToggle{display:flex;align-items:center;gap:6px;width:100%;padding:8px 11px;border:0;border-radius:7px;background:transparent;color:var(--skx-fg-muted);font:inherit;font-size:14px;text-align:left;cursor:pointer}',
+			'.skxMissingToggle:hover{background:var(--skx-raised);color:var(--skx-fg)}',
+			'.skxChevron{width:12px;font-size:11px;color:var(--skx-fg-subtle)}',
+			'.skxMissingList{display:flex;flex-direction:column;gap:1px;padding:0 0 4px 12px}',
+			'.skxMissingRow{padding:4px 10px;font-size:13px;color:var(--skx-fg-subtle);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+			'.skxMain{display:flex;flex-direction:column;min-height:0;border:1px solid var(--skx-line);border-radius:12px;background:var(--skx-surface);box-shadow:var(--skx-shadow);overflow:hidden}',
+			'.skxSplit{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);height:100%;min-height:0}',
+			'.skxListCol{display:flex;flex-direction:column;min-height:0;overflow-y:auto;border-right:1px solid var(--skx-line)}',
+			'.skxDetailCol{display:flex;flex-direction:column;min-height:0;overflow-y:auto;background:var(--skx-canvas);scrollbar-gutter:stable}',
+			'.skxHead{display:flex;align-items:flex-start;gap:12px;padding:16px 18px;border-bottom:1px solid var(--skx-line-soft)}',
+			'.skxHeadMain{display:flex;flex-direction:column;gap:4px;min-width:0;flex:1}',
+			'.skxHeadSide{display:flex;align-items:center;gap:8px;flex:none;padding-top:2px}',
+			'.skxTitle{margin:0;font-size:20px;line-height:1.3;font-weight:600;color:var(--skx-fg)}',
+			'.skxTitleMeta{font-size:13.5px;color:var(--skx-fg-muted)}',
+			'.skxCode{font-family:var(--dsw-font-mono,ui-monospace,SFMono-Regular,Menlo,monospace);font-size:12.5px;color:var(--skx-fg-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+			'.skxCodeBlock{display:block;padding:8px 10px;border:1px solid var(--skx-line);border-radius:6px;background:var(--skx-surface);word-break:break-all;white-space:normal}',
+			'.skxToolbar{display:flex;align-items:center;gap:10px;padding:12px 18px;border-bottom:1px solid var(--skx-line-soft);flex-wrap:wrap}',
+			'.skxInput{flex:1;min-width:160px;padding:8px 12px;border:1px solid var(--skx-line);border-radius:8px;background:var(--skx-canvas);color:var(--skx-fg);font:inherit;font-size:15px;outline:none;transition:border-color .15s ease,box-shadow .15s ease}',
+			'.skxInput:focus{border-color:var(--skx-accent);box-shadow:0 0 0 3px var(--skx-accent-soft)}',
+			'.skxInput::placeholder{color:var(--skx-fg-subtle)}',
+			'.skxCheck{display:inline-flex;align-items:center;gap:6px;font-size:14px;color:var(--skx-fg-muted);white-space:nowrap;cursor:pointer}',
+			'.skxCheck input{width:15px;height:15px;accent-color:var(--skx-accent);cursor:pointer}',
+			'.skxSelect{padding:7px 10px;border:1px solid var(--skx-line);border-radius:6px;background:var(--skx-canvas);color:var(--skx-fg);font:inherit;font-size:14px;cursor:pointer}',
+			'.skxSegmented{display:inline-flex;border:1px solid var(--skx-line);border-radius:6px;overflow:hidden}',
+			'.skxSeg{padding:7px 14px;border:0;background:transparent;color:var(--skx-fg-muted);font:inherit;font-size:14px;cursor:pointer}',
+			'.skxSegOn{background:var(--skx-accent);color:#fff;font-weight:600}',
+			'.skxBtn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:7px 14px;border:1px solid var(--skx-line);border-radius:7px;background:var(--skx-raised);color:var(--skx-fg);font:inherit;font-size:14px;font-weight:500;cursor:pointer;white-space:nowrap;transition:background .12s ease,border-color .12s ease,transform .06s ease}',
+			'.skxBtn:active:not(:disabled){transform:translateY(1px)}',
+			'.skxBtn:hover:not(:disabled){background:#262c36;border-color:#484f58}',
+			'.skxBtn:disabled{opacity:.55;cursor:not-allowed}',
+			'.skxBtnPrimary{background:#238636;border-color:#2ea043;color:#fff}',
+			'.skxBtnPrimary:hover:not(:disabled){background:#2ea043}',
+			'.skxBtnDanger{color:var(--skx-red)}',
+			'.skxBtnDanger:hover:not(:disabled){background:#da3633;border-color:#f85149;color:#fff}',
+			'.skxBtnSmall{padding:5px 11px;font-size:13.5px}',
+			'.skxRows{list-style:none;margin:0;padding:6px;display:flex;flex-direction:column;gap:2px}',
+			'.skxRow{position:relative;display:flex;align-items:flex-start;gap:12px;padding:12px 14px;border-radius:9px;cursor:pointer;border:1px solid transparent;transition:background .12s ease,border-color .12s ease}',
+			'.skxRow:hover{background:var(--skx-raised)}',
+			'.skxRowOn{background:var(--skx-accent-soft);border-color:#1f6feb;box-shadow:var(--skx-shadow-sm)}',
+			'.skxRowOn:before{content:"";position:absolute;left:0;top:8px;bottom:8px;width:3px;border-radius:3px;background:var(--skx-accent)}',
+			'.skxRowStatic{cursor:default}',
+			'.skxRowOff{opacity:.6}',
+			'.skxRowMain{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}',
+			'.skxRowTitle{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0}',
+			'.skxRowName{font-size:16px;line-height:1.4;font-weight:600;color:var(--skx-fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+			'.skxRowDesc{margin:0;font-size:14px;line-height:1.55;color:var(--skx-fg-muted);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}',
+			'.skxRowEnd{display:flex;align-items:center;gap:8px;flex:none}',
+			'.skxRowActions{display:flex;gap:8px;margin-top:8px}',
+			'.skxBadge{padding:1px 8px;border:1px solid var(--skx-line);border-radius:999px;background:var(--skx-raised);font-size:12px;color:var(--skx-fg-muted);white-space:nowrap;flex:none}',
+			'.skxBadgeWarn{color:var(--skx-amber);border-color:#9e6a03}',
+			'.skxSwitch{position:relative;width:44px;height:24px;flex:none;padding:0;border:1px solid var(--skx-line);border-radius:999px;background:var(--skx-raised);cursor:pointer;transition:background .15s ease,border-color .15s ease}',
+			'.skxSwitch:disabled{opacity:.5;cursor:not-allowed}',
+			'.skxSwitchKnob{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#8b949e;transition:transform .15s ease,background .15s ease}',
+			'.skxSwitchOn{background:#238636;border-color:#2ea043}',
+			'.skxSwitchOn .skxSwitchKnob{transform:translateX(20px);background:#fff}',
+			'.skxSwitchSm{width:38px;height:21px}',
+			'.skxSwitchSm .skxSwitchKnob{width:15px;height:15px}',
+			'.skxSwitchSm.skxSwitchOn .skxSwitchKnob{transform:translateX(17px)}',
+			'.skxSwitchLabel{font-size:13.5px;color:var(--skx-fg-muted)}',
+			'.skxDoc{display:flex;flex-direction:column;gap:18px;padding:20px 22px}',
+			'.skxDocHead{position:sticky;top:0;z-index:2;display:flex;align-items:flex-start;gap:14px;padding:18px 22px 14px;margin:-20px -22px 0;background:linear-gradient(var(--skx-canvas) 78%,transparent);border-bottom:1px solid var(--skx-line-soft)}',
+			'.skxDocHeadMain{display:flex;flex-direction:column;gap:8px;min-width:0;flex:1}',
+			'.skxDocAction{flex:none;margin-top:2px}',
+			'.skxDocTitle{margin:0;font-size:22px;line-height:1.3;font-weight:600;color:var(--skx-fg);word-break:break-word}',
+			'.skxDocSection{display:flex;flex-direction:column;gap:7px}',
+			'.skxLabel{font-size:13px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;color:var(--skx-fg-subtle)}',
+			'.skxLabelRow{display:flex;align-items:center;justify-content:space-between;gap:10px}',
+			'.skxProse{margin:0;font-size:15px;line-height:1.7;color:var(--skx-fg);white-space:pre-wrap;word-break:break-word}',
+			'.skxTokens{display:flex;flex-wrap:wrap;gap:8px}',
+			'.skxToken{padding:2px 9px;border:1px solid var(--skx-line);border-radius:999px;background:var(--skx-raised);font-size:12.5px;color:var(--skx-fg-muted)}',
+			'.skxLink{padding:0;border:0;background:none;color:#79c0ff;font:inherit;font-size:13.5px;cursor:pointer}',
+			'.skxLink:hover{text-decoration:underline}',
+			'.skxPre{margin:0;padding:14px 16px;max-height:420px;overflow:auto;border:1px solid var(--skx-line);border-radius:8px;background:var(--skx-surface);font-family:var(--dsw-font-mono,ui-monospace,SFMono-Regular,Menlo,monospace);font-size:13.5px;line-height:1.7;color:var(--skx-fg);white-space:pre-wrap;word-break:break-word}',
+			'.skxTextarea{width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid var(--skx-line);border-radius:6px;background:var(--skx-canvas);color:var(--skx-fg);font:inherit;font-size:15px;line-height:1.6;resize:vertical;outline:none}',
+			'.skxTextarea:focus{border-color:var(--skx-accent);box-shadow:0 0 0 3px var(--skx-accent-soft)}',
+			'.skxChips{display:flex;flex-wrap:wrap;gap:8px;padding:12px 18px;border-bottom:1px solid var(--skx-line-soft)}',
+			'.skxChip{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border:1px solid var(--skx-line);border-radius:999px;background:var(--skx-raised);color:var(--skx-fg);font:inherit;font-size:14px;cursor:pointer}',
+			'.skxChipOn{background:var(--skx-accent);border-color:var(--skx-accent);color:#fff;font-weight:600}',
+			'.skxChipOff{opacity:.55}',
+			'.skxGroup{padding:8px 12px}',
+			'.skxGroupHead{display:flex;align-items:center;gap:8px;padding:8px 6px 4px}',
+			'.skxNote{margin:0 18px 8px;padding:9px 12px;border:1px solid #1f6feb;border-radius:6px;background:var(--skx-accent-soft);font-size:14px;color:#79c0ff}',
+			'.skxBanner{display:flex;align-items:center;gap:12px;padding:11px 14px;border:1px solid #f85149;border-radius:8px;background:rgba(248,81,73,.1);font-size:14.5px;color:#ffa198}',
+			'.skxBannerText{flex:1;word-break:break-word}',
+			'.skxEmptyTall{flex:1;display:flex;align-items:center;justify-content:center;min-height:220px}',
+			'.skxFoot{display:flex;align-items:center;gap:10px;flex:none}',
+			'.skxFootText{font-size:13px;color:var(--skx-fg-muted)}',
+			'.skxSearchField{display:flex;align-items:center;gap:8px;flex:1;min-width:180px;padding:0 12px;border:1px solid var(--skx-line);border-radius:8px;background:var(--skx-canvas);transition:border-color .15s ease,box-shadow .15s ease}',
+			'.skxSearchField:focus-within{border-color:var(--skx-accent);box-shadow:0 0 0 3px var(--skx-accent-soft)}',
+			'.skxSearchIcon{font-size:16px;color:var(--skx-fg-subtle);flex:none;line-height:1}',
+			'.skxInputBare{flex:1;min-width:0;padding:9px 0;border:0;background:transparent;box-shadow:none!important}',
+			'.skxInputBare:focus{border:0;box-shadow:none}',
+			'.skxTabs{display:flex;align-items:center;gap:6px;flex-wrap:wrap}',
+			'.skxChipTight{padding:5px 12px;font-size:13.5px}',
+			'.skxRowMeta{font-size:12.5px;color:var(--skx-fg-subtle);font-family:var(--dsw-font-mono,ui-monospace,SFMono-Regular,Menlo,monospace);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+			'.skxDocSections{display:flex;flex-direction:column;gap:18px}',
+			'.skxDocFoot{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:auto;padding-top:16px;border-top:1px solid var(--skx-line-soft)}',
+			'.skxHint{font-size:12.5px;line-height:1.6;color:var(--skx-fg-subtle)}',
+			'.skxModal{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(1,4,9,.72);backdrop-filter:blur(2px)}',
+			'.skxModalCard{width:min(460px,100%);display:flex;flex-direction:column;gap:12px;padding:22px 24px;border:1px solid var(--skx-line);border-radius:14px;background:var(--skx-surface);box-shadow:0 24px 60px rgba(1,4,9,.7)}',
+			'.skxModalCard .skxProse{font-size:14.5px;line-height:1.7;color:var(--skx-fg-muted)}',
+			'.skxConfirmTitle{font-size:15px;font-weight:600;color:var(--skx-fg)}',
+			'.skxEmpty{padding:32px 20px;text-align:center;font-size:14.5px;line-height:1.7;color:var(--skx-fg-muted)}',
+			'body[data-theme="light"] .skxRoot{--skx-line:#d0d7de;--skx-line-soft:#d8dee4;--skx-canvas:#ffffff;--skx-surface:#f6f8fa;--skx-raised:#eaeef2;--skx-fg:#1f2328;--skx-fg-muted:#656d76;--skx-fg-subtle:#818b98;--skx-accent-soft:rgba(9,105,218,.1)}',
+			'body[data-theme="light"] .skxBtn:hover:not(:disabled){background:#eaeef2;border-color:#afb8c1}',
+			'body[data-theme="light"] .skxNavOn,body[data-theme="light"] .skxSourceRowOn,body[data-theme="light"] .skxRowOn{color:#0969da}',
+			'body[data-theme="light"] .skxLink{color:#0969da}',
+			'body[data-theme="light"] .skxNote{color:#0969da;border-color:#54aeff}',
+			'body[data-theme="light"] .skxBanner{color:#cf222e}',
+			'@media (max-width:1100px){.skxShell{grid-template-columns:220px minmax(0,1fr)}.skxSplit{grid-template-columns:minmax(0,1fr)}}',
 		].join('\n');
 
 		//#endregion
@@ -769,7 +1032,18 @@ window.__ModuleLoader__.load({
 				options.signal = AbortSignal.timeout(wait);
 			}
 			return fetch(API_PREFIX + '/' + endpoint, options).then(function (response) {
-				return response.json().then(function (value) {
+				// A Host that has not reloaded the plugin (or an authenticating
+				// proxy) answers with plain text, not this plugin's JSON envelope.
+				// Parsing that as JSON would surface "Unexpected token" as the
+				// panel's error, which says nothing about what went wrong.
+				return response.text().then(function (raw) {
+					var value;
+					try {
+						value = JSON.parse(raw);
+					} catch {
+						if (!response.ok) throw new Error('HTTP ' + response.status + (raw === '' ? '' : '：' + raw.slice(0, 120)));
+						throw new Error('服务端返回了非 JSON 响应：' + raw.slice(0, 120));
+					}
 					// The error envelope is an object with a code and a message.
 					// A plain `error` string in a payload is data, not a failure.
 					var error = value !== null && typeof value === 'object' && value.error !== null && typeof value.error === 'object'
@@ -957,265 +1231,796 @@ window.__ModuleLoader__.load({
 		//#region skills view
 
 		/**
-		 * Hierarchical skill categories.
+		 * Call one of the vendored kernel's endpoints.
+		 *
+		 * The kernel answers `{ ok, data }` on success and `{ ok: false, error }`
+		 * on failure, which is a different envelope from this plugin's own
+		 * endpoints. Keeping the two call paths apart means neither has to learn
+		 * the other's error shape.
+		 *
+		 * @param {object} ctx - Client context.
+		 * @param {string} path - Kernel route below `/api/manager`.
+		 * @param {object} [body] - JSON body for a POST.
+		 * @param {object} [options] - `method` override and `query` search params.
+		 * @returns {Promise<unknown>} The route's `data`.
+		 */
+		function callKernel(ctx, path, body, options) {
+			if (ctx.get('connection') === undefined) return Promise.reject(new Error('连接不可用'));
+			var settings = options ?? {};
+			var verb = settings.method ?? (body === undefined ? 'GET' : 'POST');
+			var url = API_PREFIX + '/' + path;
+			if (settings.query !== undefined && settings.query !== '') url += '?' + settings.query;
+			var request = {
+				method: verb,
+				headers: { 'content-type': 'application/json', 'x-dsh-manager-client': '1' },
+				credentials: 'same-origin',
+			};
+			if (verb !== 'GET' && verb !== 'HEAD') request.body = JSON.stringify(body ?? {});
+			if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') {
+				request.signal = AbortSignal.timeout(30000);
+			}
+			return fetch(url, request).then(function (response) {
+				return response.text().then(function (raw) {
+					var value;
+					try {
+						value = JSON.parse(raw);
+					} catch {
+						if (!response.ok) throw new Error('HTTP ' + response.status + (raw === '' ? '' : '：' + raw.slice(0, 120)));
+						throw new Error('服务端返回了非 JSON 响应：' + raw.slice(0, 120));
+					}
+					if (value !== null && typeof value === 'object' && value.ok === true) return value.data;
+					// The kernel reports a refused operation as `{ ok: false, code, error }`
+					// where `error` is the message string.
+					var error = value !== null && typeof value === 'object' ? value.error : undefined;
+					var message = typeof error === 'string' && error !== ''
+						? error
+						: (error !== null && typeof error === 'object' && typeof error.message === 'string' ? error.message : 'HTTP ' + response.status);
+					var failure = new Error(message);
+					if (error !== null && typeof error === 'object' && typeof error.code === 'string') failure.code = error.code;
+					if (value !== null && typeof value === 'object' && typeof value.code === 'string') failure.code = value.code;
+					throw failure;
+				});
+			});
+		}
+
+		/**
+		 * Group a root's skills by effective name, keeping one representative.
+		 *
+		 * The same skill commonly exists in several agent directories (a shared
+		 * copy, a per-app copy, a symlink). Showing every copy turns a 26-skill
+		 * machine into a wall of duplicates, so the list shows the copy that
+		 * actually wins and reports the rest as a count.
+		 *
+		 * @param {Array<object>} skills - The root's skills.
+		 * @returns {Array<object>} One row per name, with `copies` filled in.
+		 */
+		function collapseSkills(skills) {
+			var byName = new Map();
+			for (var index = 0; index < skills.length; index += 1) {
+				var skill = skills[index];
+				var key = skill.canonicalName ?? skill.name;
+				var existing = byName.get(key);
+				if (existing === undefined) {
+					byName.set(key, { ...skill, copies: 0 });
+					continue;
+				}
+				// A loadable copy beats an unparseable one; otherwise the first
+				// listed (highest-priority source) keeps the row.
+				if (skill.loadable !== false && existing.loadable === false) {
+					byName.set(key, { ...skill, copies: existing.copies + 1 });
+				} else {
+					existing.copies += 1;
+				}
+			}
+			return Array.from(byName.values());
+		}
+
+		/**
+		 * A GitHub-style pill switch.
+		 *
+		 * Sits inline in a row and toggles on click; it stops propagation so a
+		 * row that is itself clickable (to select) is not also selected.
+		 *
+		 * @param {object} props - `checked`, `label`, `disabled`, `onChange`, `size`.
+		 * @returns {object} React node.
+		 */
+		function PillSwitch(props) {
+			var size = props.size === 'sm' ? ' skxSwitchSm' : '';
+			return h('button', {
+				type: 'button',
+				role: 'switch',
+				'aria-checked': props.checked === true,
+				'aria-label': props.label,
+				title: props.label,
+				disabled: props.disabled === true,
+				className: classes('skxSwitch', props.checked === true && 'skxSwitchOn', size),
+				onClick: function (event) {
+					event.stopPropagation();
+					if (props.disabled !== true) props.onChange(!props.checked);
+				},
+			}, h('span', { className: 'skxSwitchKnob' }));
+		}
+
+		/**
+		 * The skills workspace: a rail of sources plus one of four sub-views.
 		 *
 		 * @param {object} props - Panel data and actions.
 		 * @returns {object} React node.
 		 */
-		function SkillsSection(props) {
+		function SkillsWorkspace(props) {
 			var t = props.t;
-			var skills = props.skills;
-			var catalog = props.catalog;
-			var catalogText = '';
-			if (catalog !== undefined) {
-				if (catalog.error !== '') {
-					catalogText = t('skills.catalogError', { error: catalog.error });
-				} else if (catalog.unavailable === true) {
-					catalogText = t('skills.catalogUnavailable');
-				} else {
-					catalogText = t('skills.catalog', {
-						total: catalog.total,
-						visible: catalog.visible,
-						managed: catalog.managed,
-						external: catalog.external.length,
-					});
-					if (catalog.external.length > 0) catalogText += t('skills.catalogNames', { names: nameList(catalog.external) });
-				}
-			}
-			var needle = props.query.trim().toLowerCase();
-			var categories = [];
-			for (var index = 0; index < skills.categories.length; index += 1) {
-				var category = skills.categories[index];
-				if (needle === '') {
-					categories.push(category);
-					continue;
-				}
-				var matched = category.skills.filter(function (skill) {
-					var haystack = (category.name + ' ' + skill.name + ' ' + skill.description).toLowerCase();
-					return haystack.indexOf(needle) >= 0;
-				});
-				if (matched.length > 0) {
-					categories.push({ ...category, skills: matched });
-				}
-			}
-			var missingRoots = skills.roots.filter(function (root) { return !root.exists; });
-			return h('div', null,
-				h('div', { className: 'mgrToolbar' },
-					h('input', {
-						className: 'mgrInput',
-						type: 'search',
-						value: props.query,
-						placeholder: t('skills.search'),
-						'aria-label': t('skills.search'),
-						onChange: function (event) { props.setQuery(event.target.value); },
-					}),
-					h('span', { className: 'mgrToolbarSpacer' }),
-					h('button', { type: 'button', className: 'mgrBtn', onClick: props.onRefresh, disabled: props.busy }, t('skills.refresh')),
-					h('button', { type: 'button', className: 'mgrBtn mgrBtnPrimary', onClick: props.onNew, disabled: props.busy }, t('skills.new'))),
-				h('div', { className: 'mgrStats' },
-					h('span', null, t('skills.count', {
-						categories: skills.totals.categories,
-						skills: skills.totals.skills,
-						enabled: skills.totals.enabled,
-					})),
-					h('span', { className: 'mgrSpacer' }),
-					h('span', { className: 'mgrRootPath' }, skills.roots.map(function (root) { return root.path; }).join(' · '))),
-				catalogText === '' ? null : h('div', { className: 'mgrHint mgrCatalog' }, catalogText),
-				catalog === undefined || catalog.missing.length === 0 ? null : h('div', { className: 'mgrWarn' },
-					h('span', null, t('skills.catalogMissing', { n: catalog.missing.length, names: nameList(catalog.missing) }))),
-				missingRoots.length === 0 ? null : h('div', { className: 'mgrWarn' },
-					h('span', null, t('skills.roots') + '：' + missingRoots.map(function (root) {
-						return root.path + (root.error ? '（' + t('skills.rootError') + '：' + root.error + '）' : '（' + t('skills.rootMissing') + '）');
-					}).join('；'))),
-				skills.conflicts.length === 0 ? null : h('div', { className: 'mgrWarn' },
-					h('span', null, skills.conflicts.map(function (conflict) {
-						return conflict.name + '：' + conflict.sources.join('、');
-					}).join('；'))),
-				categories.length === 0 ? h('div', { className: 'mgrEmpty' }, t('skills.empty')) : categories.map(function (entry) {
-					var open = needle !== '' || props.openCats[entry.name] === true;
-					return h('div', { className: 'mgrCat', key: entry.name },
-						h('div', { className: 'mgrCatHead' },
-							h('button', {
-								type: 'button',
-								className: 'mgrChevron',
-								'aria-expanded': open,
-								'aria-label': entry.name,
-								onClick: function () { props.toggleCategory(entry.name); },
-							}, open ? '▾' : '▸'),
-							h('span', { className: 'mgrCatName' }, entry.name),
-							h('span', { className: 'mgrCount' }, String(entry.skills.length)),
-							entry.disabled ? h(Badge, { tone: 'Warn' }, t('skills.categoryDisabled')) : null,
-							h('span', { className: 'mgrSpacer' }),
-							h(Switch, {
-								checked: !entry.disabled,
-								disabled: props.busy,
-								label: entry.name,
-								onChange: function (next) { props.onToggleCategory(entry.name, next); },
-							})),
-						!open ? null : h('div', { className: 'mgrCatBody' },
-							entry.error === undefined ? null : h('div', { className: 'mgrServerError', style: { padding: '8px 12px' } }, entry.error),
-							entry.skills.length === 0 ? h('div', { className: 'mgrEmpty', style: { padding: '18px 12px' } }, t('skills.categoryEmpty')) : entry.skills.map(function (skill) {
-								var badges = [];
-								if (!skill.ok) badges.push(h(Badge, { tone: 'Error', key: 'broken' }, t('skills.broken')));
-								if (skill.conflict) badges.push(h(Badge, {
-									tone: 'Error',
-									key: 'conflict',
-									title: skill.conflictWith === undefined ? t('skills.conflict') : t('skills.conflictWith', { owner: skill.conflictWith }),
-								}, t('skills.conflict')));
-								if (skill.ok && skill.disabled && !entry.disabled) badges.push(h(Badge, { key: 'disabled' }, t('skills.skillDisabled')));
-								if (skill.ok && !skill.invocation.modelInvocable) badges.push(h(Badge, { key: 'model' }, t('skills.modelHidden')));
-								if (skill.ok && !skill.invocation.userInvocable) badges.push(h(Badge, { key: 'user' }, t('skills.userHidden')));
-								return h('div', {
-									key: skill.folder,
-									className: 'mgrSkill',
-									role: 'button',
-									tabIndex: 0,
-									onClick: function () { props.onOpenSkill(entry.name, skill); },
-									onKeyDown: function (event) {
-										if (event.key === 'Enter' || event.key === ' ') {
-											event.preventDefault();
-											props.onOpenSkill(entry.name, skill);
-										}
-									},
-								},
-									h('div', { className: 'mgrSkillMain' },
-										h('div', { className: 'mgrSkillName' }, skill.name, badges),
-										h('div', { className: 'mgrSkillDesc' }, skill.ok ? skill.description : skill.error)),
-									h(Switch, {
-										checked: skill.ok && !skill.conflict && !entry.disabled && !skill.disabled,
-										disabled: props.busy || !skill.ok || skill.conflict || entry.disabled,
-										label: skill.name,
-										onChange: function (next) { props.onToggleSkill(entry.name, skill.name, next); },
-									}));
-							})));
-				}));
-		}
-
-		/**
-		 * One skill's parsed contents.
-		 *
-		 * @param {object} props - `category`, `name`, `call`, `t`, `onClose`.
-		 * @returns {object} React node.
-		 */
-		function SkillDetail(props) {
-			var [state, setState] = useState({ loading: true, data: null, error: '' });
-			useEffect(function () {
-				var alive = true;
-				props.call('skill-read', { category: props.category, name: props.name }).then(function (value) {
-					if (alive) setState({ loading: false, data: value, error: '' });
-				}).catch(function (reason) {
-					if (alive) setState({ loading: false, data: null, error: messageOf(reason) });
-				});
-				return function () { alive = false; };
-			}, [props.category, props.name, props.call]);
-			var body;
-			if (state.loading) {
-				body = h(Loading, { label: props.t('state.loading') });
-			} else if (state.error !== '') {
-				body = h('div', { className: 'mgrErrorBox' }, state.error);
-			} else {
-				var data = state.data;
-				var invocation = data.invocation.modelInvocable
-					? (data.invocation.userInvocable ? props.t('skills.detail.invocation.both') : props.t('skills.detail.invocation.modelOnly'))
-					: (data.invocation.userInvocable ? props.t('skills.detail.invocation.userOnly') : props.t('skills.detail.invocation.none'));
-				body = h('div', null,
-					h('div', { className: 'mgrDetailRow' },
-						h('span', { className: 'mgrDetailKey' }, props.t('skills.detail.description')),
-						h('span', { className: 'mgrDetailValue' }, data.description)),
-					data.whenToUse === undefined ? null : h('div', { className: 'mgrDetailRow' },
-						h('span', { className: 'mgrDetailKey' }, props.t('skills.detail.whenToUse')),
-						h('span', { className: 'mgrDetailValue' }, data.whenToUse)),
-					h('div', { className: 'mgrDetailRow' },
-						h('span', { className: 'mgrDetailKey' }, props.t('skills.detail.invocation')),
-						h('span', { className: 'mgrDetailValue' }, invocation)),
-					h('div', { className: 'mgrDetailRow' },
-						h('span', { className: 'mgrDetailKey' }, props.t('skills.detail.path')),
-						h('span', { className: 'mgrDetailValue mgrRootPath' }, data.path)),
-					h('div', { className: 'mgrLabel', style: { margin: '14px 0 6px' } }, props.t('skills.detail.content')),
-					h('pre', { className: 'mgrPre' }, data.content));
-			}
-			return h(Modal, {
-				title: props.category + ' / ' + props.name,
-				onClose: props.onClose,
-			}, body);
-		}
-
-		/**
-		 * Creation form for one skill skeleton.
-		 *
-		 * @param {object} props - `skills`, `t`, `onSubmit`, `onClose`.
-		 * @returns {object} React node.
-		 */
-		function SkillCreate(props) {
-			var [category, setCategory] = useState('');
-			var [name, setName] = useState('');
-			var [description, setDescription] = useState('');
+			var call = props.callKernel;
+			var [roots, setRoots] = useState(null);
+			var [activeRoot, setActiveRoot] = useState('');
+			var [tab, setTab] = useState('installed');
+			var [showMissing, setShowMissing] = useState(false);
 			var [error, setError] = useState('');
 			var [busy, setBusy] = useState(false);
-			var t = props.t;
-			var firstRoot = props.skills.roots.length > 0 ? props.skills.roots[0].path : '';
-			var location = firstRoot === '' ? '' : firstRoot.replace(/\/$/, '') + '/' + (category.trim() || '<分类>') + '/' + (name.trim() || '<技能名>') + '/SKILL.md';
-			function submit(event) {
-				if (event) event.preventDefault();
-				var categoryValue = category.trim();
-				var nameValue = name.trim();
-				if (!/^[\p{L}\p{N}][\p{L}\p{N}._-]{0,63}$/u.test(categoryValue)) {
-					setError(t('skills.create.invalidCategory'));
-					return;
-				}
-				if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(nameValue)) {
-					setError(t('skills.create.invalidName'));
-					return;
-				}
-				if (description.trim() === '') {
-					setError(t('skills.create.invalidDescription'));
-					return;
-				}
+
+			var load = useCallback(function () {
 				setBusy(true);
-				setError('');
-				props.onSubmit({ category: categoryValue, name: nameValue, description: description.trim() })
-					.catch(function (reason) { setError(messageOf(reason)); })
-					.then(function () { setBusy(false); });
+				return call('state').then(function (data) {
+					var list = Array.isArray(data?.roots) ? data.roots : [];
+					setRoots(list);
+					setError('');
+					setActiveRoot(function (current) {
+						if (current !== '' && list.some(function (root) { return root.key === current; })) return current;
+						var withSkills = list.find(function (root) { return root.exists !== false && (root.skills ?? []).length > 0; });
+						return withSkills !== undefined ? withSkills.key : (list.find(function (root) { return root.exists !== false; })?.key ?? '');
+					});
+				}).catch(function (reason) {
+					setError(messageOf(reason));
+				}).finally(function () {
+					setBusy(false);
+				});
+			}, [call]);
+
+			useEffect(function () { void load(); }, [load]);
+
+			if (roots === null) {
+				return h('div', { className: 'skxRoot' }, error === '' ? h(Loading, { label: t('state.loading') }) : h('div', { className: 'mgrErrorBox' }, error));
 			}
-			return h(Modal, {
-				title: t('skills.create.title'),
-				onClose: props.onClose,
-				footer: [
-					h('button', { type: 'button', className: 'mgrBtn', key: 'cancel', onClick: props.onClose }, t('action.cancel')),
-					h('button', { type: 'submit', className: 'mgrBtn mgrBtnPrimary', key: 'submit', form: 'mgr-skill-form', disabled: busy }, t('action.create')),
-				],
-			},
-				h('form', { id: 'mgr-skill-form', onSubmit: submit },
-					error === '' ? null : h('p', { className: 'mgrFormError' }, error),
-					h(Field, { label: t('skills.create.category'), hint: t('skills.create.categoryHint'), htmlFor: 'mgr-skill-category' },
-						h('input', {
-							id: 'mgr-skill-category',
-							className: 'mgrInput',
-							value: category,
-							placeholder: 'dev',
-							list: 'mgr-skill-categories',
-							onChange: function (event) { setCategory(event.target.value); },
+
+			var liveRoots = roots.filter(function (entry) { return entry.exists !== false; });
+			var missingRoots = roots.filter(function (entry) { return entry.exists === false; });
+			var active = roots.find(function (entry) { return entry.key === activeRoot; });
+
+			var toggleSource = function (entry, enabled) {
+				setBusy(true);
+				call(enabled ? 'source-enable' : 'source-disable', { root: entry.key }).then(load).catch(function (reason) {
+					setError(messageOf(reason));
+				}).finally(function () { setBusy(false); });
+			};
+
+			var subView;
+			if (tab === 'installed') {
+				subView = h(SkillListPanel, {
+					t: t, call: call, root: active, busy: busy, onToggleSource: toggleSource, onChanged: load, setError: setError,
+				});
+			} else if (tab === 'project') {
+				subView = h(ProjectSkillsPanel, { t: t, call: call, setError: setError });
+			} else if (tab === 'discover') {
+				subView = h(DiscoverPanel, { t: t, call: call, roots: liveRoots, onInstalled: load, setError: setError });
+			} else {
+				subView = h(TrashPanel, { t: t, call: call, onRestored: load, setError: setError });
+			}
+
+			return h('div', { className: 'skxRoot' },
+				error === '' ? null : h('div', { className: 'skxBanner' },
+					h('span', { className: 'skxBannerText' }, error),
+					h('button', { type: 'button', className: 'skxBtn', onClick: function () { setError(''); void load(); } }, t('action.retry'))),
+
+				h('div', { className: 'skxShell' },
+					h('aside', { className: 'skxRail' },
+						navButton('installed', t('skx.tab.installed'), liveRoots.length),
+						navButton('project', t('skx.tab.project'), null),
+						navButton('discover', t('skx.tab.discover'), null),
+						navButton('trash', t('skx.tab.trash'), null),
+						h('div', { className: 'skxRailDivider' }),
+						h('div', { className: 'skxRailLabel' }, t('skx.sources')),
+						liveRoots.map(function (entry) {
+							var count = (entry.skills ?? []).length;
+							return h('button', {
+								type: 'button',
+								key: entry.key,
+								className: classes('skxSourceRow', tab === 'installed' && entry.key === activeRoot && 'skxSourceRowOn', entry.enabled === false && 'skxSourceRowOff'),
+								onClick: function () { setTab('installed'); setActiveRoot(entry.key); },
+							},
+							h('span', { className: 'skxSourceDot', 'aria-hidden': 'true' }),
+							h('span', { className: 'skxSourceName' }, entry.label ?? entry.key),
+							h('span', { className: 'skxSourceCount' }, String(count)));
 						}),
-						h('datalist', { id: 'mgr-skill-categories' }, props.skills.categories.map(function (entry) {
-							return h('option', { key: entry.name, value: entry.name });
-						}))),
-					h(Field, { label: t('skills.create.name'), hint: t('skills.create.nameHint'), htmlFor: 'mgr-skill-name' },
+						missingRoots.length === 0 ? null : h('div', null,
+							h('button', {
+								type: 'button',
+								className: 'skxMissingToggle',
+								'aria-expanded': showMissing,
+								onClick: function () { setShowMissing(!showMissing); },
+							}, h('span', { className: 'skxChevron' }, showMissing ? '▾' : '▸'), t('skx.missingSources'), h('span', { className: 'skxSourceCount' }, String(missingRoots.length))),
+							showMissing
+								? h('div', { className: 'skxMissingList' }, missingRoots.map(function (entry) {
+									return h('div', { className: 'skxMissingRow', key: entry.key, title: entry.path }, entry.label ?? entry.key);
+								}))
+								: null)),
+					h('section', { className: 'skxMain' }, subView)),
+				h('div', { className: 'skxFoot' },
+					h('span', { className: 'skxFootText' }, t('skx.footer', { n: liveRoots.length, m: missingRoots.length })),
+					h('span', { className: 'mgrSpacer' }),
+					h('button', { type: 'button', className: 'skxBtn', onClick: function () { void load(); }, disabled: busy }, busy ? t('state.loading') : t('action.refresh'))));
+
+			function navButton(id, label, count) {
+				return h('button', {
+					type: 'button',
+					key: id,
+					className: classes('skxNav', tab === id && 'skxNavOn'),
+					onClick: function () { setTab(id); },
+				}, label, count === null || count === undefined ? null : h('span', { className: 'skxNavCount' }, String(count)));
+			}
+		}
+
+		/**
+		 * One source's skills: search, per-skill switches, detail pane.
+		 *
+		 * @param {object} props - The active root and callbacks.
+		 * @returns {object} React node.
+		 */
+		function SkillListPanel(props) {
+			var t = props.t;
+			var root = props.root;
+			var [query, setQuery] = useState('');
+			var [showBroken, setShowBroken] = useState(false);
+			var [selected, setSelected] = useState(null);
+
+			useEffect(function () { setSelected(null); }, [root === undefined ? '' : root.key]);
+
+			if (root === undefined) return h('div', { className: 'skxEmpty' }, t('skx.noSources'));
+
+			var all = root.skills ?? [];
+			var needle = query.trim().toLowerCase();
+			var rows = collapseSkills(all).filter(function (skill) {
+				if (!showBroken && skill.loadable === false) return false;
+				if (needle === '') return true;
+				var haystack = (skill.name + ' ' + (skill.description ?? '') + ' ' + (skill.customNote ?? '')).toLowerCase();
+				return haystack.indexOf(needle) >= 0;
+			});
+
+			var flip = function (skill, enabled) {
+				return props.call(enabled ? 'enable' : 'disable', { root: root.key, name: skill.name }).then(props.onChanged).catch(function (reason) {
+					props.setError(messageOf(reason));
+				});
+			};
+
+			return h('div', { className: 'skxSplit' },
+				h('div', { className: 'skxListCol' },
+					h('div', { className: 'skxHead' },
+						h('div', { className: 'skxHeadMain' },
+							h('h2', { className: 'skxTitle' }, root.label ?? root.key),
+							h('span', { className: 'skxTitleMeta' }, h('code', { className: 'skxCode' }, root.path))),
+						h('div', { className: 'skxHeadSide' },
+							h('span', { className: 'skxSwitchLabel' }, root.enabled === false ? t('skx.disabled') : t('skx.enabled')),
+							h(PillSwitch, {
+								checked: root.enabled !== false,
+								label: t('skx.toggleSource'),
+								disabled: props.busy,
+								onChange: function (next) { props.onToggleSource(root, next); },
+							}))),
+					h('div', { className: 'skxToolbar' },
 						h('input', {
-							id: 'mgr-skill-name',
-							className: 'mgrInput',
-							value: name,
-							placeholder: 'webapp-testing',
-							onChange: function (event) { setName(event.target.value); },
-						})),
-					h(Field, { label: t('skills.create.description'), hint: t('skills.create.descriptionHint'), htmlFor: 'mgr-skill-description' },
-						h('textarea', {
-							id: 'mgr-skill-description',
-							className: 'mgrTextarea',
-							value: description,
-							rows: 3,
-							onChange: function (event) { setDescription(event.target.value); },
-						})),
-					h('div', { className: 'mgrFieldHint mgrRootPath' }, location === '' ? '' : t('skills.create.location', { path: location }))));
+							className: 'skxInput',
+							type: 'search',
+							value: query,
+							placeholder: t('skx.search'),
+							'aria-label': t('skx.search'),
+							onChange: function (event) { setQuery(event.target.value); },
+						}),
+						h('label', { className: 'skxCheck' },
+							h('input', { type: 'checkbox', checked: showBroken, onChange: function (event) { setShowBroken(event.target.checked); } }),
+							h('span', null, t('skx.showBroken')))),
+					rows.length === 0
+						? h('div', { className: 'skxEmpty' }, needle === '' ? t('skx.noSkills') : t('skx.noMatch'))
+						: h('ul', { className: 'skxRows' }, rows.map(function (skill) {
+							var on = skill.enabled !== false;
+							return h('li', {
+								key: skill.name,
+								className: classes('skxRow', selected !== null && selected.name === skill.name && 'skxRowOn', !on && 'skxRowOff'),
+								onClick: function () { setSelected(skill); },
+							},
+							h('div', { className: 'skxRowMain' },
+								h('div', { className: 'skxRowTitle' },
+									h('span', { className: 'skxRowName' }, skill.name),
+									skill.copies > 0 ? h('span', { className: 'skxBadge', title: t('skx.copiesTip', { n: skill.copies }) }, '+' + skill.copies) : null,
+									skill.effectiveModelInvocable === false ? h('span', { className: 'skxBadge' }, t('skx.manualOnly')) : null,
+									skill.loadable === false ? h('span', { className: 'skxBadge skxBadgeWarn' }, t('skx.broken')) : null),
+								h('p', { className: 'skxRowDesc' }, (skill.description ?? '') === '' ? t('skx.noDescription') : skill.description)),
+							h(PillSwitch, {
+								checked: on,
+								label: t('skx.toggleSkill'),
+								size: 'sm',
+								onChange: function (next) { void flip(skill, next); },
+							}));
+						}))),
+				h('div', { className: 'skxDetailCol' },
+					selected === null
+						? h('div', { className: 'skxEmpty skxEmptyTall' }, t('skx.pickSkill'))
+						: h(SkillPane, { t: t, call: props.call, root: root, skill: selected, onSaved: props.onChanged, setError: props.setError })));
+		}
+
+		/**
+		 * The right pane: one skill's document, tokens, and note editor.
+		 *
+		 * @param {object} props - The selected skill and its source root.
+		 * @returns {object} React node.
+		 */
+		function SkillPane(props) {
+			var t = props.t;
+			var skill = props.skill;
+			var root = props.root;
+			var [doc, setDoc] = useState({ loading: true, data: null, error: '' });
+			var [note, setNote] = useState('');
+			var [editing, setEditing] = useState(false);
+			var [saving, setSaving] = useState(false);
+			var [copied, setCopied] = useState(false);
+			var [confirming, setConfirming] = useState(false);
+			var [deleting, setDeleting] = useState(false);
+
+			useEffect(function () {
+				var alive = true;
+				setDoc({ loading: true, data: null, error: '' });
+				setEditing(false);
+				props.call('detail', { root: root.key, name: skill.name }).then(function (data) {
+					if (!alive) return;
+					setDoc({ loading: false, data: data, error: '' });
+					setNote(data?.customNote ?? '');
+				}).catch(function (reason) {
+					if (alive) setDoc({ loading: false, data: null, error: messageOf(reason) });
+				});
+				return function () { alive = false; };
+			}, [root.key, skill.name, props.call]);
+
+			if (doc.loading) return h('div', { className: 'skxEmpty skxEmptyTall' }, t('state.loading'));
+			if (doc.error !== '') return h('div', { className: 'skxEmpty skxEmptyTall' }, doc.error);
+
+			var data = doc.data ?? {};
+			var saveNote = function () {
+				setSaving(true);
+				props.call('skill-note', { root: root.key, name: skill.name, note: note }).then(function () {
+					setEditing(false);
+					if (props.onSaved) props.onSaved();
+				}).catch(function (reason) {
+					props.setError(messageOf(reason));
+				}).finally(function () { setSaving(false); });
+			};
+			var copyBody = function () {
+				var text = data.body ?? '';
+				if (typeof navigator === 'undefined' || navigator.clipboard === undefined) return;
+				navigator.clipboard.writeText(text).then(function () {
+					setCopied(true);
+					setTimeout(function () { setCopied(false); }, 1500);
+				}).catch(function () {});
+			};
+
+			return h('div', { className: 'skxDoc' },
+				h('div', { className: 'skxDocHead' },
+					h('div', { className: 'skxDocHeadMain' },
+						h('h2', { className: 'skxDocTitle' }, data.declaredName ?? skill.name),
+						h('div', { className: 'skxTokens' },
+							h('span', { className: 'skxToken', title: t('skx.descTokensTip') }, String(data.descriptionTokens ?? 0) + ' ' + t('skx.tokenDesc')),
+							h('span', { className: 'skxToken', title: t('skx.bodyTokensTip') }, String(data.bodyTokens ?? 0) + ' ' + t('skx.tokenBody')))),
+					// Kept in the header so it stays reachable no matter how long the
+					// document is; the body below can run for thousands of lines.
+					root.mutable === true && data.sourceReadOnly !== true && data.linked !== true
+						? h('button', {
+							type: 'button',
+							className: 'skxBtn skxBtnDanger skxBtnSmall skxDocAction',
+							title: t('skx.trash'),
+							onClick: function () { setConfirming(true); },
+						}, t('skx.trash'))
+						: null),
+				h('div', { className: 'skxDocSection' },
+					h('div', { className: 'skxLabel' }, t('skx.description')),
+					h('p', { className: 'skxProse' }, (data.description ?? '') === '' ? t('skx.noDescription') : data.description)),
+				h('div', { className: 'skxDocSection' },
+					h('div', { className: 'skxLabelRow' },
+						h('span', { className: 'skxLabel' }, t('skx.note')),
+						editing ? null : h('button', { type: 'button', className: 'skxLink', onClick: function () { setEditing(true); } }, t('skx.editNote'))),
+					editing
+						? h('div', null,
+							h('textarea', {
+								className: 'skxTextarea',
+								rows: 3,
+								value: note,
+								placeholder: t('skx.notePlaceholder'),
+								onChange: function (event) { setNote(event.target.value); },
+							}),
+							h('div', { className: 'skxRowActions' },
+								h('button', { type: 'button', className: 'skxBtn skxBtnPrimary', disabled: saving, onClick: saveNote }, saving ? t('state.loading') : t('skx.save')),
+								h('button', { type: 'button', className: 'skxBtn', onClick: function () { setEditing(false); setNote(data.customNote ?? ''); } }, t('action.cancel'))))
+						: h('p', { className: 'skxProse' }, (data.customNote ?? '') === '' ? t('skx.noNote') : data.customNote)),
+				(data.body ?? '') === '' ? null : h('div', { className: 'skxDocSection' },
+					h('div', { className: 'skxLabelRow' },
+						h('span', { className: 'skxLabel' }, t('skx.body')),
+						h('button', { type: 'button', className: 'skxLink', onClick: copyBody }, copied ? t('skx.copied') : t('skx.copyBody'))),
+					h('pre', { className: 'skxPre' }, data.body)),
+				h('div', { className: 'skxDocSection' },
+					h('div', { className: 'skxLabel' }, t('skx.path')),
+					h('code', { className: 'skxCode skxCodeBlock' }, data.path ?? '')),
+				// The button itself lives in the header so it is always reachable;
+				// this only explains why it is absent when the source is read-only.
+				root.mutable === true && data.sourceReadOnly !== true && data.linked !== true
+					? null
+					: h('div', { className: 'skxDocFoot' },
+						h('span', { className: 'skxHint' }, t('skx.deleteUnavailable'))),
+				// A fixed overlay, not an in-flow block: the document below can be
+				// thousands of lines long, and an in-flow confirmation would render
+				// off-screen at its end.
+				confirming
+					? h('div', { className: 'skxModal', role: 'dialog', 'aria-modal': 'true' },
+						h('div', { className: 'skxModalCard' },
+							h('div', { className: 'skxConfirmTitle' }, t('skx.confirmTrashTitle', { name: data.declaredName ?? skill.name })),
+							h('p', { className: 'skxProse' }, t('skx.confirmTrashDesc')),
+							h('div', { className: 'skxRowActions' },
+								h('button', {
+									type: 'button',
+									className: 'skxBtn skxBtnDanger',
+									disabled: deleting,
+									onClick: function () {
+										setDeleting(true);
+										props.call('delete', { root: root.key, name: skill.name }, { method: 'POST' }).then(function () {
+											setConfirming(false);
+											if (props.onSaved) props.onSaved();
+										}).catch(function (reason) {
+											props.setError(messageOf(reason));
+										}).finally(function () { setDeleting(false); });
+									},
+								}, deleting ? t('state.loading') : t('skx.trashConfirm')),
+								h('button', { type: 'button', className: 'skxBtn', onClick: function () { setConfirming(false); } }, t('action.cancel')))))
+					: null);
+		}
+
+		/**
+		 * Project-scoped skills, grouped by registered workspace.
+		 *
+		 * @param {object} props - Kernel caller and error sink.
+		 * @returns {object} React node.
+		 */
+		function ProjectSkillsPanel(props) {
+			var t = props.t;
+			var call = props.call;
+			var [loading, setLoading] = useState(true);
+			var [workspaces, setWorkspaces] = useState([]);
+			var [detail, setDetail] = useState(null);
+			var [activePath, setActivePath] = useState('');
+			var [error] = useState('');
+
+			useEffect(function () {
+				call('workspaces').then(function (data) {
+					var items = Array.isArray(data?.items) ? data.items : [];
+					setWorkspaces(items);
+					var first = items.find(function (item) { return item.available !== false; });
+					if (first !== undefined) setActivePath(first.path);
+				}).catch(function (reason) {
+					props.setError(messageOf(reason));
+				}).finally(function () { setLoading(false); });
+			}, [call]);
+
+			useEffect(function () {
+				if (activePath === '') return undefined;
+				var alive = true;
+				setDetail(null);
+				call('workspace-skills', { workspace: activePath }).then(function (data) {
+					if (alive) setDetail(data);
+				}).catch(function (reason) {
+					if (alive) setDetail({ error: messageOf(reason) });
+				});
+				return function () { alive = false; };
+			}, [activePath, call]);
+
+			if (loading) return h('div', { className: 'skxEmpty skxEmptyTall' }, t('state.loading'));
+			if (workspaces.length === 0) return h('div', { className: 'skxEmpty skxEmptyTall' }, t('skx.noWorkspaces'));
+
+			var roots = Array.isArray(detail?.roots) ? detail.roots : [];
+			var visible = roots.filter(function (root) { return (root.skills ?? []).length > 0; });
+
+			return h('div', { className: 'skxSplit' },
+				h('div', { className: 'skxListCol' },
+					h('div', { className: 'skxHead' },
+						h('div', { className: 'skxHeadMain' },
+							h('h2', { className: 'skxTitle' }, t('skx.tab.project')),
+							h('span', { className: 'skxTitleMeta' }, t('skx.projectHint')))),
+					h('div', { className: 'skxChips' }, workspaces.map(function (item) {
+						return h('button', {
+							type: 'button',
+							key: item.path,
+							className: classes('skxChip', item.path === activePath && 'skxChipOn', item.available === false && 'skxChipOff'),
+							title: item.available === false ? t('skx.workspaceUnavailable') : item.path,
+							onClick: function () { setActivePath(item.path); },
+						}, item.name, h('span', { className: 'skxNavCount' }, String(item.skillCount ?? 0)));
+					})),
+					detail === null
+						? h('div', { className: 'skxEmpty' }, t('state.loading'))
+						: detail.error !== undefined
+							? h('div', { className: 'skxEmpty' }, detail.error)
+							: visible.length === 0
+								? h('div', { className: 'skxEmpty' }, t('skx.workspaceNoSkills'))
+								: h('div', null, visible.map(function (root) {
+									return h('div', { className: 'skxGroup', key: root.key },
+										h('div', { className: 'skxGroupHead' },
+											h('span', { className: 'skxLabel' }, root.label ?? root.key),
+											h('span', { className: 'skxSourceCount' }, String((root.skills ?? []).length))),
+										h('ul', { className: 'skxRows' }, collapseSkills(root.skills).map(function (skill) {
+											return h('li', { key: skill.name, className: 'skxRow skxRowStatic' },
+												h('div', { className: 'skxRowMain' },
+													h('div', { className: 'skxRowTitle' }, h('span', { className: 'skxRowName' }, skill.name)),
+													h('p', { className: 'skxRowDesc' }, (skill.description ?? '') === '' ? t('skx.noDescription') : skill.description)));
+										})));
+								}))),
+				h('div', { className: 'skxDetailCol' },
+					h('div', { className: 'skxEmpty skxEmptyTall' }, t('skx.projectReadOnly'))));
+		}
+
+		/**
+		 * Discovery: the ClawHub chart and its search.
+		 *
+		 * @param {object} props - Kernel caller, live roots, install callback.
+		 * @returns {object} React node.
+		 */
+		function DiscoverPanel(props) {
+			var t = props.t;
+			var call = props.call;
+			var [query, setQuery] = useState('');
+			var [busy, setBusy] = useState(false);
+			var [items, setItems] = useState([]);
+			var [note, setNote] = useState('');
+			var [target, setTarget] = useState('dsh');
+			var [installing, setInstalling] = useState('');
+			var [preview, setPreview] = useState(null);
+			var [sort, setSort] = useState('downloads');
+			/** Bumped on every load so an older, slower response cannot win. */
+			var [generation, setGeneration] = useState(0);
+
+			var load = useCallback(function (mode, text, order) {
+				var alive = { current: true };
+				setBusy(true);
+				var query0 = mode === 'search'
+					? 'q=' + encodeURIComponent(text) + '&limit=24'
+					: 'limit=24&sort=' + encodeURIComponent(order ?? 'downloads');
+				var route = mode === 'search' ? 'clawhub/search' : 'clawhub/list';
+				call(route, undefined, { method: 'GET', query: query0 }).then(function (data) {
+					if (!alive.current) return;
+					var rows = mode === 'search'
+						? (Array.isArray(data?.results) ? data.results : (Array.isArray(data?.items) ? data.items : []))
+						: (Array.isArray(data?.items) ? data.items : []);
+					setItems(rows);
+					setNote(rows.length === 0 ? t('skx.discoverNone') : '');
+				}).catch(function (reason) {
+					if (!alive.current) return;
+					setItems([]);
+					setNote(messageOf(reason));
+				}).finally(function () {
+					if (alive.current) setBusy(false);
+				});
+				return function () { alive.current = false; };
+			}, [call, t]);
+
+			useEffect(function () {
+				var cancel = load('chart', '', sort);
+				return cancel;
+			}, [load, sort, generation]);
+
+			var runSearch = function () {
+				var text = query.trim();
+				if (text === '') return;
+				setPreview(null);
+				load('search', text, sort);
+			};
+			var resetChart = function () {
+				setQuery('');
+				setPreview(null);
+				setNote('');
+				setGeneration(function (value) { return value + 1; });
+			};
+
+			var inspect = function (item) {
+				setPreview({ loading: true, item: item });
+				call('catalog/detail', { catalog: 'clawhub', owner: item.ownerHandle ?? item.owner, slug: item.slug }, { method: 'POST' }).then(function (data) {
+					setPreview({ loading: false, item: item, detail: data });
+				}).catch(function (reason) {
+					setPreview({ loading: false, item: item, error: messageOf(reason) });
+				});
+			};
+
+			var install = function (item) {
+				var key = item.slug ?? item.id ?? item.name;
+				setInstalling(key);
+				call('catalog/install', { catalog: 'clawhub', owner: item.ownerHandle ?? item.owner, slug: item.slug, root: target }, { method: 'POST' }).then(function () {
+					setNote(t('skx.installed', { name: item.displayName ?? item.name ?? key }));
+					setPreview(null);
+					if (props.onInstalled) props.onInstalled();
+				}).catch(function (reason) {
+					setNote(messageOf(reason));
+				}).finally(function () { setInstalling(''); });
+			};
+
+			var targets = (props.roots ?? []).filter(function (root) { return root.mutable === true || root.key === 'dsh' || root.key === 'agents'; });
+			var installTargets = targets.length === 0 ? [{ key: 'dsh', label: 'DSH' }] : targets;
+			var formatCount = function (value) {
+				var n = Number(value);
+				if (!Number.isFinite(n)) return '';
+				if (n >= 1e6) return (n / 1e6).toFixed(1).replace(/\.0$/, '') + 'M';
+				if (n >= 1e3) return (n / 1e3).toFixed(1).replace(/\.0$/, '') + 'k';
+				return String(n);
+			};
+
+			return h('div', { className: 'skxSplit' },
+				h('div', { className: 'skxListCol' },
+					h('div', { className: 'skxHead' },
+						h('div', { className: 'skxHeadMain' },
+							h('h2', { className: 'skxTitle' }, t('skx.tab.discover')),
+							h('span', { className: 'skxTitleMeta' }, t('skx.discoverHint')))),
+					h('div', { className: 'skxToolbar' },
+						h('div', { className: 'skxSearchField' },
+							h('span', { className: 'skxSearchIcon', 'aria-hidden': 'true' }, '⌕'),
+							h('input', {
+								className: 'skxInput skxInputBare',
+								type: 'search',
+								value: query,
+								placeholder: t('skx.discoverSearch'),
+								onChange: function (event) { setQuery(event.target.value); },
+								onKeyDown: function (event) { if (event.key === 'Enter') runSearch(); },
+							})),
+						h('button', { type: 'button', className: 'skxBtn skxBtnPrimary', onClick: runSearch, disabled: busy }, t('skx.searchAction')),
+						query === '' && note === '' ? null : h('button', { type: 'button', className: 'skxBtn', onClick: resetChart }, t('skx.backToChart'))),
+					h('div', { className: 'skxToolbar' },
+						h('div', { className: 'skxTabs' },
+							tabChip('downloads', t('skx.sortDownloads')),
+							tabChip('installs', t('skx.sortInstalls')),
+							tabChip('stars', t('skx.sortStars')),
+							tabChip('recent', t('skx.sortRecent'))),
+						h('span', { className: 'mgrSpacer' }),
+						h('span', { className: 'skxLabel' }, t('skx.installTo')),
+						h('select', {
+							className: 'skxSelect',
+							value: target,
+							onChange: function (event) { setTarget(event.target.value); },
+						}, installTargets.map(function (root) {
+							return h('option', { value: root.key, key: root.key }, root.label ?? root.key);
+						}))),
+					note === '' ? null : h('div', { className: 'skxNote' }, note),
+					busy
+						? h('div', { className: 'skxEmpty' }, t('state.loading'))
+						: items.length === 0
+							? h('div', { className: 'skxEmpty' }, t('skx.discoverEmpty'))
+							: h('ul', { className: 'skxRows' }, items.map(function (item) {
+								var key = item.slug ?? item.id ?? item.name;
+								var title = item.displayName ?? item.name ?? item.slug ?? key;
+								var desc = item.summary ?? item.description ?? '';
+								var stats = item.stats ?? {};
+								var active = preview !== null && (preview.item.slug ?? preview.item.id) === (item.slug ?? item.id);
+								return h('li', {
+									key: key,
+									className: classes('skxRow', 'skxRowStatic', active && 'skxRowOn'),
+									onClick: function () { inspect(item); },
+								},
+								h('div', { className: 'skxRowMain' },
+									h('div', { className: 'skxRowTitle' },
+										h('span', { className: 'skxRowName' }, title),
+										stats.downloads === undefined ? null : h('span', { className: 'skxBadge' }, t('skx.downloads', { n: formatCount(stats.downloads) })),
+										stats.stars === undefined || stats.stars === 0 ? null : h('span', { className: 'skxBadge' }, '★ ' + formatCount(stats.stars))),
+									h('p', { className: 'skxRowDesc' }, desc === '' ? t('skx.noDescription') : desc),
+									h('span', { className: 'skxRowMeta' }, (item.ownerHandle ?? item.owner ?? '') + ' / ' + (item.slug ?? ''))),
+								h('div', { className: 'skxRowEnd' },
+									h('button', { type: 'button', className: 'skxBtn skxBtnSmall', onClick: function (event) { event.stopPropagation(); inspect(item); } }, t('skx.preview')),
+									h('button', {
+										type: 'button',
+										className: 'skxBtn skxBtnPrimary skxBtnSmall',
+										disabled: installing === key,
+										onClick: function (event) { event.stopPropagation(); install(item); },
+									}, installing === key ? t('state.loading') : t('skx.install'))));
+							}))),
+				h('div', { className: 'skxDetailCol' },
+					preview === null
+						? h('div', { className: 'skxEmpty skxEmptyTall' }, t('skx.discoverPick'))
+						: preview.loading
+							? h('div', { className: 'skxEmpty skxEmptyTall' }, t('state.loading'))
+							: h('div', { className: 'skxDoc' },
+								h('div', { className: 'skxDocHead' },
+									h('h2', { className: 'skxDocTitle' }, preview.detail?.name ?? preview.item.displayName ?? preview.item.name ?? ''),
+									h('div', { className: 'skxTokens' },
+										preview.detail === undefined ? null : h('span', { className: 'skxToken' }, String(preview.detail.descriptionTokens ?? 0) + ' ' + t('skx.tokenDesc')),
+										preview.detail === undefined ? null : h('span', { className: 'skxToken' }, String(preview.detail.bodyTokens ?? 0) + ' ' + t('skx.tokenBody')))),
+								preview.error !== undefined
+									? h('div', { className: 'skxEmpty' }, preview.error)
+									: h('div', { className: 'skxDocSections' },
+										h('div', { className: 'skxDocSection' },
+											h('div', { className: 'skxLabel' }, t('skx.description')),
+											h('p', { className: 'skxProse' }, preview.detail?.description ?? '')),
+										(preview.detail?.body ?? '') === '' ? null : h('div', { className: 'skxDocSection' },
+											h('div', { className: 'skxLabel' }, t('skx.body')),
+											h('pre', { className: 'skxPre' }, preview.detail.body))),
+								h('div', { className: 'skxDocFoot' },
+									h('button', { type: 'button', className: 'skxBtn skxBtnPrimary', onClick: function () { install(preview.item); } }, t('skx.install')),
+									h('button', { type: 'button', className: 'skxBtn', onClick: function () { setPreview(null); } }, t('action.close'))))));
+
+			function tabChip(id, label) {
+				return h('button', {
+					type: 'button',
+					key: id,
+					className: classes('skxChip', 'skxChipTight', sort === id && 'skxChipOn'),
+					onClick: function () { setSort(id); setPreview(null); },
+				}, label);
+			}
+		}
+
+		/**
+		 * The kernel's trash: restore or delete forever.
+		 *
+		 * @param {object} props - Kernel caller and restore callback.
+		 * @returns {object} React node.
+		 */
+		function TrashPanel(props) {
+			var t = props.t;
+			var call = props.call;
+			var [items, setItems] = useState(null);
+			var [busy, setBusy] = useState(false);
+
+			var load = useCallback(function () {
+				setBusy(true);
+				return call('state').then(function (data) {
+					setItems(Array.isArray(data?.trash) ? data.trash : []);
+				}).catch(function (reason) {
+					props.setError(messageOf(reason));
+				}).finally(function () { setBusy(false); });
+			}, [call]);
+
+			useEffect(function () { void load(); }, [load]);
+
+			var restore = function (item) {
+				setBusy(true);
+				call('trash-restore', { id: item.id }).then(function () {
+					if (props.onRestored) props.onRestored();
+					return load();
+				}).catch(function (reason) {
+					props.setError(messageOf(reason));
+				}).finally(function () { setBusy(false); });
+			};
+			var purge = function (item) {
+				setBusy(true);
+				call('trash-delete', { id: item.id }).then(load).catch(function (reason) {
+					props.setError(messageOf(reason));
+				}).finally(function () { setBusy(false); });
+			};
+			var when = function (value) {
+				if (typeof value !== 'string' || value === '') return '';
+				try {
+					return new Date(value).toLocaleString();
+				} catch {
+					return value;
+				}
+			};
+
+			if (items === null) return h('div', { className: 'skxEmpty skxEmptyTall' }, t('state.loading'));
+
+			return h('div', { className: 'skxSplit' },
+				h('div', { className: 'skxListCol' },
+					h('div', { className: 'skxHead' },
+						h('div', { className: 'skxHeadMain' },
+							h('h2', { className: 'skxTitle' }, t('skx.tab.trash')),
+							h('span', { className: 'skxTitleMeta' }, t('skx.trashHint')))),
+					items.length === 0
+						? h('div', { className: 'skxEmpty' }, t('skx.trashEmpty'))
+						: h('ul', { className: 'skxRows' }, items.map(function (item) {
+							return h('li', { key: item.id, className: 'skxRow skxRowStatic' },
+								h('div', { className: 'skxRowMain' },
+									h('div', { className: 'skxRowTitle' },
+										h('span', { className: 'skxRowName' }, item.name ?? item.id),
+										h('span', { className: 'skxBadge' }, when(item.deletedAt))),
+									h('p', { className: 'skxRowDesc' }, t('skx.trashFrom', { root: typeof item.root === 'string' ? item.root : (item.root?.key ?? '') }))),
+								h('div', { className: 'skxRowEnd' },
+									h('button', { type: 'button', className: 'skxBtn skxBtnSmall', disabled: busy, onClick: function () { restore(item); } }, t('skx.restore')),
+									h('button', { type: 'button', className: 'skxBtn skxBtnDanger skxBtnSmall', disabled: busy, onClick: function () { purge(item); } }, t('skx.purge'))));
+						}))),
+				h('div', { className: 'skxDetailCol' },
+					h('div', { className: 'skxEmpty skxEmptyTall' }, t('skx.trashHint'))));
 		}
 
 		//#endregion
@@ -2313,6 +3118,9 @@ window.__ModuleLoader__.load({
 			var ctx = props.ctx;
 			var t = props.t;
 			var call = useCallback(function (endpoint, payload) { return callHost(ctx, endpoint, payload); }, [ctx]);
+			// The vendored kernel answers its own envelope, so it gets its own
+			// caller; `call` above stays for this plugin's endpoints.
+			var kernelCall = useCallback(function (path, payload) { return callKernel(ctx, path, payload); }, [ctx]);
 			var [tab, setTab] = useState('skills');
 			var [data, setData] = useState(null);
 			var [lan, setLan] = useState(null);
@@ -2320,9 +3128,6 @@ window.__ModuleLoader__.load({
 			var [busy, setBusy] = useState(false);
 			var [toast, setToast] = useState(null);
 			var [query, setQuery] = useState('');
-			var [openCats, setOpenCats] = useState({});
-			var [detail, setDetail] = useState(null);
-			var [creating, setCreating] = useState(false);
 			var [searchStatus, setSearchStatus] = useState(null);
 			var [searchQuery, setSearchQuery] = useState('');
 			var [searchResult, setSearchResult] = useState(null);
@@ -2445,33 +3250,11 @@ window.__ModuleLoader__.load({
 				}).catch(function () {});
 			}
 
-			function toggleCategory(name, enabled) {
-				void run(call('skill-toggle', { category: name, enabled: enabled }), function (value) {
-					applyOverview(value);
-					notify(t('state.saved'), false);
-				}).catch(function () {});
-			}
-
-			function toggleSkill(category, name, enabled) {
-				void run(call('skill-toggle', { category: category, name: name, enabled: enabled }), function (value) {
-					applyOverview(value);
-					notify(t('state.saved'), false);
-				}).catch(function () {});
-			}
-
 			function toggleMode(id, enabled) {
 				void run(call('mode-toggle', { id: id, enabled: enabled }), function (value) {
 					applyOverview(value);
 					notify(enabled ? t('modes.on') : t('modes.off'), false);
 				}).catch(function () {});
-			}
-
-			function createSkill(payload) {
-				return call('skill-create', payload).then(function (value) {
-					applyOverview(value.overview);
-					setCreating(false);
-					notify(t('state.created'), false);
-				});
 			}
 
 			function mcpToggle(id, enabled) {
@@ -2736,27 +3519,14 @@ window.__ModuleLoader__.load({
 					data === null
 						? (error === '' ? h(Loading, { label: t('state.loading') }) : null)
 						: (tab === 'skills'
-							? h(SkillsSection, {
-								t: t,
-								skills: data.skills,
-								catalog: data.catalog,
-								query: query,
-								setQuery: setQuery,
-								openCats: openCats,
-								busy: busy,
-								toggleCategory: function (name) {
-									setOpenCats(function (current) {
-										var next = { ...current };
-										next[name] = current[name] !== true;
-										return next;
-									});
-								},
-								onToggleCategory: toggleCategory,
-								onToggleSkill: toggleSkill,
-								onOpenSkill: function (category, skill) { setDetail({ category: category, name: skill.name }); },
-								onRefresh: refresh,
-								onNew: function () { setCreating(true); },
-							})
+							? (data.kernel !== undefined && data.kernel.routes > 0
+								? h(SkillsWorkspace, { t: t, callKernel: kernelCall })
+								: h('div', { className: 'mgrErrorBox' },
+									h('span', null, '技能内核未就绪：' + (data.kernel === undefined
+										? '未接线'
+										: ('已挂载=' + String(data.kernel.mounted) + '，路由数=' + String(data.kernel.routes) + (data.kernel.error === '' ? '' : '，错误：' + data.kernel.error)))),
+									h('span', { className: 'mgrSpacer' }),
+									h('button', { type: 'button', className: 'mgrBtn', onClick: function () { void load(); } }, t('action.retry'))))
 							: tab === 'mcp'
 								? h(McpSection, {
 									t: t,
@@ -2810,19 +3580,6 @@ window.__ModuleLoader__.load({
 									onCopy: lanCopy,
 									onDownloadCa: lanDownloadCa,
 								}))),
-				detail === null ? null : h(SkillDetail, {
-					category: detail.category,
-					name: detail.name,
-					call: call,
-					t: t,
-					onClose: function () { setDetail(null); },
-				}),
-				creating === false ? null : h(SkillCreate, {
-					skills: data === null ? { categories: [], roots: [] } : data.skills,
-					t: t,
-					onClose: function () { setCreating(false); },
-					onSubmit: createSkill,
-				}),
 				toast === null ? null : h('div', { className: classes('mgrToast', toast.error && 'mgrToastError'), role: 'status' },
 					h('span', { className: 'mgrToastText' }, toast.message),
 					h('button', {
