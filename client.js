@@ -77,7 +77,6 @@ window.__ModuleLoader__.load({
 			'skx.sortDownloads': '按下载',
 			'skx.sortInstalls': '按安装',
 			'skx.sortStars': '按星标',
-			'skx.sortRecent': '最近更新',
 			'skx.backToChart': '回到榜单',
 			'skx.trash': '移到回收站',
 			'skx.trashConfirm': '确认移入',
@@ -395,7 +394,6 @@ window.__ModuleLoader__.load({
 			'skx.sortDownloads': 'Downloads',
 			'skx.sortInstalls': 'Installs',
 			'skx.sortStars': 'Stars',
-			'skx.sortRecent': 'Recent',
 			'skx.backToChart': 'Back to chart',
 			'skx.trash': 'Move to trash',
 			'skx.trashConfirm': 'Move to trash',
@@ -1775,49 +1773,65 @@ window.__ModuleLoader__.load({
 			var [installing, setInstalling] = useState('');
 			var [preview, setPreview] = useState(null);
 			var [sort, setSort] = useState('downloads');
-			/** Bumped on every load so an older, slower response cannot win. */
-			var [generation, setGeneration] = useState(0);
+			var [chartNonce, setChartNonce] = useState(0);
+			/**
+			 * The only request allowed to write `items`.
+			 *
+			 * Each load takes a ticket; a slower, older answer that arrives after
+			 * a newer one is dropped instead of overwriting the newer list.
+			 */
+			var requestId = useRef(0);
 
-			var load = useCallback(function (mode, text, order) {
-				var alive = { current: true };
+			/**
+			 * Fetch the ClawHub chart or search results.
+			 *
+			 * The kernel's chart endpoint caps `limit` at 10 and only offers the
+			 * download-sorted chart, so the list request uses no `sort` at all and
+			 * the visible order is applied here (see `orderedItems`).
+			 *
+			 * @param {string} mode - `chart` or `search`.
+			 * @param {string} text - Search terms; ignored for the chart.
+			 * @returns {void}
+			 */
+			var load = useCallback(function (mode, text) {
+				var ticket = requestId.current + 1;
+				requestId.current = ticket;
 				setBusy(true);
 				var query0 = mode === 'search'
 					? 'q=' + encodeURIComponent(text) + '&limit=24'
-					: 'limit=24&sort=' + encodeURIComponent(order ?? 'downloads');
+					: 'limit=10';
 				var route = mode === 'search' ? 'clawhub/search' : 'clawhub/list';
 				call(route, undefined, { method: 'GET', query: query0 }).then(function (data) {
-					if (!alive.current) return;
+					if (requestId.current !== ticket) return;
 					var rows = mode === 'search'
 						? (Array.isArray(data?.results) ? data.results : (Array.isArray(data?.items) ? data.items : []))
 						: (Array.isArray(data?.items) ? data.items : []);
 					setItems(rows);
 					setNote(rows.length === 0 ? t('skx.discoverNone') : '');
 				}).catch(function (reason) {
-					if (!alive.current) return;
+					if (requestId.current !== ticket) return;
 					setItems([]);
 					setNote(messageOf(reason));
 				}).finally(function () {
-					if (alive.current) setBusy(false);
+					if (requestId.current === ticket) setBusy(false);
 				});
-				return function () { alive.current = false; };
 			}, [call, t]);
 
 			useEffect(function () {
-				var cancel = load('chart', '', sort);
-				return cancel;
-			}, [load, sort, generation]);
+				load('chart', '');
+			}, [load, chartNonce]);
 
 			var runSearch = function () {
 				var text = query.trim();
 				if (text === '') return;
 				setPreview(null);
-				load('search', text, sort);
+				load('search', text);
 			};
 			var resetChart = function () {
 				setQuery('');
 				setPreview(null);
 				setNote('');
-				setGeneration(function (value) { return value + 1; });
+				setChartNonce(function (value) { return value + 1; });
 			};
 
 			var inspect = function (item) {
@@ -1829,10 +1843,16 @@ window.__ModuleLoader__.load({
 				});
 			};
 
+			var targets = (props.roots ?? []).filter(function (root) { return root.mutable === true || root.key === 'dsh' || root.key === 'agents'; });
+			var installTargets = targets.length === 0 ? [{ key: 'dsh', label: 'DSH' }] : targets;
+			// `dsh` is absent on a machine that never created ~/.dsh/skills, so the
+			// selection must fall back to a target that is actually listed.
+			var selectedTarget = installTargets.some(function (root) { return root.key === target; }) ? target : installTargets[0].key;
+
 			var install = function (item) {
 				var key = item.slug ?? item.id ?? item.name;
 				setInstalling(key);
-				call('catalog/install', { catalog: 'clawhub', owner: item.ownerHandle ?? item.owner, slug: item.slug, root: target }, { method: 'POST' }).then(function () {
+				call('catalog/install', { catalog: 'clawhub', owner: item.ownerHandle ?? item.owner, slug: item.slug, root: selectedTarget }, { method: 'POST' }).then(function () {
 					setNote(t('skx.installed', { name: item.displayName ?? item.name ?? key }));
 					setPreview(null);
 					if (props.onInstalled) props.onInstalled();
@@ -1841,8 +1861,17 @@ window.__ModuleLoader__.load({
 				}).finally(function () { setInstalling(''); });
 			};
 
-			var targets = (props.roots ?? []).filter(function (root) { return root.mutable === true || root.key === 'dsh' || root.key === 'agents'; });
-			var installTargets = targets.length === 0 ? [{ key: 'dsh', label: 'DSH' }] : targets;
+			/**
+			 * The visible order.
+			 *
+			 * The kernel exposes one server-side chart order (downloads), so the
+			 * other two orders are applied over the rows already fetched.
+			 */
+			var orderedItems = sort === 'downloads' ? items : items.slice().sort(function (left, right) {
+				var a = Number((left.stats ?? {})[sort] ?? left[sort] ?? 0);
+				var b = Number((right.stats ?? {})[sort] ?? right[sort] ?? 0);
+				return b - a;
+			});
 			var formatCount = function (value) {
 				var n = Number(value);
 				if (!Number.isFinite(n)) return '';
@@ -1866,7 +1895,12 @@ window.__ModuleLoader__.load({
 								value: query,
 								placeholder: t('skx.discoverSearch'),
 								onChange: function (event) { setQuery(event.target.value); },
-								onKeyDown: function (event) { if (event.key === 'Enter') runSearch(); },
+								'aria-label': t('skx.discoverSearch'),
+								onKeyDown: function (event) {
+									// Confirm a candidate in an IME is not a submit.
+									if (event.isComposing === true || event.keyCode === 229) return;
+									if (event.key === 'Enter') runSearch();
+								},
 							})),
 						h('button', { type: 'button', className: 'skxBtn skxBtnPrimary', onClick: runSearch, disabled: busy }, t('skx.searchAction')),
 						query === '' && note === '' ? null : h('button', { type: 'button', className: 'skxBtn', onClick: resetChart }, t('skx.backToChart'))),
@@ -1874,13 +1908,13 @@ window.__ModuleLoader__.load({
 						h('div', { className: 'skxTabs' },
 							tabChip('downloads', t('skx.sortDownloads')),
 							tabChip('installs', t('skx.sortInstalls')),
-							tabChip('stars', t('skx.sortStars')),
-							tabChip('recent', t('skx.sortRecent'))),
+							tabChip('stars', t('skx.sortStars'))),
 						h('span', { className: 'mgrSpacer' }),
 						h('span', { className: 'skxLabel' }, t('skx.installTo')),
 						h('select', {
 							className: 'skxSelect',
-							value: target,
+							value: selectedTarget,
+							'aria-label': t('skx.installTo'),
 							onChange: function (event) { setTarget(event.target.value); },
 						}, installTargets.map(function (root) {
 							return h('option', { value: root.key, key: root.key }, root.label ?? root.key);
@@ -1888,9 +1922,9 @@ window.__ModuleLoader__.load({
 					note === '' ? null : h('div', { className: 'skxNote' }, note),
 					busy
 						? h('div', { className: 'skxEmpty' }, t('state.loading'))
-						: items.length === 0
+						: orderedItems.length === 0
 							? h('div', { className: 'skxEmpty' }, t('skx.discoverEmpty'))
-							: h('ul', { className: 'skxRows' }, items.map(function (item) {
+							: h('ul', { className: 'skxRows' }, orderedItems.map(function (item) {
 								var key = item.slug ?? item.id ?? item.name;
 								var title = item.displayName ?? item.name ?? item.slug ?? key;
 								var desc = item.summary ?? item.description ?? '';

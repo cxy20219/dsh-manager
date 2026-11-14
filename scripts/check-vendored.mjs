@@ -26,7 +26,7 @@ const vendoredDirectory = resolve(here, '..', 'skills')
 const manifestPath = join(vendoredDirectory, '.vendored.json')
 
 /** Files in `skills/` that are project-owned, not vendored from upstream. */
-const PROJECT_OWNED = new Set(['NOTICE', '.vendored.json'])
+const PROJECT_OWNED = new Set(['NOTICE', '.vendored.json', 'zip.js'])
 
 async function hashFile(path) {
 	const contents = await readFile(path)

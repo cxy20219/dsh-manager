@@ -41,7 +41,7 @@ dsh plugin --profile desktop add .
 
 也可以用 Web UI 里的插件管理器安装：先 `npm pack` 打包，再选中生成的 `.tgz`。
 这个 bundle 会插入一行宿主配置（`dsh-manager`）和一个客户端模块。
-运行时只有一个依赖 `fflate`（ZIP 导入用），`pnpm` 会一并装好。
+不安装任何运行时依赖：ZIP 导入由自带的 `skills/zip.js` 处理，`dsh plugin add` 直接链接检出目录即可用。
 
 装完后刷新一次网页，入口就出现在左侧栏的其他全局面板旁边。
 
@@ -305,7 +305,7 @@ npm run check:vendored   # 校验 skills/ 与钉住的哈希一致（手改或�
 |---|---|
 | `index.js` | 宿主入口：技能内核挂载、MCP、模式、搜索、局域网监听与 `/api/manager` 路由 |
 | `src/frontmatter.js` | `SKILL.md` frontmatter 子集解析器 |
-| `skills/` | **自带的技能内核**（派生自 `@michengai/dsh-skills-manager`，见 `skills/NOTICE`）：来源发现、扫描、虚拟分类、回收站、导入导出、仓库订阅、项目作用域。44 条内核路由与下面的面板端点共用 `/api/manager` |
+| `skills/` | **自带的技能内核**（派生自 `@michengai/dsh-skills-manager`，见 `skills/NOTICE`）：来源发现、扫描、虚拟分类、回收站、导入导出、仓库订阅、项目作用域。48 条内核路由与下面的面板端点共用 `/api/manager` |
 | `src/skills-kernel.js` | 把内核挂到这个插件的上下文上：收窄可见服务、补齐 Host 要求的 `requestBody`、`create_skill` 撞名时降级而不是中断挂载 |
 | `src/skills-adapter.js` | 把内核的按来源快照投影成面板沿用的 `categories` 形状，旧端点因此不必知道内核的数据结构 |
 | `src/mcp-client.js` | 无依赖的 stdio MCP 客户端与工具命名约定 |

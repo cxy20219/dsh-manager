@@ -26,12 +26,25 @@ change; no algorithm, validation rule, or safety check was altered.
   1. identity      `name`'s value ("skills-manager") -> "dsh-manager"
   2. api prefix    API_PREFIX ("/api/michengai/dsh-skills-manager") -> "/api/manager"
   3. client header CLIENT_MARKER_HEADER ("x-dsh-skills-manager") -> "x-dsh-manager-client"
-  4. state dir     managerHomePath() <DSH_HOME>/skills-manager -> <DSH_HOME>/manager
-  5. log file      logPath() <DSH_HOME>/dsh-skills-manager.log -> <DSH_HOME>/manager/skills.log
+  4. state dir     managerHomePath() <DSH_HOME>/skills-manager -> <DSH_HOME>/manager/skills
+  5. log file      logPath() <DSH_HOME>/dsh-skills-manager.log -> <DSH_HOME>/manager/skills/skills.log
   6. provider name "dsh-skills-manager-external" -> "manager-external"
+  7. zip reader    core.js imports `unzipSync` from the project's own ./zip.js instead of
+                   the npm package `fflate`; the plugin therefore has no runtime npm dependency
+                   (`dsh plugin add` links the checkout and never installs its dependencies).
+  8. temp dir      repository-git.js EMPTY_CHECKOUT_PATTERN ".dsh-skills-manager-empty"
+                   -> ".dsh-manager-empty" (the checkout is still outside the skill roots)
+
+The fallback client header in `validateMutationRequest` (upstream accepted
+`x-michengai-client` as a second name) now names this plugin's own header; the
+old upstream compatibility name is intentionally gone.
 
 Files removed from the vendored set: upstream `client.js` (its browser half is
 replaced by this project's own UI) and upstream `client`-only locale JSON.
+
+Files added next to the vendored set: `zip.js`, a project-owned minimal ZIP
+reader (store/deflate only). It is not derived from upstream and is excluded
+from the vendored hash list by `scripts/check-vendored.mjs`.
 
 Per Apache-2.0 section 4(b), these modified files are marked as changed above.
 Upstream's own copyright and license notices are retained in ./LICENSE and in

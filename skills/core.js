@@ -11,7 +11,11 @@ import {
 } from "node:path";
 import { promises as fs, readFileSync } from "node:fs";
 import { createHash, randomUUID } from "node:crypto";
-import { unzipSync } from "fflate";
+// changed: upstream imported `unzipSync` from the npm package `fflate`. This
+// build ships a project-owned ZIP reader instead, so the plugin has no runtime
+// npm dependency (a `dsh plugin add` install is a pnpm link and would not
+// install it). See ../NOTICE and ./zip.js.
+import { unzipSync } from "./zip.js";
 import { estimateTokens, truncateCatalogDescription } from "./token-count.js";
 import {
   discoverReadonlyEntries,

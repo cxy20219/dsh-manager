@@ -10,7 +10,7 @@
  */
 
 import assert from 'node:assert/strict'
-import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises'
+import { mkdtemp, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
@@ -53,9 +53,26 @@ test('the kernel keeps its state inside this plugin data directory', () => {
 })
 
 test('the kernel carries this plugin API prefix and client header', async () => {
-	// Asserted through the routes it registers rather than by reading constants:
-	// a path that is not under /api/manager is rejected by the bridge.
+	const index = await readFile(new URL('../skills/index.js', import.meta.url), 'utf8')
+	assert.match(index, /const API_PREFIX = "\/api\/manager"/)
+	assert.match(index, /const CLIENT_MARKER_HEADER = "x-dsh-manager-client"/)
 	assert.equal(bridge.KERNEL_EXTERNAL_PROVIDER, 'manager-external')
+})
+
+test('the kernel has no runtime npm dependency', async () => {
+	// `dsh plugin add` links the checkout with pnpm, which never installs the
+	// linked package's dependencies. A bare import here would make the whole
+	// plugin fail to load on a clean machine (this is why the ZIP reader is
+	// project-owned instead of `fflate`).
+	const directory = new URL('../skills/', import.meta.url)
+	for (const name of (await readdir(directory)).filter((entry) => entry.endsWith('.js'))) {
+		const source = await readFile(new URL(name, directory), 'utf8')
+		for (const match of source.matchAll(/\bfrom\s+"([^"]+)"/g)) {
+			const specifier = match[1]
+			if (specifier.startsWith('node:') || specifier.startsWith('.')) continue
+			assert.fail(`skills/${name} imports the runtime package "${specifier}"`)
+		}
+	}
 })
 
 test('projects kernel roots onto the legacy snapshot shape', async () => {

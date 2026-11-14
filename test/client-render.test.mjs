@@ -211,15 +211,21 @@ async function createApp(options = {}) {
 		const endpoint = url.slice(url.lastIndexOf('/') + 1)
 		const payload = typeof init?.body === 'string' && init.body !== '' ? JSON.parse(init.body) : {}
 		requests.push({ endpoint, payload })
+		// `client.js` reads the raw body and parses it itself so a non-JSON
+		// answer (an unloaded plugin, an authenticating proxy) becomes a readable
+		// error instead of `Unexpected token`. The stand-in therefore has to
+		// expose the same body through `text()`; `json()` stays for older paths.
+		const reply = (status, ok, value) => ({
+			ok,
+			status,
+			json: async () => value,
+			text: async () => JSON.stringify(value),
+		})
 		if (options.failQuery === true && endpoint === 'search-query') {
-			return {
-				ok: false,
-				status: 400,
-				json: async () => ({ error: { code: 'dsh-manager/search-offline', message: '搜索请求被拒绝' } }),
-			}
+			return reply(400, false, { error: { code: 'dsh-manager/search-offline', message: '搜索请求被拒绝' } })
 		}
 		const handler = handlers[endpoint]
-		return { ok: true, status: 200, json: async () => (handler === undefined ? null : handler(payload)) }
+		return reply(200, true, handler === undefined ? null : handler(payload))
 	}
 
 	// ---- React stand-in -----------------------------------------------------
