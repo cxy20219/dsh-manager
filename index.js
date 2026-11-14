@@ -36,7 +36,7 @@ import { createManagerHandler, ENDPOINTS } from './src/remote.js'
 import { DEFAULT_LAN_PORT, SettingsStore } from './src/settings.js'
 import { createSearchManager } from './src/search.js'
 import { SEARCH_CHANNELS } from './src/search-providers.js'
-import { createSkillsManager } from './src/skills.js'
+import { createSkillsKernel } from './src/skills-kernel.js'
 
 /** The plugin's row name. */
 export const name = 'dsh-manager'
@@ -47,8 +47,13 @@ export const API_PREFIX = '/api/manager'
 /** How large a request body the panel API accepts. */
 const MAX_REQUEST_BYTES = 1024 * 1024
 
-/** The services this plugin cannot work without. */
-export const inject = ['skills', 'connection']
+/**
+ * The services this plugin cannot work without.
+ *
+ * `tools` and `sessions` are needed by the vendored skill kernel: the first to
+ * expose `create_skill`, the second to resolve which project a request is for.
+ */
+export const inject = ['skills', 'connection', 'tools', 'sessions']
 
 
 
@@ -126,11 +131,15 @@ export async function apply(ctx, config) {
 	})
 	const ready = settings.load()
 
-	// The registry wants a provider registered synchronously during apply, so
-	// this stays ahead of the awaits; the provider waits for `ready` itself.
-	const skills = createSkillsManager({ ctx, settings, ready, logger: ctx.logger, defaultRoot })
-	ctx.skills.registerProvider((control) => skills.provider(control))
-	ctx.effect(() => () => skills.dispose(), 'dsh-manager: skill watchers')
+	// The vendored skill kernel registers its own provider (and its own
+	// `create_skill` tool) inside `ctx.effect`; it replaces the older
+	// category-per-directory scanner, which has been retired.
+	const kernel = createSkillsKernel(ctx, { logger: ctx.logger })
+	if (!kernel.mounted) {
+		ctx.logger.warn('dsh-manager: 技能内核未挂载，技能页将显示为空；其余面板照常可用')
+	} else if (kernel.routes < 1) {
+		ctx.logger.warn('dsh-manager: 技能内核已挂载但未注册任何路由，技能页将显示为空')
+	}
 
 	const version = await readVersion()
 	const credentials = ctx.get('credentials')
@@ -174,7 +183,6 @@ export async function apply(ctx, config) {
 	}, 'dsh-manager: lan access')
 
 	const handler = createManagerHandler({
-		skills,
 		mcp,
 		modes,
 		lan,
@@ -183,6 +191,9 @@ export async function apply(ctx, config) {
 		dataDir,
 		registry: ctx.skills,
 		search,
+		// Reported through `overview` so the panel can say whether the skill
+		// kernel actually came up instead of silently showing an empty list.
+		kernel,
 	})
 	/** Everything that has to be undone when the plugin unloads. */
 	const disposers = []

@@ -33,6 +33,35 @@ window.__ModuleLoader__.load({
 			'tab.skills': '技能',
 			'tab.mcp': 'MCP',
 			'tab.search': '联网搜索',
+			'skx.sources': '来源目录',
+			'skx.missingSources': '未安装',
+			'skx.noSources': '没有检测到任何技能目录。',
+			'skx.search': '搜索名称、简介或备注',
+			'skx.showBroken': '显示异常项',
+			'skx.toggleSource': '开启或关闭整个来源',
+			'skx.enableSource': '启用来源',
+			'skx.disableSource': '停用来源',
+			'skx.off': '已停用',
+			'skx.noSkills': '这个来源里还没有技能。',
+			'skx.noMatch': '没有匹配的技能。',
+			'skx.pickSkill': '从中间选择一个技能查看详情。',
+			'skx.summary': '共 {total} 项，显示 {shown} 项',
+			'skx.copiesTip': '另有 {n} 处同名副本（来自其他来源，未在列表中重复显示）',
+			'skx.manualOnly': '仅手动',
+			'skx.disabled': '已停用',
+			'skx.noDescription': '未提供简介',
+			'skx.enable': '启用',
+			'skx.disable': '停用',
+			'skx.description': '简介',
+			'skx.descTokens': '简介约 {n} token（常驻）',
+			'skx.bodyTokens': '正文约 {n} token（按需加载）',
+			'skx.note': '自定义备注',
+			'skx.editNote': '编辑',
+			'skx.notePlaceholder': '记录这个技能是做什么的、什么时候用…',
+			'skx.noNote': '还没有备注。备注只存在本插件里，不改 SKILL.md。',
+			'skx.save': '保存',
+			'skx.body': 'SKILL.md 正文',
+			'skx.path': '源文件',
 			'action.refresh': '重新扫描',
 			'action.close': '关闭',
 			'action.cancel': '取消',
@@ -258,6 +287,35 @@ window.__ModuleLoader__.load({
 			'tab.skills': 'Skills',
 			'tab.mcp': 'MCP',
 			'tab.search': 'Web search',
+			'skx.sources': 'Sources',
+			'skx.missingSources': 'Not installed',
+			'skx.noSources': 'No skill directory was found.',
+			'skx.search': 'Search name, description or note',
+			'skx.showBroken': 'Show broken',
+			'skx.toggleSource': 'Turn the whole source on or off',
+			'skx.enableSource': 'Enable source',
+			'skx.disableSource': 'Disable source',
+			'skx.off': 'Off',
+			'skx.noSkills': 'This source has no skills yet.',
+			'skx.noMatch': 'No matching skills.',
+			'skx.pickSkill': 'Pick a skill in the middle pane to see its details.',
+			'skx.summary': '{shown} of {total} shown',
+			'skx.copiesTip': '{n} more copies exist in other sources and are not repeated here',
+			'skx.manualOnly': 'Manual only',
+			'skx.disabled': 'Off',
+			'skx.noDescription': 'No description',
+			'skx.enable': 'Enable',
+			'skx.disable': 'Disable',
+			'skx.description': 'Description',
+			'skx.descTokens': 'Description ≈{n} tokens (always loaded)',
+			'skx.bodyTokens': 'Body ≈{n} tokens (loaded on use)',
+			'skx.note': 'Custom note',
+			'skx.editNote': 'Edit',
+			'skx.notePlaceholder': 'Record what this skill does and when to use it…',
+			'skx.noNote': 'No note yet. Notes stay in this plugin and never touch SKILL.md.',
+			'skx.save': 'Save',
+			'skx.body': 'SKILL.md body',
+			'skx.path': 'Source file',
 			'action.refresh': 'Rescan',
 			'action.close': 'Close',
 			'action.cancel': 'Cancel',
@@ -670,6 +728,53 @@ window.__ModuleLoader__.load({
 			'.mgrSearchAnswer{margin-bottom:14px;padding:10px 12px;border:1px solid var(--dsw-alias-border-l2);border-left:3px solid var(--dsw-alias-state-business-primary);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-1)}',
 			'.mgrSearchAnswerTitle{margin-bottom:4px;font-size:11.5px;font-weight:600;color:var(--dsw-alias-label-secondary)}',
 			'.mgrSearchAnswerBody{max-height:220px;overflow:auto;font-size:12px;line-height:1.65;color:var(--dsw-alias-label-secondary);white-space:pre-wrap;word-break:break-word}',
+
+			/* ---- three-pane skill workspace ---------------------------- */
+			'.skxRoot{display:flex;flex-direction:column;gap:10px;height:100%;min-height:0}',
+			'.skxPanes{display:grid;grid-template-columns:210px minmax(240px,1fr) minmax(300px,1.25fr);gap:10px;flex:1;min-height:0}',
+			'.skxSources,.skxSkills,.skxDetail{display:flex;flex-direction:column;min-height:0;border:1px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-1);overflow:hidden}',
+			'.skxPaneHead{display:flex;align-items:center;gap:8px;padding:9px 11px;border-bottom:1px solid var(--dsw-alias-border-l2);flex:none;flex-wrap:wrap}',
+			'.skxPaneTitle{font-size:12.5px;font-weight:600;color:var(--dsw-alias-label-secondary)}',
+			'.skxPaneCount{font-size:11.5px;color:var(--dsw-alias-label-tertiary)}',
+			'.skxSourceList{overflow-y:auto;padding:6px;display:flex;flex-direction:column;gap:2px;min-height:0}',
+			'.skxSource{display:flex;align-items:center;gap:6px;padding:8px 9px;border:1px solid transparent;border-radius:var(--dsw-radius-sm,6px);background:transparent;color:var(--dsw-alias-label-primary);font:inherit;font-size:13px;text-align:left;cursor:pointer;width:100%;transition:background .12s ease}',
+			'.skxSource:hover{background:var(--dsw-alias-bg-layer-2)}',
+			'.skxSourceActive{background:var(--dsw-alias-interactive-bg-active);border-color:var(--dsw-alias-border-l2);font-weight:500}',
+			'.skxSourceOff{color:var(--dsw-alias-label-tertiary)}',
+			'.skxSourceName{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+			'.skxSourceCount{font-size:11.5px;color:var(--dsw-alias-label-tertiary);flex:none}',
+			'.skxSourceOffMark{font-size:10.5px;padding:1px 5px;border-radius:999px;background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-tertiary);flex:none}',
+			'.skxMissingBlock{margin-top:8px;padding-top:8px;border-top:1px solid var(--dsw-alias-border-l2);display:flex;flex-direction:column;gap:3px}',
+			'.skxMissing{font-size:11.5px;color:var(--dsw-alias-label-tertiary);padding:3px 9px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+			'.skxSearch{flex:1;min-width:120px}',
+			'.skxFilter{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;color:var(--dsw-alias-label-secondary);white-space:nowrap;cursor:pointer}',
+			'.skxSourceSwitch{height:24px;padding:0 9px;border:1px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-secondary);font:inherit;font-size:11.5px;cursor:pointer;flex:none}',
+			'.skxSourceSwitchOn{color:var(--dsw-alias-label-primary)}',
+			'.skxList{overflow-y:auto;padding:6px;display:flex;flex-direction:column;gap:2px;min-height:0}',
+			'.skxSkill{display:flex;flex-direction:column;gap:3px;padding:9px 10px;border:1px solid transparent;border-radius:var(--dsw-radius-sm,6px);background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer;width:100%;transition:background .12s ease}',
+			'.skxSkill:hover{background:var(--dsw-alias-bg-layer-2)}',
+			'.skxSkillActive{background:var(--dsw-alias-interactive-bg-active);border-color:var(--dsw-alias-border-l2)}',
+			'.skxSkillOff{opacity:.62}',
+			'.skxSkillTop{display:flex;align-items:center;gap:6px;min-width:0}',
+			'.skxSkillName{font-size:15px;line-height:1.35;font-weight:500;color:var(--dsw-alias-label-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+			'.skxSkillDesc{font-size:12.5px;line-height:1.55;color:var(--dsw-alias-label-secondary);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}',
+			'.skxCopies{font-size:10.5px;padding:1px 5px;border-radius:999px;background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-tertiary);flex:none}',
+			'.skxFlag{font-size:10.5px;padding:1px 5px;border-radius:999px;border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-tertiary);flex:none;white-space:nowrap}',
+			'.skxPath{padding:6px 11px;border-top:1px solid var(--dsw-alias-border-l2);font-size:10.5px;font-family:var(--dsw-font-mono,ui-monospace,SFMono-Regular,Menlo,monospace);color:var(--dsw-alias-label-tertiary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:none}',
+			'.skxDetailBody{overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:12px;min-height:0}',
+			'.skxDetailHead{display:flex;align-items:flex-start;gap:8px}',
+			'.skxDetailTitle{flex:1;font-size:16px;line-height:1.35;font-weight:600;color:var(--dsw-alias-label-primary);word-break:break-word}',
+			'.skxDetailActions{display:flex;gap:6px;flex:none}',
+			'.skxTokens{display:flex;flex-wrap:wrap;gap:10px;font-size:11.5px;color:var(--dsw-alias-label-tertiary)}',
+			'.skxSection{display:flex;flex-direction:column;gap:5px}',
+			'.skxSectionTitle{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;color:var(--dsw-alias-label-secondary)}',
+			'.skxLink{border:0;background:none;padding:0;color:var(--dsw-alias-state-business-primary);font:inherit;font-size:11.5px;cursor:pointer}',
+			'.skxText{font-size:13px;line-height:1.7;color:var(--dsw-alias-label-primary);white-space:pre-wrap;word-break:break-word}',
+			'.skxMono{font-family:var(--dsw-font-mono,ui-monospace,SFMono-Regular,Menlo,monospace);font-size:11.5px;color:var(--dsw-alias-label-tertiary)}',
+			'.skxPre{margin:0;padding:10px 12px;max-height:340px;overflow:auto;border:1px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-2);font-family:var(--dsw-font-mono,ui-monospace,SFMono-Regular,Menlo,monospace);font-size:11.5px;line-height:1.65;color:var(--dsw-alias-label-secondary);white-space:pre-wrap;word-break:break-word}',
+			'.skxEditActions{display:flex;gap:6px;margin-top:6px}',
+			'.skxEmpty{padding:22px 14px;text-align:center;font-size:12.5px;color:var(--dsw-alias-label-tertiary)}',
+			'.skxFoot{display:flex;align-items:center;gap:8px;flex:none}',
 		].join('\n');
 
 		//#endregion
@@ -698,7 +803,18 @@ window.__ModuleLoader__.load({
 				options.signal = AbortSignal.timeout(wait);
 			}
 			return fetch(API_PREFIX + '/' + endpoint, options).then(function (response) {
-				return response.json().then(function (value) {
+				// A Host that has not reloaded the plugin (or an authenticating
+				// proxy) answers with plain text, not this plugin's JSON envelope.
+				// Parsing that as JSON would surface "Unexpected token" as the
+				// panel's error, which says nothing about what went wrong.
+				return response.text().then(function (raw) {
+					var value;
+					try {
+						value = JSON.parse(raw);
+					} catch {
+						if (!response.ok) throw new Error('HTTP ' + response.status + (raw === '' ? '' : '：' + raw.slice(0, 120)));
+						throw new Error('服务端返回了非 JSON 响应：' + raw.slice(0, 120));
+					}
 					// The error envelope is an object with a code and a message.
 					// A plain `error` string in a payload is data, not a failure.
 					var error = value !== null && typeof value === 'object' && value.error !== null && typeof value.error === 'object'
@@ -886,266 +1002,361 @@ window.__ModuleLoader__.load({
 		//#region skills view
 
 		/**
-		 * Hierarchical skill categories.
+		 * Call one of the vendored kernel's endpoints.
+		 *
+		 * The kernel answers `{ ok, data }` on success and `{ ok: false, error }`
+		 * on failure, which is a different envelope from this plugin's own
+		 * endpoints. Keeping the two call paths apart means neither has to learn
+		 * the other's error shape.
+		 *
+		 * @param {object} ctx - Client context.
+		 * @param {string} path - Kernel route below `/api/manager`.
+		 * @param {object} [body] - JSON body for a POST.
+		 * @param {string} [method] - HTTP method; POST unless told otherwise.
+		 * @returns {Promise<unknown>} The route's `data`.
+		 */
+		function callKernel(ctx, path, body, method) {
+			if (ctx.get('connection') === undefined) return Promise.reject(new Error('连接不可用'));
+			var verb = method ?? (body === undefined ? 'GET' : 'POST');
+			var options = {
+				method: verb,
+				headers: { 'content-type': 'application/json', 'x-dsh-manager-client': '1' },
+				credentials: 'same-origin',
+			};
+			if (verb !== 'GET' && verb !== 'HEAD') options.body = JSON.stringify(body ?? {});
+			if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') {
+				options.signal = AbortSignal.timeout(30000);
+			}
+			return fetch(API_PREFIX + '/' + path, options).then(function (response) {
+				return response.text().then(function (raw) {
+					var value;
+					try {
+						value = JSON.parse(raw);
+					} catch {
+						if (!response.ok) throw new Error('HTTP ' + response.status + (raw === '' ? '' : '：' + raw.slice(0, 120)));
+						throw new Error('服务端返回了非 JSON 响应：' + raw.slice(0, 120));
+					}
+					if (value !== null && typeof value === 'object' && value.ok === true) return value.data;
+					var error = value !== null && typeof value === 'object' ? value.error : undefined;
+					var failure = new Error(typeof error === 'string' && error !== '' ? error : ('HTTP ' + response.status));
+					if (error !== null && typeof error === 'object' && typeof error.code === 'string') failure.code = error.code;
+					throw failure;
+				});
+			});
+		}
+
+		/**
+		 * Group a root's skills by effective name, keeping one representative.
+		 *
+		 * The same skill commonly exists in several agent directories (a shared
+		 * copy, a per-app copy, a symlink). Showing every copy turns a 26-skill
+		 * machine into a wall of duplicates, so the list shows the copy that
+		 * actually wins and reports the rest as a count.
+		 *
+		 * @param {Array<object>} skills - The root's skills.
+		 * @returns {Array<object>} One row per name, with `copies` filled in.
+		 */
+		function collapseSkills(skills) {
+			var byName = new Map();
+			for (var index = 0; index < skills.length; index += 1) {
+				var skill = skills[index];
+				var key = skill.canonicalName ?? skill.name;
+				var existing = byName.get(key);
+				if (existing === undefined) {
+					byName.set(key, { ...skill, copies: 0 });
+					continue;
+				}
+				// A loadable copy beats an unparseable one; otherwise the first
+				// listed (highest-priority source) keeps the row.
+				if (skill.loadable !== false && existing.loadable === false) {
+					byName.set(key, { ...skill, copies: existing.copies + 1 });
+				} else {
+					existing.copies += 1;
+				}
+			}
+			return Array.from(byName.values());
+		}
+
+		/**
+		 * Whether a skill can be toggled at all.
+		 *
+		 * @param {object} skill - A projected skill row.
+		 * @returns {boolean} True when the source allows policy changes.
+		 */
+		function skillToggleable(skill) {
+			return skill.toggleable === true || skill.sourceToggleable === true;
+		}
+
+		/**
+		 * The three-pane skill workspace: sources, skills, detail.
+		 *
+		 * Replaces the old category accordion. The left pane lists every agent
+		 * source the kernel discovered (including the ones that do not exist on
+		 * this machine, greyed out), the middle pane lists that source's skills,
+		 * and the right pane shows the selected skill's document.
 		 *
 		 * @param {object} props - Panel data and actions.
 		 * @returns {object} React node.
 		 */
-		function SkillsSection(props) {
+		function SkillsWorkspace(props) {
 			var t = props.t;
-			var skills = props.skills;
-			var catalog = props.catalog;
-			var catalogText = '';
-			if (catalog !== undefined) {
-				if (catalog.error !== '') {
-					catalogText = t('skills.catalogError', { error: catalog.error });
-				} else if (catalog.unavailable === true) {
-					catalogText = t('skills.catalogUnavailable');
-				} else {
-					catalogText = t('skills.catalog', {
-						total: catalog.total,
-						visible: catalog.visible,
-						managed: catalog.managed,
-						external: catalog.external.length,
-					});
-					if (catalog.external.length > 0) catalogText += t('skills.catalogNames', { names: nameList(catalog.external) });
-				}
-			}
-			var needle = props.query.trim().toLowerCase();
-			var categories = [];
-			for (var index = 0; index < skills.categories.length; index += 1) {
-				var category = skills.categories[index];
-				if (needle === '') {
-					categories.push(category);
-					continue;
-				}
-				var matched = category.skills.filter(function (skill) {
-					var haystack = (category.name + ' ' + skill.name + ' ' + skill.description).toLowerCase();
-					return haystack.indexOf(needle) >= 0;
-				});
-				if (matched.length > 0) {
-					categories.push({ ...category, skills: matched });
-				}
-			}
-			var missingRoots = skills.roots.filter(function (root) { return !root.exists; });
-			return h('div', null,
-				h('div', { className: 'mgrToolbar' },
-					h('input', {
-						className: 'mgrInput',
-						type: 'search',
-						value: props.query,
-						placeholder: t('skills.search'),
-						'aria-label': t('skills.search'),
-						onChange: function (event) { props.setQuery(event.target.value); },
-					}),
-					h('span', { className: 'mgrToolbarSpacer' }),
-					h('button', { type: 'button', className: 'mgrBtn', onClick: props.onRefresh, disabled: props.busy }, t('skills.refresh')),
-					h('button', { type: 'button', className: 'mgrBtn mgrBtnPrimary', onClick: props.onNew, disabled: props.busy }, t('skills.new'))),
-				h('div', { className: 'mgrStats' },
-					h('span', null, t('skills.count', {
-						categories: skills.totals.categories,
-						skills: skills.totals.skills,
-						enabled: skills.totals.enabled,
-					})),
-					h('span', { className: 'mgrSpacer' }),
-					h('span', { className: 'mgrRootPath' }, skills.roots.map(function (root) { return root.path; }).join(' · '))),
-				catalogText === '' ? null : h('div', { className: 'mgrHint mgrCatalog' }, catalogText),
-				catalog === undefined || catalog.missing.length === 0 ? null : h('div', { className: 'mgrWarn' },
-					h('span', null, t('skills.catalogMissing', { n: catalog.missing.length, names: nameList(catalog.missing) }))),
-				missingRoots.length === 0 ? null : h('div', { className: 'mgrWarn' },
-					h('span', null, t('skills.roots') + '：' + missingRoots.map(function (root) {
-						return root.path + (root.error ? '（' + t('skills.rootError') + '：' + root.error + '）' : '（' + t('skills.rootMissing') + '）');
-					}).join('；'))),
-				skills.conflicts.length === 0 ? null : h('div', { className: 'mgrWarn' },
-					h('span', null, skills.conflicts.map(function (conflict) {
-						return conflict.name + '：' + conflict.sources.join('、');
-					}).join('；'))),
-				categories.length === 0 ? h('div', { className: 'mgrEmpty' }, t('skills.empty')) : categories.map(function (entry) {
-					var open = needle !== '' || props.openCats[entry.name] === true;
-					return h('div', { className: 'mgrCat', key: entry.name },
-						h('div', { className: 'mgrCatHead' },
-							h('button', {
-								type: 'button',
-								className: 'mgrChevron',
-								'aria-expanded': open,
-								'aria-label': entry.name,
-								onClick: function () { props.toggleCategory(entry.name); },
-							}, open ? '▾' : '▸'),
-							h('span', { className: 'mgrCatName' }, entry.name),
-							h('span', { className: 'mgrCount' }, String(entry.skills.length)),
-							entry.disabled ? h(Badge, { tone: 'Warn' }, t('skills.categoryDisabled')) : null,
-							h('span', { className: 'mgrSpacer' }),
-							h(Switch, {
-								checked: !entry.disabled,
-								disabled: props.busy,
-								label: entry.name,
-								onChange: function (next) { props.onToggleCategory(entry.name, next); },
-							})),
-						!open ? null : h('div', { className: 'mgrCatBody' },
-							entry.error === undefined ? null : h('div', { className: 'mgrServerError', style: { padding: '8px 12px' } }, entry.error),
-							entry.skills.length === 0 ? h('div', { className: 'mgrEmpty', style: { padding: '18px 12px' } }, t('skills.categoryEmpty')) : entry.skills.map(function (skill) {
-								var badges = [];
-								if (!skill.ok) badges.push(h(Badge, { tone: 'Error', key: 'broken' }, t('skills.broken')));
-								if (skill.conflict) badges.push(h(Badge, {
-									tone: 'Error',
-									key: 'conflict',
-									title: skill.conflictWith === undefined ? t('skills.conflict') : t('skills.conflictWith', { owner: skill.conflictWith }),
-								}, t('skills.conflict')));
-								if (skill.ok && skill.disabled && !entry.disabled) badges.push(h(Badge, { key: 'disabled' }, t('skills.skillDisabled')));
-								if (skill.ok && !skill.invocation.modelInvocable) badges.push(h(Badge, { key: 'model' }, t('skills.modelHidden')));
-								if (skill.ok && !skill.invocation.userInvocable) badges.push(h(Badge, { key: 'user' }, t('skills.userHidden')));
-								return h('div', {
-									key: skill.folder,
-									className: 'mgrSkill',
-									role: 'button',
-									tabIndex: 0,
-									onClick: function () { props.onOpenSkill(entry.name, skill); },
-									onKeyDown: function (event) {
-										if (event.key === 'Enter' || event.key === ' ') {
-											event.preventDefault();
-											props.onOpenSkill(entry.name, skill);
-										}
-									},
-								},
-									h('div', { className: 'mgrSkillMain' },
-										h('div', { className: 'mgrSkillName' }, skill.name, badges),
-										h('div', { className: 'mgrSkillDesc' }, skill.ok ? skill.description : skill.error)),
-									h(Switch, {
-										checked: skill.ok && !skill.conflict && !entry.disabled && !skill.disabled,
-										disabled: props.busy || !skill.ok || skill.conflict || entry.disabled,
-										label: skill.name,
-										onChange: function (next) { props.onToggleSkill(entry.name, skill.name, next); },
-									}));
-							})));
-				}));
-		}
-
-		/**
-		 * One skill's parsed contents.
-		 *
-		 * @param {object} props - `category`, `name`, `call`, `t`, `onClose`.
-		 * @returns {object} React node.
-		 */
-		function SkillDetail(props) {
-			var [state, setState] = useState({ loading: true, data: null, error: '' });
-			useEffect(function () {
-				var alive = true;
-				props.call('skill-read', { category: props.category, name: props.name }).then(function (value) {
-					if (alive) setState({ loading: false, data: value, error: '' });
-				}).catch(function (reason) {
-					if (alive) setState({ loading: false, data: null, error: messageOf(reason) });
-				});
-				return function () { alive = false; };
-			}, [props.category, props.name, props.call]);
-			var body;
-			if (state.loading) {
-				body = h(Loading, { label: props.t('state.loading') });
-			} else if (state.error !== '') {
-				body = h('div', { className: 'mgrErrorBox' }, state.error);
-			} else {
-				var data = state.data;
-				var invocation = data.invocation.modelInvocable
-					? (data.invocation.userInvocable ? props.t('skills.detail.invocation.both') : props.t('skills.detail.invocation.modelOnly'))
-					: (data.invocation.userInvocable ? props.t('skills.detail.invocation.userOnly') : props.t('skills.detail.invocation.none'));
-				body = h('div', null,
-					h('div', { className: 'mgrDetailRow' },
-						h('span', { className: 'mgrDetailKey' }, props.t('skills.detail.description')),
-						h('span', { className: 'mgrDetailValue' }, data.description)),
-					data.whenToUse === undefined ? null : h('div', { className: 'mgrDetailRow' },
-						h('span', { className: 'mgrDetailKey' }, props.t('skills.detail.whenToUse')),
-						h('span', { className: 'mgrDetailValue' }, data.whenToUse)),
-					h('div', { className: 'mgrDetailRow' },
-						h('span', { className: 'mgrDetailKey' }, props.t('skills.detail.invocation')),
-						h('span', { className: 'mgrDetailValue' }, invocation)),
-					h('div', { className: 'mgrDetailRow' },
-						h('span', { className: 'mgrDetailKey' }, props.t('skills.detail.path')),
-						h('span', { className: 'mgrDetailValue mgrRootPath' }, data.path)),
-					h('div', { className: 'mgrLabel', style: { margin: '14px 0 6px' } }, props.t('skills.detail.content')),
-					h('pre', { className: 'mgrPre' }, data.content));
-			}
-			return h(Modal, {
-				title: props.category + ' / ' + props.name,
-				onClose: props.onClose,
-			}, body);
-		}
-
-		/**
-		 * Creation form for one skill skeleton.
-		 *
-		 * @param {object} props - `skills`, `t`, `onSubmit`, `onClose`.
-		 * @returns {object} React node.
-		 */
-		function SkillCreate(props) {
-			var [category, setCategory] = useState('');
-			var [name, setName] = useState('');
-			var [description, setDescription] = useState('');
+			var call = props.callKernel;
+			var [roots, setRoots] = useState(null);
+			var [activeRoot, setActiveRoot] = useState('');
+			var [selected, setSelected] = useState(null);
+			var [query, setQuery] = useState('');
+			var [showEmpty, setShowEmpty] = useState(false);
 			var [error, setError] = useState('');
 			var [busy, setBusy] = useState(false);
-			var t = props.t;
-			var firstRoot = props.skills.roots.length > 0 ? props.skills.roots[0].path : '';
-			var location = firstRoot === '' ? '' : firstRoot.replace(/\/$/, '') + '/' + (category.trim() || '<分类>') + '/' + (name.trim() || '<技能名>') + '/SKILL.md';
-			function submit(event) {
-				if (event) event.preventDefault();
-				var categoryValue = category.trim();
-				var nameValue = name.trim();
-				if (!/^[\p{L}\p{N}][\p{L}\p{N}._-]{0,63}$/u.test(categoryValue)) {
-					setError(t('skills.create.invalidCategory'));
-					return;
-				}
-				if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(nameValue)) {
-					setError(t('skills.create.invalidName'));
-					return;
-				}
-				if (description.trim() === '') {
-					setError(t('skills.create.invalidDescription'));
-					return;
-				}
+
+			var load = useCallback(function () {
 				setBusy(true);
-				setError('');
-				props.onSubmit({ category: categoryValue, name: nameValue, description: description.trim() })
-					.catch(function (reason) { setError(messageOf(reason)); })
-					.then(function () { setBusy(false); });
+				return call('state').then(function (data) {
+					var list = Array.isArray(data?.roots) ? data.roots : [];
+					setRoots(list);
+					setError('');
+					// Keep the current source if it still exists; otherwise pick the
+					// first one that actually has skills, so the middle pane is never
+					// empty on arrival.
+					setActiveRoot(function (current) {
+						if (current !== '' && list.some(function (root) { return root.key === current; })) return current;
+						var withSkills = list.find(function (root) { return (root.skills ?? []).length > 0; });
+						return withSkills !== undefined ? withSkills.key : (list[0]?.key ?? '');
+					});
+				}).catch(function (reason) {
+					setError(messageOf(reason));
+				}).finally(function () {
+					setBusy(false);
+				});
+			}, [call]);
+
+			useEffect(function () { void load(); }, [load]);
+
+			var root = roots === null ? undefined : roots.find(function (entry) { return entry.key === activeRoot; });
+			var allSkills = root === undefined ? [] : (root.skills ?? []);
+			var needle = query.trim().toLowerCase();
+			var visible = collapseSkills(allSkills).filter(function (skill) {
+				if (needle !== '') {
+					var haystack = (skill.name + ' ' + (skill.description ?? '') + ' ' + (skill.customNote ?? '')).toLowerCase();
+					if (haystack.indexOf(needle) < 0) return false;
+				}
+				// The kernel reports parse health as `loadable`, not `ok`. A skill
+				// that cannot be parsed is noise in the list unless asked for.
+				var healthy = skill.loadable !== false;
+				return healthy || showEmpty;
+			});
+
+			var toggleSource = function (enabled) {
+				if (root === undefined) return;
+				setBusy(true);
+				var path = enabled ? 'source-enable' : 'source-disable';
+				call(path, { root: root.key }).then(load).catch(function (reason) {
+					setError(messageOf(reason));
+				}).finally(function () { setBusy(false); });
+			};
+
+			var toggleSkill = function (skill) {
+				var path = skill.enabled === false ? 'enable' : 'disable';
+				setBusy(true);
+				call(path, { root: root.key, name: skill.name }).then(load).catch(function (reason) {
+					setError(messageOf(reason));
+				}).finally(function () { setBusy(false); });
+			};
+
+			if (roots === null) {
+				return h('div', { className: 'skxRoot' }, error === '' ? h(Loading, { label: t('state.loading') }) : h('div', { className: 'mgrErrorBox' }, error));
 			}
-			return h(Modal, {
-				title: t('skills.create.title'),
-				onClose: props.onClose,
-				footer: [
-					h('button', { type: 'button', className: 'mgrBtn', key: 'cancel', onClick: props.onClose }, t('action.cancel')),
-					h('button', { type: 'submit', className: 'mgrBtn mgrBtnPrimary', key: 'submit', form: 'mgr-skill-form', disabled: busy }, t('action.create')),
-				],
-			},
-				h('form', { id: 'mgr-skill-form', onSubmit: submit },
-					error === '' ? null : h('p', { className: 'mgrFormError' }, error),
-					h(Field, { label: t('skills.create.category'), hint: t('skills.create.categoryHint'), htmlFor: 'mgr-skill-category' },
-						h('input', {
-							id: 'mgr-skill-category',
-							className: 'mgrInput',
-							value: category,
-							placeholder: 'dev',
-							list: 'mgr-skill-categories',
-							onChange: function (event) { setCategory(event.target.value); },
-						}),
-						h('datalist', { id: 'mgr-skill-categories' }, props.skills.categories.map(function (entry) {
-							return h('option', { key: entry.name, value: entry.name });
-						}))),
-					h(Field, { label: t('skills.create.name'), hint: t('skills.create.nameHint'), htmlFor: 'mgr-skill-name' },
-						h('input', {
-							id: 'mgr-skill-name',
-							className: 'mgrInput',
-							value: name,
-							placeholder: 'webapp-testing',
-							onChange: function (event) { setName(event.target.value); },
-						})),
-					h(Field, { label: t('skills.create.description'), hint: t('skills.create.descriptionHint'), htmlFor: 'mgr-skill-description' },
-						h('textarea', {
-							id: 'mgr-skill-description',
-							className: 'mgrTextarea',
-							value: description,
-							rows: 3,
-							onChange: function (event) { setDescription(event.target.value); },
-						})),
-					h('div', { className: 'mgrFieldHint mgrRootPath' }, location === '' ? '' : t('skills.create.location', { path: location }))));
+
+			var liveRoots = roots.filter(function (entry) { return entry.exists !== false; });
+			var missingRoots = roots.filter(function (entry) { return entry.exists === false; });
+
+			return h('div', { className: 'skxRoot' },
+				error === '' ? null : h('div', { className: 'mgrErrorBox' },
+					h('span', null, error),
+					h('span', { className: 'mgrSpacer' }),
+					h('button', { type: 'button', className: 'mgrBtn', onClick: function () { void load(); } }, t('action.retry'))),
+
+				h('div', { className: 'skxPanes' },
+					// ---- left: sources -------------------------------------
+					h('div', { className: 'skxSources' },
+						h('div', { className: 'skxPaneHead' },
+							h('span', { className: 'skxPaneTitle' }, t('skx.sources')),
+							h('span', { className: 'skxPaneCount' }, String(liveRoots.length))),
+						h('div', { className: 'skxSourceList' },
+							liveRoots.length === 0
+								? h('div', { className: 'skxEmpty' }, t('skx.noSources'))
+								: liveRoots.map(function (entry) {
+									var count = (entry.skills ?? []).length;
+									return h('button', {
+										type: 'button',
+										key: entry.key,
+										className: classes('skxSource', entry.key === activeRoot && 'skxSourceActive', entry.enabled === false && 'skxSourceOff'),
+										onClick: function () { setActiveRoot(entry.key); setSelected(null); },
+									},
+									h('span', { className: 'skxSourceName' }, entry.label ?? entry.key),
+									h('span', { className: 'skxSourceCount' }, String(count)),
+									entry.enabled === false ? h('span', { className: 'skxSourceOffMark' }, t('skx.off')) : null);
+								}),
+							missingRoots.length === 0 ? null : h('div', { className: 'skxMissingBlock' },
+								h('div', { className: 'skxPaneTitle' }, t('skx.missingSources')),
+								missingRoots.map(function (entry) {
+									return h('div', { className: 'skxMissing', key: entry.key, title: entry.path }, entry.label ?? entry.key);
+								})))),
+
+					// ---- middle: skills ------------------------------------
+					h('div', { className: 'skxSkills' },
+						h('div', { className: 'skxPaneHead' },
+							h('input', {
+								className: 'mgrInput skxSearch',
+								type: 'search',
+								value: query,
+								placeholder: t('skx.search'),
+								'aria-label': t('skx.search'),
+								onChange: function (event) { setQuery(event.target.value); },
+							}),
+							h('label', { className: 'skxFilter' },
+								h('input', {
+									type: 'checkbox',
+									checked: showEmpty,
+									onChange: function (event) { setShowEmpty(event.target.checked); },
+								}),
+								h('span', null, t('skx.showBroken'))),
+							root === undefined ? null : h('button', {
+								type: 'button',
+								className: classes('skxSourceSwitch', root.enabled !== false && 'skxSourceSwitchOn'),
+								disabled: busy,
+								title: t('skx.toggleSource'),
+								onClick: function () { toggleSource(root.enabled === false); },
+							}, root.enabled === false ? t('skx.enableSource') : t('skx.disableSource'))),
+						h('div', { className: 'skxList' },
+							visible.length === 0
+								? h('div', { className: 'skxEmpty' }, needle === '' ? t('skx.noSkills') : t('skx.noMatch'))
+								: visible.map(function (skill) {
+									var active = selected !== null && selected.name === skill.name;
+									return h('button', {
+										type: 'button',
+										key: skill.name,
+										className: classes('skxSkill', active && 'skxSkillActive', skill.enabled === false && 'skxSkillOff'),
+										onClick: function () { setSelected(skill); },
+									},
+									h('span', { className: 'skxSkillTop' },
+										h('span', { className: 'skxSkillName' }, skill.name),
+										skill.copies > 0 ? h('span', { className: 'skxCopies', title: t('skx.copiesTip', { n: skill.copies }) }, '+' + skill.copies) : null,
+										skill.modelInvocable === false ? h('span', { className: 'skxFlag' }, t('skx.manualOnly')) : null,
+										skill.enabled === false ? h('span', { className: 'skxFlag' }, t('skx.disabled')) : null),
+									h('span', { className: 'skxSkillDesc' }, skill.description === '' ? t('skx.noDescription') : skill.description));
+								})),
+						root === undefined ? null : h('div', { className: 'skxPath', title: root.path }, root.path)),
+
+					// ---- right: detail -------------------------------------
+					h('div', { className: 'skxDetail' },
+						selected === null
+							? h('div', { className: 'skxEmpty' }, t('skx.pickSkill'))
+							: h(SkillPane, {
+								t: t,
+								call: call,
+								root: root,
+								skill: selected,
+								busy: busy,
+								onToggle: function () { toggleSkill(selected); },
+								onSaved: load,
+							}))),
+				root === undefined ? null : h('div', { className: 'skxFoot' },
+					h('span', null, t('skx.summary', { total: allSkills.length, shown: visible.length })),
+					h('span', { className: 'mgrSpacer' }),
+					h('button', { type: 'button', className: 'mgrBtn', onClick: function () { void load(); }, disabled: busy }, t('action.refresh'))));
 		}
+
+		/**
+		 * The right pane: one skill's document, tokens, and note editor.
+		 *
+		 * @param {object} props - The selected skill and its source root.
+		 * @returns {object} React node.
+		 */
+		function SkillPane(props) {
+			var t = props.t;
+			var call = props.call;
+			var skill = props.skill;
+			var root = props.root;
+			var [detail, setDetail] = useState({ loading: true, data: null, error: '' });
+			var [note, setNote] = useState('');
+			var [editing, setEditing] = useState(false);
+			var [saving, setSaving] = useState(false);
+
+			useEffect(function () {
+				var alive = true;
+				setDetail({ loading: true, data: null, error: '' });
+				setEditing(false);
+				call('detail', { root: root.key, name: skill.name }).then(function (data) {
+					if (!alive) return;
+					setDetail({ loading: false, data: data, error: '' });
+					setNote(data?.customNote ?? '');
+				}).catch(function (reason) {
+					if (alive) setDetail({ loading: false, data: null, error: messageOf(reason) });
+				});
+				return function () { alive = false; };
+			}, [root.key, skill.name, call]);
+
+			if (detail.loading) return h(Loading, { label: t('state.loading') });
+			if (detail.error !== '') return h('div', { className: 'mgrErrorBox' }, detail.error);
+
+			var data = detail.data ?? {};
+			var saveNote = function () {
+				setSaving(true);
+				call('skill-note', { root: root.key, name: skill.name, note: note }).then(function () {
+					setEditing(false);
+					if (props.onSaved) props.onSaved();
+				}).catch(function (reason) {
+					setDetail({ loading: false, data: data, error: messageOf(reason) });
+				}).finally(function () { setSaving(false); });
+			};
+
+			return h('div', { className: 'skxDetailBody' },
+				h('div', { className: 'skxDetailHead' },
+					h('div', { className: 'skxDetailTitle' }, data.declaredName ?? skill.name),
+					h('div', { className: 'skxDetailActions' },
+						h('button', {
+							type: 'button',
+							className: classes('mgrBtn', skill.enabled !== false && 'mgrBtnPrimary'),
+							disabled: props.busy,
+							onClick: props.onToggle,
+						}, skill.enabled === false ? t('skx.enable') : t('skx.disable')))),
+				h('div', { className: 'skxTokens' },
+					h('span', null, t('skx.descTokens', { n: data.descriptionTokens ?? 0 })),
+					h('span', null, t('skx.bodyTokens', { n: data.bodyTokens ?? 0 }))),
+				h('div', { className: 'skxSection' },
+					h('div', { className: 'skxSectionTitle' }, t('skx.description')),
+					h('div', { className: 'skxText' }, data.description === '' ? t('skx.noDescription') : data.description)),
+				h('div', { className: 'skxSection' },
+					h('div', { className: 'skxSectionTitle' },
+						t('skx.note'),
+						editing
+							? null
+							: h('button', { type: 'button', className: 'skxLink', onClick: function () { setEditing(true); } }, t('skx.editNote'))),
+					editing
+						? h('div', null,
+							h('textarea', {
+								className: 'mgrTextarea',
+								rows: 3,
+								value: note,
+								placeholder: t('skx.notePlaceholder'),
+								onChange: function (event) { setNote(event.target.value); },
+							}),
+							h('div', { className: 'skxEditActions' },
+								h('button', { type: 'button', className: 'mgrBtn mgrBtnPrimary', disabled: saving, onClick: saveNote }, t('skx.save')),
+								h('button', { type: 'button', className: 'mgrBtn', onClick: function () { setEditing(false); setNote(data.customNote ?? ''); } }, t('action.cancel'))))
+						: h('div', { className: 'skxText' }, (data.customNote ?? '') === '' ? t('skx.noNote') : data.customNote)),
+				data.body === undefined || data.body === ''
+					? null
+					: h('div', { className: 'skxSection' },
+						h('div', { className: 'skxSectionTitle' }, t('skx.body')),
+						h('pre', { className: 'skxPre' }, data.body)),
+				h('div', { className: 'skxSection' },
+					h('div', { className: 'skxSectionTitle' }, t('skx.path')),
+					h('div', { className: 'skxText skxMono' }, data.path ?? '')));
+		}
+
+		//#endregion
 
 		//#endregion
 
@@ -2042,6 +2253,9 @@ window.__ModuleLoader__.load({
 			var ctx = props.ctx;
 			var t = props.t;
 			var call = useCallback(function (endpoint, payload) { return callHost(ctx, endpoint, payload); }, [ctx]);
+			// The vendored kernel answers its own envelope, so it gets its own
+			// caller; `call` above stays for this plugin's endpoints.
+			var kernelCall = useCallback(function (path, payload) { return callKernel(ctx, path, payload); }, [ctx]);
 			var [tab, setTab] = useState('skills');
 			var [data, setData] = useState(null);
 			var [lan, setLan] = useState(null);
@@ -2049,9 +2263,6 @@ window.__ModuleLoader__.load({
 			var [busy, setBusy] = useState(false);
 			var [toast, setToast] = useState(null);
 			var [query, setQuery] = useState('');
-			var [openCats, setOpenCats] = useState({});
-			var [detail, setDetail] = useState(null);
-			var [creating, setCreating] = useState(false);
 			var [searchStatus, setSearchStatus] = useState(null);
 			var [searchQuery, setSearchQuery] = useState('');
 			var [searchResult, setSearchResult] = useState(null);
@@ -2161,33 +2372,11 @@ window.__ModuleLoader__.load({
 				}).catch(function () {});
 			}
 
-			function toggleCategory(name, enabled) {
-				void run(call('skill-toggle', { category: name, enabled: enabled }), function (value) {
-					applyOverview(value);
-					notify(t('state.saved'), false);
-				}).catch(function () {});
-			}
-
-			function toggleSkill(category, name, enabled) {
-				void run(call('skill-toggle', { category: category, name: name, enabled: enabled }), function (value) {
-					applyOverview(value);
-					notify(t('state.saved'), false);
-				}).catch(function () {});
-			}
-
 			function toggleMode(id, enabled) {
 				void run(call('mode-toggle', { id: id, enabled: enabled }), function (value) {
 					applyOverview(value);
 					notify(enabled ? t('modes.on') : t('modes.off'), false);
 				}).catch(function () {});
-			}
-
-			function createSkill(payload) {
-				return call('skill-create', payload).then(function (value) {
-					applyOverview(value.overview);
-					setCreating(false);
-					notify(t('state.created'), false);
-				});
 			}
 
 			function mcpToggle(id, enabled) {
@@ -2410,27 +2599,14 @@ window.__ModuleLoader__.load({
 					data === null
 						? (error === '' ? h(Loading, { label: t('state.loading') }) : null)
 						: (tab === 'skills'
-							? h(SkillsSection, {
-								t: t,
-								skills: data.skills,
-								catalog: data.catalog,
-								query: query,
-								setQuery: setQuery,
-								openCats: openCats,
-								busy: busy,
-								toggleCategory: function (name) {
-									setOpenCats(function (current) {
-										var next = { ...current };
-										next[name] = current[name] !== true;
-										return next;
-									});
-								},
-								onToggleCategory: toggleCategory,
-								onToggleSkill: toggleSkill,
-								onOpenSkill: function (category, skill) { setDetail({ category: category, name: skill.name }); },
-								onRefresh: refresh,
-								onNew: function () { setCreating(true); },
-							})
+							? (data.kernel !== undefined && data.kernel.routes > 0
+								? h(SkillsWorkspace, { t: t, callKernel: kernelCall })
+								: h('div', { className: 'mgrErrorBox' },
+									h('span', null, '技能内核未就绪：' + (data.kernel === undefined
+										? '未接线'
+										: ('已挂载=' + String(data.kernel.mounted) + '，路由数=' + String(data.kernel.routes) + (data.kernel.error === '' ? '' : '，错误：' + data.kernel.error)))),
+									h('span', { className: 'mgrSpacer' }),
+									h('button', { type: 'button', className: 'mgrBtn', onClick: function () { void load(); } }, t('action.retry'))))
 							: tab === 'mcp'
 								? h(McpSection, {
 									t: t,
@@ -2475,19 +2651,6 @@ window.__ModuleLoader__.load({
 									onCopy: lanCopy,
 									onDownloadCa: lanDownloadCa,
 								}))),
-				detail === null ? null : h(SkillDetail, {
-					category: detail.category,
-					name: detail.name,
-					call: call,
-					t: t,
-					onClose: function () { setDetail(null); },
-				}),
-				creating === false ? null : h(SkillCreate, {
-					skills: data === null ? { categories: [], roots: [] } : data.skills,
-					t: t,
-					onClose: function () { setCreating(false); },
-					onSubmit: createSkill,
-				}),
 				toast === null ? null : h('div', { className: classes('mgrToast', toast.error && 'mgrToastError'), role: 'status' },
 					h('span', { className: 'mgrToastText' }, toast.message),
 					h('button', {

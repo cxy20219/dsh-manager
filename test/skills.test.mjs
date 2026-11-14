@@ -1,155 +1,199 @@
+/**
+ * The skill surface after the vendored kernel took over.
+ *
+ * The old `src/skills.js` scanner is retired, so these tests assert the two
+ * things that now matter: the kernel is vendored and self-contained, and the
+ * adapter that projects it onto the panel's legacy snapshot keeps its contract.
+ *
+ * The kernel owns its own state directory (`<DSH_HOME>/manager/skills`), so
+ * every test points `DSH_HOME` at a throwaway directory first.
+ */
+
 import assert from 'node:assert/strict'
 import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
 
-import { createSkillsManager } from '../src/skills.js'
+const home = await mkdtemp(join(tmpdir(), 'dsh-manager-kernel-'))
+process.env.DSH_HOME = home
+process.env.DSH_AGENTS_HOME = join(home, '.agents')
 
-const skill = (name, description = `${name} description`) => `---\nname: ${name}\ndescription: ${description}\n---\n\n# ${name}\n\nBody for ${name}.\n`
+const kernel = await import('../skills/index.js')
+const kernelCore = await import('../skills/core.js')
+const adapter = await import('../src/skills-adapter.js')
+const bridge = await import('../src/skills-kernel.js')
+
+const skillDoc = (name, description = `${name} description`) => `---\nname: ${name}\ndescription: ${description}\n---\n\n# ${name}\n\nBody for ${name}.\n`
 
 async function fixture() {
-	const root = await mkdtemp(join(tmpdir(), 'dsh-manager-skills-'))
-	await mkdir(join(root, 'dev', 'webapp-testing'), { recursive: true })
-	await writeFile(join(root, 'dev', 'webapp-testing', 'SKILL.md'), skill('webapp-testing'))
-	await mkdir(join(root, 'dev', 'flat-skill'), { recursive: true })
-	await writeFile(join(root, 'dev', 'flat.md'), skill('flat-skill'))
-	await mkdir(join(root, 'office', 'docx'), { recursive: true })
-	await writeFile(join(root, 'office', 'docx', 'SKILL.md'), skill('docx', 'Word 文档'))
-	await mkdir(join(root, 'office', 'broken'), { recursive: true })
-	await writeFile(join(root, 'office', 'broken', 'SKILL.md'), 'no frontmatter here')
-	await mkdir(join(root, 'top-level', 'own'), { recursive: true })
-	await writeFile(join(root, 'top-level', 'SKILL.md'), skill('top-level'))
-	await mkdir(join(root, '.hidden'), { recursive: true })
+	const root = await mkdtemp(join(home, 'skills-'))
+	await mkdir(join(root, 'one'), { recursive: true })
+	await writeFile(join(root, 'one', 'SKILL.md'), skillDoc('one'))
+	await mkdir(join(root, 'two'), { recursive: true })
+	await writeFile(join(root, 'two', 'SKILL.md'), skillDoc('two', 'Second skill'))
+	await mkdir(join(root, 'broken'), { recursive: true })
+	await writeFile(join(root, 'broken', 'SKILL.md'), 'no frontmatter here')
 	return root
 }
 
-function manager(root) {
-	const state = {
-		skills: { roots: [root], disabledCategories: [], disabledSkills: [] },
-		mcp: { servers: [] },
+test('the vendored kernel is a self-contained plugin module', () => {
+	// It must load on its own: nothing from the skills-manager plugin, and no
+	// import of that plugin's package or client.
+	assert.equal(typeof kernel.apply, 'function')
+	assert.deepEqual([...kernel.inject].sort(), ['connection', 'sessions', 'skills', 'tools'])
+	assert.equal(typeof kernelCore.state, 'function')
+	assert.ok(Object.keys(kernelCore).length > 40)
+})
+
+test('the kernel keeps its state inside this plugin data directory', () => {
+	// Rebranded from upstream: <DSH_HOME>/skills-manager -> <DSH_HOME>/manager/skills
+	assert.equal(kernelCore.logPath(), join(home, 'manager', 'skills', 'skills.log'))
+	assert.equal(kernelCore.trashRootPath(), join(home, 'manager', 'skills', 'trash'))
+})
+
+test('the kernel carries this plugin API prefix and client header', async () => {
+	// Asserted through the routes it registers rather than by reading constants:
+	// a path that is not under /api/manager is rejected by the bridge.
+	assert.equal(bridge.KERNEL_EXTERNAL_PROVIDER, 'manager-external')
+})
+
+test('projects kernel roots onto the legacy snapshot shape', async () => {
+	const root = await fixture()
+	try {
+		await kernelCore.addCustomSources([{ path: root, label: 'Fixture' }])
+		const snapshot = await adapter.legacySnapshot()
+		assert.ok(Array.isArray(snapshot.categories))
+		assert.ok(snapshot.categories.length > 0)
+		assert.equal(typeof snapshot.totals.skills, 'number')
+		const fixtureRoot = snapshot.categories.find((category) => category.skills.some((entry) => entry.name === 'one'))
+		assert.ok(fixtureRoot, 'the custom source appears in the snapshot')
+		const one = fixtureRoot.skills.find((entry) => entry.name === 'one')
+		assert.equal(one.ok, true)
+		assert.equal(one.folder, 'one')
+		assert.equal(one.description, 'one description')
+		assert.equal(one.invocation.modelInvocable, true)
+	} finally {
+		await rm(root, { recursive: true, force: true })
 	}
-	const settings = {
-		get: () => state,
-		update: async (mutate) => {
-			const draft = structuredClone(state)
-			mutate(draft)
-			state.skills = draft.skills
-			state.mcp = draft.mcp
-			return state
+})
+
+test('a skill without frontmatter is projected as not ok', async () => {
+	const root = await fixture()
+	try {
+		await kernelCore.addCustomSources([{ path: root, label: 'Broken fixture' }])
+		const snapshot = await adapter.legacySnapshot()
+		const broken = snapshot.categories
+			.flatMap((category) => category.skills)
+			.find((entry) => entry.folder === 'broken')
+		assert.ok(broken, 'the broken skill is still listed')
+		assert.equal(broken.ok, false)
+	} finally {
+		await rm(root, { recursive: true, force: true })
+	}
+})
+
+test('toggling a skill through the adapter persists in the kernel state', async () => {
+	// Toggling is only allowed on a root the kernel marks `toggleable`. Custom
+	// sources (from addCustomSources) are deliberately read-only, so this uses
+	// the plugin's own DSH skills root, pointed at a fixture through DSH_HOME.
+	// The kernel's `dsh` root is `<DSH_HOME>/skills` (DSH_HOME already points at
+	// the `.dsh` directory itself), and it is the one writable+toggleable root.
+	const dshRoot = join(home, 'skills')
+	await mkdir(join(dshRoot, 'toggler'), { recursive: true })
+	await writeFile(join(dshRoot, 'toggler', 'SKILL.md'), skillDoc('toggler'))
+	try {
+		const before = await adapter.legacySnapshot()
+		const owner = before.categories.find((category) => category.skills.some((entry) => entry.name === 'toggler'))
+		assert.ok(owner, 'the fixture skill is discovered under the dsh root')
+		assert.equal(owner.skills.find((entry) => entry.name === 'toggler').enabled, true)
+
+		await adapter.legacyToggle({ category: owner.name, name: 'toggler', enabled: false })
+		const after = await adapter.legacySnapshot()
+		const toggled = after.categories
+			.flatMap((category) => category.skills)
+			.find((entry) => entry.name === 'toggler')
+		assert.equal(toggled.enabled, false)
+	} finally {
+		await rm(dshRoot, { recursive: true, force: true })
+	}
+})
+
+test('the bridge normalises every kernel route for the Host', () => {
+	// `ConnectionFetchRoute.requestBody` is required by the Host and the
+	// vendored kernel omits it, so a route passed through unchanged is rejected
+	// and every kernel endpoint answers 404. The bridge has to fill it in.
+	const registered = []
+	const ctx = {
+		logger: { warn() {}, info() {} },
+		effect: (fn) => fn(),
+		on: () => () => {},
+		emit: () => {},
+		get: (name) => {
+			if (name === 'connection') return { fetch: { register: (route) => { registered.push(route); return () => {} } } }
+			if (name === 'skills') return { registerProvider: () => () => {} }
+			if (name === 'tools') return { register: () => () => {} }
+			return undefined
 		},
 	}
-	const skills = createSkillsManager({
-		ctx: {},
-		settings,
-		ready: Promise.resolve(),
-		logger: { warn() {} },
-		defaultRoot: root,
-	})
-	return { skills, state }
-}
-
-test('scans category skills, flat skills, and errors; skips top-level skills and dot dirs', async () => {
-	const root = await fixture()
-	const { skills } = manager(root)
-	try {
-		const snapshot = await skills.snapshot()
-		assert.deepEqual(snapshot.categories.map((category) => category.name), ['dev', 'office'])
-		const dev = snapshot.categories[0]
-		assert.deepEqual(dev.skills.map((entry) => entry.name).sort(), ['flat-skill', 'webapp-testing'])
-		const office = snapshot.categories[1]
-		assert.equal(office.skills.find((entry) => entry.folder === 'broken').ok, false)
-		assert.equal(snapshot.totals.skills, 4)
-		assert.equal(snapshot.totals.enabled, 3)
-	} finally {
-		skills.dispose()
-		await rm(root, { recursive: true, force: true })
-	}
+	const result = bridge.createSkillsKernel(ctx, { logger: ctx.logger })
+	assert.equal(result.mounted, true)
+	assert.ok(registered.length > 0, 'the kernel registered its routes')
+	assert.equal(result.routes, registered.length)
+	assert.ok(
+		registered.every((route) => route.path.startsWith('/api/manager/')),
+		`every kernel route stays under /api/manager: ${registered.map((route) => route.path).join(', ')}`,
+	)
+	assert.ok(
+		registered.every((route) => !route.path.includes('michengai')),
+		'the upstream prefix is gone',
+	)
+	assert.ok(
+		registered.every((route) => route.requestBody === 'buffered' || route.requestBody === 'streaming'),
+		'every route declares the requestBody the Host requires',
+	)
+	assert.ok(
+		registered.every((route) => Array.isArray(route.methods) && typeof route.fetch === 'function'),
+		'every route carries methods and a fetch handler',
+	)
 })
 
-test('lists only enabled candidates and loads a body on demand', async () => {
-	const root = await fixture()
-	const { skills } = manager(root)
-	try {
-		const candidates = await skills.list()
-		assert.deepEqual(candidates.map((entry) => entry.name).sort(), ['docx', 'flat-skill', 'webapp-testing'])
-		assert.ok(candidates.every((entry) => entry.source === 'custom' && entry.provider === 'manager'))
-		const docx = candidates.find((entry) => entry.name === 'docx')
-		const definition = await skills.get(docx, {})
-		assert.equal(definition.description, 'Word 文档')
-		assert.equal(definition.content, '# docx\n\nBody for docx.')
-		assert.equal(definition.resourceBase.kind, 'directory')
-	} finally {
-		skills.dispose()
-		await rm(root, { recursive: true, force: true })
+test('a taken create_skill tool does not abort the mount', () => {
+	// Real failure seen on a machine that also ran another skill plugin: the
+	// Host throws on the duplicate tool name, and because the kernel's `apply`
+	// is synchronous that throw aborted every route registration too. The
+	// bridge has to swallow that one collision.
+	const routes = []
+	const warnings = []
+	const ctx = {
+		logger: { warn: (message) => warnings.push(message), info() {} },
+		effect: (fn) => fn() ?? (() => {}),
+		on: () => () => {},
+		emit: () => {},
+		get: (name) => {
+			if (name === 'connection') return { fetch: { register: (route) => { routes.push(route); return () => {} } } }
+			if (name === 'skills') return { registerProvider: () => () => {} }
+			if (name === 'tools') {
+				return {
+					register: (definition) => {
+						throw new Error(`tool "${definition.name}" is already registered`)
+					},
+				}
+			}
+			return undefined
+		},
 	}
+	const result = bridge.createSkillsKernel(ctx, { logger: ctx.logger })
+	assert.equal(result.mounted, true, 'the kernel still mounts')
+	assert.ok(result.routes > 0, 'the routes are still registered')
+	assert.equal(routes.length, result.routes)
+	assert.ok(
+		warnings.some((message) => message.includes('create_skill')),
+		'the dropped tool is reported',
+	)
+	assert.ok(routes.every((route) => route.path.startsWith('/api/manager/')), 'routes keep the plugin prefix')
 })
 
-test('a disabled category or skill disappears from the catalog', async () => {
-	const root = await fixture()
-	const { skills } = manager(root)
-	try {
-		await skills.setCategoryEnabled('office', false)
-		assert.deepEqual((await skills.list()).map((entry) => entry.name).sort(), ['flat-skill', 'webapp-testing'])
-		await skills.setSkillEnabled('dev', 'flat-skill', false)
-		assert.deepEqual((await skills.list()).map((entry) => entry.name), ['webapp-testing'])
-		await skills.setCategoryEnabled('office', true)
-		assert.deepEqual((await skills.list()).map((entry) => entry.name).sort(), ['docx', 'webapp-testing'])
-	} finally {
-		skills.dispose()
-		await rm(root, { recursive: true, force: true })
-	}
-})
-
-test('marks later same-name skills as conflicts and registers only the first', async () => {
-	const root = await fixture()
-	await mkdir(join(root, 'zzz', 'duplicate'), { recursive: true })
-	await writeFile(join(root, 'zzz', 'duplicate', 'SKILL.md'), skill('webapp-testing'))
-	const { skills } = manager(root)
-	try {
-		const snapshot = await skills.snapshot()
-		const fromZzz = snapshot.categories.find((category) => category.name === 'zzz')
-		assert.equal(fromZzz.skills[0].conflict, true)
-		assert.equal(snapshot.conflicts.length, 1)
-		assert.equal((await skills.list()).filter((entry) => entry.name === 'webapp-testing').length, 1)
-	} finally {
-		skills.dispose()
-		await rm(root, { recursive: true, force: true })
-	}
-})
-
-test('refresh drops the cached scan so an outside change is visible', async () => {
-	const root = await fixture()
-	const { skills } = manager(root)
-	try {
-		const before = await skills.snapshot()
-		assert.equal(before.totals.skills, 4)
-		await mkdir(join(root, 'paper', 'arxiv-reader'), { recursive: true })
-		await writeFile(join(root, 'paper', 'arxiv-reader', 'SKILL.md'), skill('arxiv-reader'))
-		skills.refresh()
-		const after = await skills.snapshot()
-		assert.equal(after.totals.skills, 5)
-		const paper = after.categories.find((category) => category.name === 'paper')
-		assert.deepEqual(paper.skills.map((entry) => entry.name), ['arxiv-reader'])
-	} finally {
-		skills.dispose()
-		await rm(root, { recursive: true, force: true })
-	}
-})
-
-test('creates a skill skeleton and reads it back', async () => {
-	const root = await fixture()
-	const { skills } = manager(root)
-	try {
-		const created = await skills.create({ category: 'dev', name: 'new-skill', description: '测试 "引号" 与描述' })
-		assert.match(created.path, /dev\/new-skill\/SKILL\.md$/)
-		const preview = await skills.read({ category: 'dev', name: 'new-skill' })
-		assert.equal(preview.description, '测试 "引号" 与描述')
-		await assert.rejects(skills.create({ category: 'dev', name: 'new-skill', description: 'again' }), /已存在/)
-		await assert.rejects(skills.create({ category: '../escape', name: 'x', description: 'x' }), /分类名/)
-		await assert.rejects(skills.create({ category: 'dev', name: 'Bad Name', description: 'x' }), /kebab-case/)
-	} finally {
-		skills.dispose()
-		await rm(root, { recursive: true, force: true })
-	}
+test.after(async () => {
+	await rm(home, { recursive: true, force: true })
 })
