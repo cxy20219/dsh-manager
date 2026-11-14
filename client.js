@@ -33,35 +33,63 @@ window.__ModuleLoader__.load({
 			'tab.skills': '技能',
 			'tab.mcp': 'MCP',
 			'tab.search': '联网搜索',
-			'skx.sources': '来源目录',
-			'skx.missingSources': '未安装',
+			'skx.tab.installed': '已安装',
+			'skx.tab.project': '项目技能',
+			'skx.tab.discover': '发现技能',
+			'skx.tab.trash': '回收站',
+			'skx.sources': '来源',
+			'skx.missingSources': '未安装的来源',
 			'skx.noSources': '没有检测到任何技能目录。',
+			'skx.noWorkspaces': '还没有登记的工作区。先在侧栏添加一个工作区。',
+			'skx.workspaceNoSkills': '这个工作区里还没有技能。',
+			'skx.workspaceUnavailable': '目录不可用',
+			'skx.projectHint': '按工作区查看项目级技能，只读。',
+			'skx.projectReadOnly': '项目技能在项目目录里维护，这里只做浏览。',
 			'skx.search': '搜索名称、简介或备注',
+			'skx.searchAction': '搜索',
 			'skx.showBroken': '显示异常项',
 			'skx.toggleSource': '开启或关闭整个来源',
-			'skx.enableSource': '启用来源',
-			'skx.disableSource': '停用来源',
-			'skx.off': '已停用',
+			'skx.toggleSkill': '开启或关闭这个技能',
+			'skx.enabled': '已启用',
+			'skx.disabled': '已停用',
 			'skx.noSkills': '这个来源里还没有技能。',
 			'skx.noMatch': '没有匹配的技能。',
-			'skx.pickSkill': '从中间选择一个技能查看详情。',
-			'skx.summary': '共 {total} 项，显示 {shown} 项',
-			'skx.copiesTip': '另有 {n} 处同名副本（来自其他来源，未在列表中重复显示）',
+			'skx.pickSkill': '从左侧选择一个技能，这里显示它的简介、备注和正文。',
+			'skx.copiesTip': '另有 {n} 处同名副本（来自其他来源，未重复列出）',
 			'skx.manualOnly': '仅手动',
-			'skx.disabled': '已停用',
+			'skx.broken': '解析失败',
 			'skx.noDescription': '未提供简介',
-			'skx.enable': '启用',
-			'skx.disable': '停用',
 			'skx.description': '简介',
-			'skx.descTokens': '简介约 {n} token（常驻）',
-			'skx.bodyTokens': '正文约 {n} token（按需加载）',
+			'skx.tokenDesc': '简介 token',
+			'skx.tokenBody': '正文 token',
+			'skx.descTokensTip': '简介常驻系统提示词，按估算值显示',
+			'skx.bodyTokensTip': '正文只在调用技能时加载，按估算值显示',
 			'skx.note': '自定义备注',
 			'skx.editNote': '编辑',
 			'skx.notePlaceholder': '记录这个技能是做什么的、什么时候用…',
-			'skx.noNote': '还没有备注。备注只存在本插件里，不改 SKILL.md。',
+			'skx.noNote': '还没有备注。备注只存在本插件里，不会写回 SKILL.md。',
 			'skx.save': '保存',
 			'skx.body': 'SKILL.md 正文',
+			'skx.copyBody': '复制正文',
+			'skx.copied': '已复制',
 			'skx.path': '源文件',
+			'skx.discoverHint': '从 ClawHub 榜单或 skills.sh 搜索安装技能。',
+			'skx.discoverSearch': '搜索技能名、关键词…',
+			'skx.discoverEmpty': '还没有结果。换一个关键词，或在上方搜索。',
+			'skx.discoverNone': '没有搜索到匹配的技能。',
+			'skx.discoverPick': '选择一个技能查看它的简介和正文，然后安装。',
+			'skx.install': '安装',
+			'skx.installTo': '安装到',
+			'skx.installed': '已安装：{name}',
+			'skx.preview': '预览',
+			'skx.downloads': '{n} 次下载',
+			'skx.installs': '{n} 次安装',
+			'skx.trashHint': '删除的技能先进回收站，可以恢复。',
+			'skx.trashEmpty': '回收站是空的。',
+			'skx.trashFrom': '来自 {root}',
+			'skx.restore': '恢复',
+			'skx.purge': '永久删除',
+			'skx.footer': '{n} 个来源已安装 · {m} 个未安装',
 			'action.refresh': '重新扫描',
 			'action.close': '关闭',
 			'action.cancel': '取消',
@@ -287,35 +315,63 @@ window.__ModuleLoader__.load({
 			'tab.skills': 'Skills',
 			'tab.mcp': 'MCP',
 			'tab.search': 'Web search',
+			'skx.tab.installed': 'Installed',
+			'skx.tab.project': 'Project skills',
+			'skx.tab.discover': 'Discover',
+			'skx.tab.trash': 'Trash',
 			'skx.sources': 'Sources',
 			'skx.missingSources': 'Not installed',
 			'skx.noSources': 'No skill directory was found.',
+			'skx.noWorkspaces': 'No workspace is registered yet. Add one in the sidebar first.',
+			'skx.workspaceNoSkills': 'This workspace has no skills yet.',
+			'skx.workspaceUnavailable': 'Directory unavailable',
+			'skx.projectHint': 'Browse project-scoped skills per workspace. Read-only.',
+			'skx.projectReadOnly': 'Project skills are maintained in the project directory; this view only browses them.',
 			'skx.search': 'Search name, description or note',
+			'skx.searchAction': 'Search',
 			'skx.showBroken': 'Show broken',
 			'skx.toggleSource': 'Turn the whole source on or off',
-			'skx.enableSource': 'Enable source',
-			'skx.disableSource': 'Disable source',
-			'skx.off': 'Off',
+			'skx.toggleSkill': 'Turn this skill on or off',
+			'skx.enabled': 'On',
+			'skx.disabled': 'Off',
 			'skx.noSkills': 'This source has no skills yet.',
 			'skx.noMatch': 'No matching skills.',
-			'skx.pickSkill': 'Pick a skill in the middle pane to see its details.',
-			'skx.summary': '{shown} of {total} shown',
+			'skx.pickSkill': 'Pick a skill on the left to see its description, note and body.',
 			'skx.copiesTip': '{n} more copies exist in other sources and are not repeated here',
 			'skx.manualOnly': 'Manual only',
-			'skx.disabled': 'Off',
+			'skx.broken': 'Unparseable',
 			'skx.noDescription': 'No description',
-			'skx.enable': 'Enable',
-			'skx.disable': 'Disable',
 			'skx.description': 'Description',
-			'skx.descTokens': 'Description ≈{n} tokens (always loaded)',
-			'skx.bodyTokens': 'Body ≈{n} tokens (loaded on use)',
+			'skx.tokenDesc': 'description tokens',
+			'skx.tokenBody': 'body tokens',
+			'skx.descTokensTip': 'The description stays in the system prompt; shown as an estimate',
+			'skx.bodyTokensTip': 'The body loads only when the skill is invoked; shown as an estimate',
 			'skx.note': 'Custom note',
 			'skx.editNote': 'Edit',
 			'skx.notePlaceholder': 'Record what this skill does and when to use it…',
 			'skx.noNote': 'No note yet. Notes stay in this plugin and never touch SKILL.md.',
 			'skx.save': 'Save',
 			'skx.body': 'SKILL.md body',
+			'skx.copyBody': 'Copy body',
+			'skx.copied': 'Copied',
 			'skx.path': 'Source file',
+			'skx.discoverHint': 'Install skills from the ClawHub chart or a skills.sh search.',
+			'skx.discoverSearch': 'Search skill name or keyword…',
+			'skx.discoverEmpty': 'No results yet. Try another keyword or search above.',
+			'skx.discoverNone': 'No matching skill was found.',
+			'skx.discoverPick': 'Pick a skill to preview its description and body, then install it.',
+			'skx.install': 'Install',
+			'skx.installTo': 'Install to',
+			'skx.installed': 'Installed: {name}',
+			'skx.preview': 'Preview',
+			'skx.downloads': '{n} downloads',
+			'skx.installs': '{n} installs',
+			'skx.trashHint': 'A deleted skill goes to the trash first and can be restored.',
+			'skx.trashEmpty': 'The trash is empty.',
+			'skx.trashFrom': 'From {root}',
+			'skx.restore': 'Restore',
+			'skx.purge': 'Delete forever',
+			'skx.footer': '{n} sources installed · {m} not installed',
 			'action.refresh': 'Rescan',
 			'action.close': 'Close',
 			'action.cancel': 'Cancel',
@@ -729,52 +785,115 @@ window.__ModuleLoader__.load({
 			'.mgrSearchAnswerTitle{margin-bottom:4px;font-size:11.5px;font-weight:600;color:var(--dsw-alias-label-secondary)}',
 			'.mgrSearchAnswerBody{max-height:220px;overflow:auto;font-size:12px;line-height:1.65;color:var(--dsw-alias-label-secondary);white-space:pre-wrap;word-break:break-word}',
 
-			/* ---- three-pane skill workspace ---------------------------- */
-			'.skxRoot{display:flex;flex-direction:column;gap:10px;height:100%;min-height:0}',
-			'.skxPanes{display:grid;grid-template-columns:210px minmax(240px,1fr) minmax(300px,1.25fr);gap:10px;flex:1;min-height:0}',
-			'.skxSources,.skxSkills,.skxDetail{display:flex;flex-direction:column;min-height:0;border:1px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-1);overflow:hidden}',
-			'.skxPaneHead{display:flex;align-items:center;gap:8px;padding:9px 11px;border-bottom:1px solid var(--dsw-alias-border-l2);flex:none;flex-wrap:wrap}',
-			'.skxPaneTitle{font-size:12.5px;font-weight:600;color:var(--dsw-alias-label-secondary)}',
-			'.skxPaneCount{font-size:11.5px;color:var(--dsw-alias-label-tertiary)}',
-			'.skxSourceList{overflow-y:auto;padding:6px;display:flex;flex-direction:column;gap:2px;min-height:0}',
-			'.skxSource{display:flex;align-items:center;gap:6px;padding:8px 9px;border:1px solid transparent;border-radius:var(--dsw-radius-sm,6px);background:transparent;color:var(--dsw-alias-label-primary);font:inherit;font-size:13px;text-align:left;cursor:pointer;width:100%;transition:background .12s ease}',
-			'.skxSource:hover{background:var(--dsw-alias-bg-layer-2)}',
-			'.skxSourceActive{background:var(--dsw-alias-interactive-bg-active);border-color:var(--dsw-alias-border-l2);font-weight:500}',
-			'.skxSourceOff{color:var(--dsw-alias-label-tertiary)}',
+			/* ---- skill workspace: GitHub-flavoured, larger type ---------- */
+			'.skxRoot{--skx-line:#30363d;--skx-line-soft:#21262d;--skx-canvas:#0d1117;--skx-surface:#161b22;--skx-raised:#1c2128;--skx-fg:#e6edf3;--skx-fg-muted:#8b949e;--skx-fg-subtle:#6e7681;--skx-accent:#2f81f7;--skx-accent-soft:rgba(47,129,247,.14);--skx-green:#3fb950;--skx-red:#f85149;--skx-amber:#d29922;display:flex;flex-direction:column;gap:14px;height:100%;min-height:0;color:var(--skx-fg);font-size:15px;line-height:1.6}',
+			'.skxShell{display:grid;grid-template-columns:260px minmax(0,1fr);gap:14px;flex:1;min-height:0}',
+			'.skxRail{display:flex;flex-direction:column;gap:2px;min-height:0;overflow-y:auto;padding:10px;border:1px solid var(--skx-line);border-radius:10px;background:var(--skx-surface)}',
+			'.skxRailLabel{padding:10px 10px 6px;font-size:12.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--skx-fg-subtle)}',
+			'.skxRailDivider{height:1px;margin:8px 4px;background:var(--skx-line-soft)}',
+			'.skxNav{display:flex;align-items:center;gap:8px;width:100%;padding:9px 11px;border:0;border-radius:7px;background:transparent;color:var(--skx-fg);font:inherit;font-size:15px;text-align:left;cursor:pointer}',
+			'.skxNav:hover{background:var(--skx-raised)}',
+			'.skxNavOn{background:var(--skx-accent-soft);color:#79c0ff;font-weight:600}',
+			'.skxNavCount{margin-left:auto;font-size:12.5px;color:var(--skx-fg-subtle)}',
+			'.skxSourceRow{display:flex;align-items:center;gap:8px;width:100%;padding:8px 11px;border:0;border-radius:7px;background:transparent;color:var(--skx-fg);font:inherit;font-size:15px;text-align:left;cursor:pointer}',
+			'.skxSourceRow:hover{background:var(--skx-raised)}',
+			'.skxSourceRowOn{background:var(--skx-accent-soft);color:#79c0ff;font-weight:600}',
+			'.skxSourceRowOff{opacity:.55}',
+			'.skxSourceDot{width:7px;height:7px;border-radius:50%;background:var(--skx-green);flex:none}',
+			'.skxSourceRowOff .skxSourceDot{background:var(--skx-fg-subtle)}',
 			'.skxSourceName{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
-			'.skxSourceCount{font-size:11.5px;color:var(--dsw-alias-label-tertiary);flex:none}',
-			'.skxSourceOffMark{font-size:10.5px;padding:1px 5px;border-radius:999px;background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-tertiary);flex:none}',
-			'.skxMissingBlock{margin-top:8px;padding-top:8px;border-top:1px solid var(--dsw-alias-border-l2);display:flex;flex-direction:column;gap:3px}',
-			'.skxMissing{font-size:11.5px;color:var(--dsw-alias-label-tertiary);padding:3px 9px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
-			'.skxSearch{flex:1;min-width:120px}',
-			'.skxFilter{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;color:var(--dsw-alias-label-secondary);white-space:nowrap;cursor:pointer}',
-			'.skxSourceSwitch{height:24px;padding:0 9px;border:1px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-secondary);font:inherit;font-size:11.5px;cursor:pointer;flex:none}',
-			'.skxSourceSwitchOn{color:var(--dsw-alias-label-primary)}',
-			'.skxList{overflow-y:auto;padding:6px;display:flex;flex-direction:column;gap:2px;min-height:0}',
-			'.skxSkill{display:flex;flex-direction:column;gap:3px;padding:9px 10px;border:1px solid transparent;border-radius:var(--dsw-radius-sm,6px);background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer;width:100%;transition:background .12s ease}',
-			'.skxSkill:hover{background:var(--dsw-alias-bg-layer-2)}',
-			'.skxSkillActive{background:var(--dsw-alias-interactive-bg-active);border-color:var(--dsw-alias-border-l2)}',
-			'.skxSkillOff{opacity:.62}',
-			'.skxSkillTop{display:flex;align-items:center;gap:6px;min-width:0}',
-			'.skxSkillName{font-size:15px;line-height:1.35;font-weight:500;color:var(--dsw-alias-label-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
-			'.skxSkillDesc{font-size:12.5px;line-height:1.55;color:var(--dsw-alias-label-secondary);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}',
-			'.skxCopies{font-size:10.5px;padding:1px 5px;border-radius:999px;background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-tertiary);flex:none}',
-			'.skxFlag{font-size:10.5px;padding:1px 5px;border-radius:999px;border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-tertiary);flex:none;white-space:nowrap}',
-			'.skxPath{padding:6px 11px;border-top:1px solid var(--dsw-alias-border-l2);font-size:10.5px;font-family:var(--dsw-font-mono,ui-monospace,SFMono-Regular,Menlo,monospace);color:var(--dsw-alias-label-tertiary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:none}',
-			'.skxDetailBody{overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:12px;min-height:0}',
-			'.skxDetailHead{display:flex;align-items:flex-start;gap:8px}',
-			'.skxDetailTitle{flex:1;font-size:16px;line-height:1.35;font-weight:600;color:var(--dsw-alias-label-primary);word-break:break-word}',
-			'.skxDetailActions{display:flex;gap:6px;flex:none}',
-			'.skxTokens{display:flex;flex-wrap:wrap;gap:10px;font-size:11.5px;color:var(--dsw-alias-label-tertiary)}',
-			'.skxSection{display:flex;flex-direction:column;gap:5px}',
-			'.skxSectionTitle{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;color:var(--dsw-alias-label-secondary)}',
-			'.skxLink{border:0;background:none;padding:0;color:var(--dsw-alias-state-business-primary);font:inherit;font-size:11.5px;cursor:pointer}',
-			'.skxText{font-size:13px;line-height:1.7;color:var(--dsw-alias-label-primary);white-space:pre-wrap;word-break:break-word}',
-			'.skxMono{font-family:var(--dsw-font-mono,ui-monospace,SFMono-Regular,Menlo,monospace);font-size:11.5px;color:var(--dsw-alias-label-tertiary)}',
-			'.skxPre{margin:0;padding:10px 12px;max-height:340px;overflow:auto;border:1px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-2);font-family:var(--dsw-font-mono,ui-monospace,SFMono-Regular,Menlo,monospace);font-size:11.5px;line-height:1.65;color:var(--dsw-alias-label-secondary);white-space:pre-wrap;word-break:break-word}',
-			'.skxEditActions{display:flex;gap:6px;margin-top:6px}',
-			'.skxEmpty{padding:22px 14px;text-align:center;font-size:12.5px;color:var(--dsw-alias-label-tertiary)}',
-			'.skxFoot{display:flex;align-items:center;gap:8px;flex:none}',
+			'.skxSourceCount{font-size:12.5px;color:var(--skx-fg-subtle);flex:none}',
+			'.skxMissingToggle{display:flex;align-items:center;gap:6px;width:100%;padding:8px 11px;border:0;border-radius:7px;background:transparent;color:var(--skx-fg-muted);font:inherit;font-size:14px;text-align:left;cursor:pointer}',
+			'.skxMissingToggle:hover{background:var(--skx-raised);color:var(--skx-fg)}',
+			'.skxChevron{width:12px;font-size:11px;color:var(--skx-fg-subtle)}',
+			'.skxMissingList{display:flex;flex-direction:column;gap:1px;padding:0 0 4px 12px}',
+			'.skxMissingRow{padding:4px 10px;font-size:13px;color:var(--skx-fg-subtle);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+			'.skxMain{display:flex;flex-direction:column;min-height:0;border:1px solid var(--skx-line);border-radius:10px;background:var(--skx-surface);overflow:hidden}',
+			'.skxSplit{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);height:100%;min-height:0}',
+			'.skxListCol{display:flex;flex-direction:column;min-height:0;overflow-y:auto;border-right:1px solid var(--skx-line)}',
+			'.skxDetailCol{display:flex;flex-direction:column;min-height:0;overflow-y:auto;background:var(--skx-canvas)}',
+			'.skxHead{display:flex;align-items:flex-start;gap:12px;padding:16px 18px;border-bottom:1px solid var(--skx-line-soft)}',
+			'.skxHeadMain{display:flex;flex-direction:column;gap:4px;min-width:0;flex:1}',
+			'.skxHeadSide{display:flex;align-items:center;gap:8px;flex:none;padding-top:2px}',
+			'.skxTitle{margin:0;font-size:20px;line-height:1.3;font-weight:600;color:var(--skx-fg)}',
+			'.skxTitleMeta{font-size:13.5px;color:var(--skx-fg-muted)}',
+			'.skxCode{font-family:var(--dsw-font-mono,ui-monospace,SFMono-Regular,Menlo,monospace);font-size:12.5px;color:var(--skx-fg-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+			'.skxCodeBlock{display:block;padding:8px 10px;border:1px solid var(--skx-line);border-radius:6px;background:var(--skx-surface);word-break:break-all;white-space:normal}',
+			'.skxToolbar{display:flex;align-items:center;gap:10px;padding:12px 18px;border-bottom:1px solid var(--skx-line-soft);flex-wrap:wrap}',
+			'.skxInput{flex:1;min-width:160px;padding:8px 12px;border:1px solid var(--skx-line);border-radius:6px;background:var(--skx-canvas);color:var(--skx-fg);font:inherit;font-size:15px;outline:none}',
+			'.skxInput:focus{border-color:var(--skx-accent);box-shadow:0 0 0 3px var(--skx-accent-soft)}',
+			'.skxInput::placeholder{color:var(--skx-fg-subtle)}',
+			'.skxCheck{display:inline-flex;align-items:center;gap:6px;font-size:14px;color:var(--skx-fg-muted);white-space:nowrap;cursor:pointer}',
+			'.skxCheck input{width:15px;height:15px;accent-color:var(--skx-accent);cursor:pointer}',
+			'.skxSelect{padding:7px 10px;border:1px solid var(--skx-line);border-radius:6px;background:var(--skx-canvas);color:var(--skx-fg);font:inherit;font-size:14px;cursor:pointer}',
+			'.skxSegmented{display:inline-flex;border:1px solid var(--skx-line);border-radius:6px;overflow:hidden}',
+			'.skxSeg{padding:7px 14px;border:0;background:transparent;color:var(--skx-fg-muted);font:inherit;font-size:14px;cursor:pointer}',
+			'.skxSegOn{background:var(--skx-accent);color:#fff;font-weight:600}',
+			'.skxBtn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:7px 14px;border:1px solid var(--skx-line);border-radius:6px;background:var(--skx-raised);color:var(--skx-fg);font:inherit;font-size:14px;font-weight:500;cursor:pointer;white-space:nowrap}',
+			'.skxBtn:hover:not(:disabled){background:#262c36;border-color:#484f58}',
+			'.skxBtn:disabled{opacity:.55;cursor:not-allowed}',
+			'.skxBtnPrimary{background:#238636;border-color:#2ea043;color:#fff}',
+			'.skxBtnPrimary:hover:not(:disabled){background:#2ea043}',
+			'.skxBtnDanger{color:var(--skx-red)}',
+			'.skxBtnDanger:hover:not(:disabled){background:#da3633;border-color:#f85149;color:#fff}',
+			'.skxBtnSmall{padding:5px 11px;font-size:13.5px}',
+			'.skxRows{list-style:none;margin:0;padding:6px;display:flex;flex-direction:column;gap:2px}',
+			'.skxRow{display:flex;align-items:flex-start;gap:12px;padding:12px 13px;border-radius:8px;cursor:pointer;border:1px solid transparent}',
+			'.skxRow:hover{background:var(--skx-raised)}',
+			'.skxRowOn{background:var(--skx-accent-soft);border-color:#1f6feb}',
+			'.skxRowStatic{cursor:default}',
+			'.skxRowOff{opacity:.6}',
+			'.skxRowMain{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}',
+			'.skxRowTitle{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0}',
+			'.skxRowName{font-size:16px;line-height:1.4;font-weight:600;color:var(--skx-fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+			'.skxRowDesc{margin:0;font-size:14px;line-height:1.55;color:var(--skx-fg-muted);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}',
+			'.skxRowEnd{display:flex;align-items:center;gap:8px;flex:none}',
+			'.skxRowActions{display:flex;gap:8px;margin-top:8px}',
+			'.skxBadge{padding:1px 8px;border:1px solid var(--skx-line);border-radius:999px;background:var(--skx-raised);font-size:12px;color:var(--skx-fg-muted);white-space:nowrap;flex:none}',
+			'.skxBadgeWarn{color:var(--skx-amber);border-color:#9e6a03}',
+			'.skxSwitch{position:relative;width:44px;height:24px;flex:none;padding:0;border:1px solid var(--skx-line);border-radius:999px;background:var(--skx-raised);cursor:pointer;transition:background .15s ease,border-color .15s ease}',
+			'.skxSwitch:disabled{opacity:.5;cursor:not-allowed}',
+			'.skxSwitchKnob{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#8b949e;transition:transform .15s ease,background .15s ease}',
+			'.skxSwitchOn{background:#238636;border-color:#2ea043}',
+			'.skxSwitchOn .skxSwitchKnob{transform:translateX(20px);background:#fff}',
+			'.skxSwitchSm{width:38px;height:21px}',
+			'.skxSwitchSm .skxSwitchKnob{width:15px;height:15px}',
+			'.skxSwitchSm.skxSwitchOn .skxSwitchKnob{transform:translateX(17px)}',
+			'.skxSwitchLabel{font-size:13.5px;color:var(--skx-fg-muted)}',
+			'.skxDoc{display:flex;flex-direction:column;gap:18px;padding:20px 22px}',
+			'.skxDocHead{display:flex;flex-direction:column;gap:8px}',
+			'.skxDocTitle{margin:0;font-size:22px;line-height:1.3;font-weight:600;color:var(--skx-fg);word-break:break-word}',
+			'.skxDocSection{display:flex;flex-direction:column;gap:7px}',
+			'.skxLabel{font-size:13px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;color:var(--skx-fg-subtle)}',
+			'.skxLabelRow{display:flex;align-items:center;justify-content:space-between;gap:10px}',
+			'.skxProse{margin:0;font-size:15px;line-height:1.7;color:var(--skx-fg);white-space:pre-wrap;word-break:break-word}',
+			'.skxTokens{display:flex;flex-wrap:wrap;gap:8px}',
+			'.skxToken{padding:2px 9px;border:1px solid var(--skx-line);border-radius:999px;background:var(--skx-raised);font-size:12.5px;color:var(--skx-fg-muted)}',
+			'.skxLink{padding:0;border:0;background:none;color:#79c0ff;font:inherit;font-size:13.5px;cursor:pointer}',
+			'.skxLink:hover{text-decoration:underline}',
+			'.skxPre{margin:0;padding:14px 16px;max-height:420px;overflow:auto;border:1px solid var(--skx-line);border-radius:8px;background:var(--skx-surface);font-family:var(--dsw-font-mono,ui-monospace,SFMono-Regular,Menlo,monospace);font-size:13.5px;line-height:1.7;color:var(--skx-fg);white-space:pre-wrap;word-break:break-word}',
+			'.skxTextarea{width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid var(--skx-line);border-radius:6px;background:var(--skx-canvas);color:var(--skx-fg);font:inherit;font-size:15px;line-height:1.6;resize:vertical;outline:none}',
+			'.skxTextarea:focus{border-color:var(--skx-accent);box-shadow:0 0 0 3px var(--skx-accent-soft)}',
+			'.skxChips{display:flex;flex-wrap:wrap;gap:8px;padding:12px 18px;border-bottom:1px solid var(--skx-line-soft)}',
+			'.skxChip{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border:1px solid var(--skx-line);border-radius:999px;background:var(--skx-raised);color:var(--skx-fg);font:inherit;font-size:14px;cursor:pointer}',
+			'.skxChipOn{background:var(--skx-accent);border-color:var(--skx-accent);color:#fff;font-weight:600}',
+			'.skxChipOff{opacity:.55}',
+			'.skxGroup{padding:8px 12px}',
+			'.skxGroupHead{display:flex;align-items:center;gap:8px;padding:8px 6px 4px}',
+			'.skxNote{margin:0 18px 8px;padding:9px 12px;border:1px solid #1f6feb;border-radius:6px;background:var(--skx-accent-soft);font-size:14px;color:#79c0ff}',
+			'.skxBanner{display:flex;align-items:center;gap:12px;padding:11px 14px;border:1px solid #f85149;border-radius:8px;background:rgba(248,81,73,.1);font-size:14.5px;color:#ffa198}',
+			'.skxBannerText{flex:1;word-break:break-word}',
+			'.skxEmpty{padding:32px 20px;text-align:center;font-size:14.5px;line-height:1.7;color:var(--skx-fg-muted)}',
+			'.skxEmptyTall{flex:1;display:flex;align-items:center;justify-content:center;min-height:220px}',
+			'.skxFoot{display:flex;align-items:center;gap:10px;flex:none}',
+			'.skxFootText{font-size:13px;color:var(--skx-fg-muted)}',
+			'body[data-theme="light"] .skxRoot{--skx-line:#d0d7de;--skx-line-soft:#d8dee4;--skx-canvas:#ffffff;--skx-surface:#f6f8fa;--skx-raised:#eaeef2;--skx-fg:#1f2328;--skx-fg-muted:#656d76;--skx-fg-subtle:#818b98;--skx-accent-soft:rgba(9,105,218,.1)}',
+			'body[data-theme="light"] .skxBtn:hover:not(:disabled){background:#eaeef2;border-color:#afb8c1}',
+			'body[data-theme="light"] .skxNavOn,body[data-theme="light"] .skxSourceRowOn,body[data-theme="light"] .skxRowOn{color:#0969da}',
+			'body[data-theme="light"] .skxLink{color:#0969da}',
+			'body[data-theme="light"] .skxNote{color:#0969da;border-color:#54aeff}',
+			'body[data-theme="light"] .skxBanner{color:#cf222e}',
+			'@media (max-width:1100px){.skxShell{grid-template-columns:220px minmax(0,1fr)}.skxSplit{grid-template-columns:minmax(0,1fr)}}',
 		].join('\n');
 
 		//#endregion
@@ -1012,22 +1131,25 @@ window.__ModuleLoader__.load({
 		 * @param {object} ctx - Client context.
 		 * @param {string} path - Kernel route below `/api/manager`.
 		 * @param {object} [body] - JSON body for a POST.
-		 * @param {string} [method] - HTTP method; POST unless told otherwise.
+		 * @param {object} [options] - `method` override and `query` search params.
 		 * @returns {Promise<unknown>} The route's `data`.
 		 */
-		function callKernel(ctx, path, body, method) {
+		function callKernel(ctx, path, body, options) {
 			if (ctx.get('connection') === undefined) return Promise.reject(new Error('连接不可用'));
-			var verb = method ?? (body === undefined ? 'GET' : 'POST');
-			var options = {
+			var settings = options ?? {};
+			var verb = settings.method ?? (body === undefined ? 'GET' : 'POST');
+			var url = API_PREFIX + '/' + path;
+			if (settings.query !== undefined && settings.query !== '') url += '?' + settings.query;
+			var request = {
 				method: verb,
 				headers: { 'content-type': 'application/json', 'x-dsh-manager-client': '1' },
 				credentials: 'same-origin',
 			};
-			if (verb !== 'GET' && verb !== 'HEAD') options.body = JSON.stringify(body ?? {});
+			if (verb !== 'GET' && verb !== 'HEAD') request.body = JSON.stringify(body ?? {});
 			if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') {
-				options.signal = AbortSignal.timeout(30000);
+				request.signal = AbortSignal.timeout(30000);
 			}
-			return fetch(API_PREFIX + '/' + path, options).then(function (response) {
+			return fetch(url, request).then(function (response) {
 				return response.text().then(function (raw) {
 					var value;
 					try {
@@ -1037,9 +1159,15 @@ window.__ModuleLoader__.load({
 						throw new Error('服务端返回了非 JSON 响应：' + raw.slice(0, 120));
 					}
 					if (value !== null && typeof value === 'object' && value.ok === true) return value.data;
+					// The kernel reports a refused operation as `{ ok: false, code, error }`
+					// where `error` is the message string.
 					var error = value !== null && typeof value === 'object' ? value.error : undefined;
-					var failure = new Error(typeof error === 'string' && error !== '' ? error : ('HTTP ' + response.status));
+					var message = typeof error === 'string' && error !== ''
+						? error
+						: (error !== null && typeof error === 'object' && typeof error.message === 'string' ? error.message : 'HTTP ' + response.status);
+					var failure = new Error(message);
 					if (error !== null && typeof error === 'object' && typeof error.code === 'string') failure.code = error.code;
+					if (value !== null && typeof value === 'object' && typeof value.code === 'string') failure.code = value.code;
 					throw failure;
 				});
 			});
@@ -1078,22 +1206,33 @@ window.__ModuleLoader__.load({
 		}
 
 		/**
-		 * Whether a skill can be toggled at all.
+		 * A GitHub-style pill switch.
 		 *
-		 * @param {object} skill - A projected skill row.
-		 * @returns {boolean} True when the source allows policy changes.
+		 * Sits inline in a row and toggles on click; it stops propagation so a
+		 * row that is itself clickable (to select) is not also selected.
+		 *
+		 * @param {object} props - `checked`, `label`, `disabled`, `onChange`, `size`.
+		 * @returns {object} React node.
 		 */
-		function skillToggleable(skill) {
-			return skill.toggleable === true || skill.sourceToggleable === true;
+		function PillSwitch(props) {
+			var size = props.size === 'sm' ? ' skxSwitchSm' : '';
+			return h('button', {
+				type: 'button',
+				role: 'switch',
+				'aria-checked': props.checked === true,
+				'aria-label': props.label,
+				title: props.label,
+				disabled: props.disabled === true,
+				className: classes('skxSwitch', props.checked === true && 'skxSwitchOn', size),
+				onClick: function (event) {
+					event.stopPropagation();
+					if (props.disabled !== true) props.onChange(!props.checked);
+				},
+			}, h('span', { className: 'skxSwitchKnob' }));
 		}
 
 		/**
-		 * The three-pane skill workspace: sources, skills, detail.
-		 *
-		 * Replaces the old category accordion. The left pane lists every agent
-		 * source the kernel discovered (including the ones that do not exist on
-		 * this machine, greyed out), the middle pane lists that source's skills,
-		 * and the right pane shows the selected skill's document.
+		 * The skills workspace: a rail of sources plus one of four sub-views.
 		 *
 		 * @param {object} props - Panel data and actions.
 		 * @returns {object} React node.
@@ -1103,9 +1242,8 @@ window.__ModuleLoader__.load({
 			var call = props.callKernel;
 			var [roots, setRoots] = useState(null);
 			var [activeRoot, setActiveRoot] = useState('');
-			var [selected, setSelected] = useState(null);
-			var [query, setQuery] = useState('');
-			var [showEmpty, setShowEmpty] = useState(false);
+			var [tab, setTab] = useState('installed');
+			var [showMissing, setShowMissing] = useState(false);
 			var [error, setError] = useState('');
 			var [busy, setBusy] = useState(false);
 
@@ -1115,13 +1253,10 @@ window.__ModuleLoader__.load({
 					var list = Array.isArray(data?.roots) ? data.roots : [];
 					setRoots(list);
 					setError('');
-					// Keep the current source if it still exists; otherwise pick the
-					// first one that actually has skills, so the middle pane is never
-					// empty on arrival.
 					setActiveRoot(function (current) {
 						if (current !== '' && list.some(function (root) { return root.key === current; })) return current;
-						var withSkills = list.find(function (root) { return (root.skills ?? []).length > 0; });
-						return withSkills !== undefined ? withSkills.key : (list[0]?.key ?? '');
+						var withSkills = list.find(function (root) { return root.exists !== false && (root.skills ?? []).length > 0; });
+						return withSkills !== undefined ? withSkills.key : (list.find(function (root) { return root.exists !== false; })?.key ?? '');
 					});
 				}).catch(function (reason) {
 					setError(messageOf(reason));
@@ -1132,139 +1267,172 @@ window.__ModuleLoader__.load({
 
 			useEffect(function () { void load(); }, [load]);
 
-			var root = roots === null ? undefined : roots.find(function (entry) { return entry.key === activeRoot; });
-			var allSkills = root === undefined ? [] : (root.skills ?? []);
-			var needle = query.trim().toLowerCase();
-			var visible = collapseSkills(allSkills).filter(function (skill) {
-				if (needle !== '') {
-					var haystack = (skill.name + ' ' + (skill.description ?? '') + ' ' + (skill.customNote ?? '')).toLowerCase();
-					if (haystack.indexOf(needle) < 0) return false;
-				}
-				// The kernel reports parse health as `loadable`, not `ok`. A skill
-				// that cannot be parsed is noise in the list unless asked for.
-				var healthy = skill.loadable !== false;
-				return healthy || showEmpty;
-			});
-
-			var toggleSource = function (enabled) {
-				if (root === undefined) return;
-				setBusy(true);
-				var path = enabled ? 'source-enable' : 'source-disable';
-				call(path, { root: root.key }).then(load).catch(function (reason) {
-					setError(messageOf(reason));
-				}).finally(function () { setBusy(false); });
-			};
-
-			var toggleSkill = function (skill) {
-				var path = skill.enabled === false ? 'enable' : 'disable';
-				setBusy(true);
-				call(path, { root: root.key, name: skill.name }).then(load).catch(function (reason) {
-					setError(messageOf(reason));
-				}).finally(function () { setBusy(false); });
-			};
-
 			if (roots === null) {
 				return h('div', { className: 'skxRoot' }, error === '' ? h(Loading, { label: t('state.loading') }) : h('div', { className: 'mgrErrorBox' }, error));
 			}
 
 			var liveRoots = roots.filter(function (entry) { return entry.exists !== false; });
 			var missingRoots = roots.filter(function (entry) { return entry.exists === false; });
+			var active = roots.find(function (entry) { return entry.key === activeRoot; });
+
+			var toggleSource = function (entry, enabled) {
+				setBusy(true);
+				call(enabled ? 'source-enable' : 'source-disable', { root: entry.key }).then(load).catch(function (reason) {
+					setError(messageOf(reason));
+				}).finally(function () { setBusy(false); });
+			};
+
+			var subView;
+			if (tab === 'installed') {
+				subView = h(SkillListPanel, {
+					t: t, call: call, root: active, busy: busy, onToggleSource: toggleSource, onChanged: load, setError: setError,
+				});
+			} else if (tab === 'project') {
+				subView = h(ProjectSkillsPanel, { t: t, call: call, setError: setError });
+			} else if (tab === 'discover') {
+				subView = h(DiscoverPanel, { t: t, call: call, roots: liveRoots, onInstalled: load, setError: setError });
+			} else {
+				subView = h(TrashPanel, { t: t, call: call, onRestored: load, setError: setError });
+			}
 
 			return h('div', { className: 'skxRoot' },
-				error === '' ? null : h('div', { className: 'mgrErrorBox' },
-					h('span', null, error),
-					h('span', { className: 'mgrSpacer' }),
-					h('button', { type: 'button', className: 'mgrBtn', onClick: function () { void load(); } }, t('action.retry'))),
+				error === '' ? null : h('div', { className: 'skxBanner' },
+					h('span', { className: 'skxBannerText' }, error),
+					h('button', { type: 'button', className: 'skxBtn', onClick: function () { setError(''); void load(); } }, t('action.retry'))),
 
-				h('div', { className: 'skxPanes' },
-					// ---- left: sources -------------------------------------
-					h('div', { className: 'skxSources' },
-						h('div', { className: 'skxPaneHead' },
-							h('span', { className: 'skxPaneTitle' }, t('skx.sources')),
-							h('span', { className: 'skxPaneCount' }, String(liveRoots.length))),
-						h('div', { className: 'skxSourceList' },
-							liveRoots.length === 0
-								? h('div', { className: 'skxEmpty' }, t('skx.noSources'))
-								: liveRoots.map(function (entry) {
-									var count = (entry.skills ?? []).length;
-									return h('button', {
-										type: 'button',
-										key: entry.key,
-										className: classes('skxSource', entry.key === activeRoot && 'skxSourceActive', entry.enabled === false && 'skxSourceOff'),
-										onClick: function () { setActiveRoot(entry.key); setSelected(null); },
-									},
-									h('span', { className: 'skxSourceName' }, entry.label ?? entry.key),
-									h('span', { className: 'skxSourceCount' }, String(count)),
-									entry.enabled === false ? h('span', { className: 'skxSourceOffMark' }, t('skx.off')) : null);
-								}),
-							missingRoots.length === 0 ? null : h('div', { className: 'skxMissingBlock' },
-								h('div', { className: 'skxPaneTitle' }, t('skx.missingSources')),
-								missingRoots.map(function (entry) {
-									return h('div', { className: 'skxMissing', key: entry.key, title: entry.path }, entry.label ?? entry.key);
-								})))),
-
-					// ---- middle: skills ------------------------------------
-					h('div', { className: 'skxSkills' },
-						h('div', { className: 'skxPaneHead' },
-							h('input', {
-								className: 'mgrInput skxSearch',
-								type: 'search',
-								value: query,
-								placeholder: t('skx.search'),
-								'aria-label': t('skx.search'),
-								onChange: function (event) { setQuery(event.target.value); },
-							}),
-							h('label', { className: 'skxFilter' },
-								h('input', {
-									type: 'checkbox',
-									checked: showEmpty,
-									onChange: function (event) { setShowEmpty(event.target.checked); },
-								}),
-								h('span', null, t('skx.showBroken'))),
-							root === undefined ? null : h('button', {
+				h('div', { className: 'skxShell' },
+					h('aside', { className: 'skxRail' },
+						navButton('installed', t('skx.tab.installed'), liveRoots.length),
+						navButton('project', t('skx.tab.project'), null),
+						navButton('discover', t('skx.tab.discover'), null),
+						navButton('trash', t('skx.tab.trash'), null),
+						h('div', { className: 'skxRailDivider' }),
+						h('div', { className: 'skxRailLabel' }, t('skx.sources')),
+						liveRoots.map(function (entry) {
+							var count = (entry.skills ?? []).length;
+							return h('button', {
 								type: 'button',
-								className: classes('skxSourceSwitch', root.enabled !== false && 'skxSourceSwitchOn'),
-								disabled: busy,
-								title: t('skx.toggleSource'),
-								onClick: function () { toggleSource(root.enabled === false); },
-							}, root.enabled === false ? t('skx.enableSource') : t('skx.disableSource'))),
-						h('div', { className: 'skxList' },
-							visible.length === 0
-								? h('div', { className: 'skxEmpty' }, needle === '' ? t('skx.noSkills') : t('skx.noMatch'))
-								: visible.map(function (skill) {
-									var active = selected !== null && selected.name === skill.name;
-									return h('button', {
-										type: 'button',
-										key: skill.name,
-										className: classes('skxSkill', active && 'skxSkillActive', skill.enabled === false && 'skxSkillOff'),
-										onClick: function () { setSelected(skill); },
-									},
-									h('span', { className: 'skxSkillTop' },
-										h('span', { className: 'skxSkillName' }, skill.name),
-										skill.copies > 0 ? h('span', { className: 'skxCopies', title: t('skx.copiesTip', { n: skill.copies }) }, '+' + skill.copies) : null,
-										skill.modelInvocable === false ? h('span', { className: 'skxFlag' }, t('skx.manualOnly')) : null,
-										skill.enabled === false ? h('span', { className: 'skxFlag' }, t('skx.disabled')) : null),
-									h('span', { className: 'skxSkillDesc' }, skill.description === '' ? t('skx.noDescription') : skill.description));
-								})),
-						root === undefined ? null : h('div', { className: 'skxPath', title: root.path }, root.path)),
-
-					// ---- right: detail -------------------------------------
-					h('div', { className: 'skxDetail' },
-						selected === null
-							? h('div', { className: 'skxEmpty' }, t('skx.pickSkill'))
-							: h(SkillPane, {
-								t: t,
-								call: call,
-								root: root,
-								skill: selected,
-								busy: busy,
-								onToggle: function () { toggleSkill(selected); },
-								onSaved: load,
-							}))),
-				root === undefined ? null : h('div', { className: 'skxFoot' },
-					h('span', null, t('skx.summary', { total: allSkills.length, shown: visible.length })),
+								key: entry.key,
+								className: classes('skxSourceRow', tab === 'installed' && entry.key === activeRoot && 'skxSourceRowOn', entry.enabled === false && 'skxSourceRowOff'),
+								onClick: function () { setTab('installed'); setActiveRoot(entry.key); },
+							},
+							h('span', { className: 'skxSourceDot', 'aria-hidden': 'true' }),
+							h('span', { className: 'skxSourceName' }, entry.label ?? entry.key),
+							h('span', { className: 'skxSourceCount' }, String(count)));
+						}),
+						missingRoots.length === 0 ? null : h('div', null,
+							h('button', {
+								type: 'button',
+								className: 'skxMissingToggle',
+								'aria-expanded': showMissing,
+								onClick: function () { setShowMissing(!showMissing); },
+							}, h('span', { className: 'skxChevron' }, showMissing ? '▾' : '▸'), t('skx.missingSources'), h('span', { className: 'skxSourceCount' }, String(missingRoots.length))),
+							showMissing
+								? h('div', { className: 'skxMissingList' }, missingRoots.map(function (entry) {
+									return h('div', { className: 'skxMissingRow', key: entry.key, title: entry.path }, entry.label ?? entry.key);
+								}))
+								: null)),
+					h('section', { className: 'skxMain' }, subView)),
+				h('div', { className: 'skxFoot' },
+					h('span', { className: 'skxFootText' }, t('skx.footer', { n: liveRoots.length, m: missingRoots.length })),
 					h('span', { className: 'mgrSpacer' }),
-					h('button', { type: 'button', className: 'mgrBtn', onClick: function () { void load(); }, disabled: busy }, t('action.refresh'))));
+					h('button', { type: 'button', className: 'skxBtn', onClick: function () { void load(); }, disabled: busy }, busy ? t('state.loading') : t('action.refresh'))));
+
+			function navButton(id, label, count) {
+				return h('button', {
+					type: 'button',
+					key: id,
+					className: classes('skxNav', tab === id && 'skxNavOn'),
+					onClick: function () { setTab(id); },
+				}, label, count === null || count === undefined ? null : h('span', { className: 'skxNavCount' }, String(count)));
+			}
+		}
+
+		/**
+		 * One source's skills: search, per-skill switches, detail pane.
+		 *
+		 * @param {object} props - The active root and callbacks.
+		 * @returns {object} React node.
+		 */
+		function SkillListPanel(props) {
+			var t = props.t;
+			var root = props.root;
+			var [query, setQuery] = useState('');
+			var [showBroken, setShowBroken] = useState(false);
+			var [selected, setSelected] = useState(null);
+
+			useEffect(function () { setSelected(null); }, [root === undefined ? '' : root.key]);
+
+			if (root === undefined) return h('div', { className: 'skxEmpty' }, t('skx.noSources'));
+
+			var all = root.skills ?? [];
+			var needle = query.trim().toLowerCase();
+			var rows = collapseSkills(all).filter(function (skill) {
+				if (!showBroken && skill.loadable === false) return false;
+				if (needle === '') return true;
+				var haystack = (skill.name + ' ' + (skill.description ?? '') + ' ' + (skill.customNote ?? '')).toLowerCase();
+				return haystack.indexOf(needle) >= 0;
+			});
+
+			var flip = function (skill, enabled) {
+				return props.call(enabled ? 'enable' : 'disable', { root: root.key, name: skill.name }).then(props.onChanged).catch(function (reason) {
+					props.setError(messageOf(reason));
+				});
+			};
+
+			return h('div', { className: 'skxSplit' },
+				h('div', { className: 'skxListCol' },
+					h('div', { className: 'skxHead' },
+						h('div', { className: 'skxHeadMain' },
+							h('h2', { className: 'skxTitle' }, root.label ?? root.key),
+							h('span', { className: 'skxTitleMeta' }, h('code', { className: 'skxCode' }, root.path))),
+						h('div', { className: 'skxHeadSide' },
+							h('span', { className: 'skxSwitchLabel' }, root.enabled === false ? t('skx.disabled') : t('skx.enabled')),
+							h(PillSwitch, {
+								checked: root.enabled !== false,
+								label: t('skx.toggleSource'),
+								disabled: props.busy,
+								onChange: function (next) { props.onToggleSource(root, next); },
+							}))),
+					h('div', { className: 'skxToolbar' },
+						h('input', {
+							className: 'skxInput',
+							type: 'search',
+							value: query,
+							placeholder: t('skx.search'),
+							'aria-label': t('skx.search'),
+							onChange: function (event) { setQuery(event.target.value); },
+						}),
+						h('label', { className: 'skxCheck' },
+							h('input', { type: 'checkbox', checked: showBroken, onChange: function (event) { setShowBroken(event.target.checked); } }),
+							h('span', null, t('skx.showBroken')))),
+					rows.length === 0
+						? h('div', { className: 'skxEmpty' }, needle === '' ? t('skx.noSkills') : t('skx.noMatch'))
+						: h('ul', { className: 'skxRows' }, rows.map(function (skill) {
+							var on = skill.enabled !== false;
+							return h('li', {
+								key: skill.name,
+								className: classes('skxRow', selected !== null && selected.name === skill.name && 'skxRowOn', !on && 'skxRowOff'),
+								onClick: function () { setSelected(skill); },
+							},
+							h('div', { className: 'skxRowMain' },
+								h('div', { className: 'skxRowTitle' },
+									h('span', { className: 'skxRowName' }, skill.name),
+									skill.copies > 0 ? h('span', { className: 'skxBadge', title: t('skx.copiesTip', { n: skill.copies }) }, '+' + skill.copies) : null,
+									skill.effectiveModelInvocable === false ? h('span', { className: 'skxBadge' }, t('skx.manualOnly')) : null,
+									skill.loadable === false ? h('span', { className: 'skxBadge skxBadgeWarn' }, t('skx.broken')) : null),
+								h('p', { className: 'skxRowDesc' }, (skill.description ?? '') === '' ? t('skx.noDescription') : skill.description)),
+							h(PillSwitch, {
+								checked: on,
+								label: t('skx.toggleSkill'),
+								size: 'sm',
+								onChange: function (next) { void flip(skill, next); },
+							}));
+						}))),
+				h('div', { className: 'skxDetailCol' },
+					selected === null
+						? h('div', { className: 'skxEmpty skxEmptyTall' }, t('skx.pickSkill'))
+						: h(SkillPane, { t: t, call: props.call, root: root, skill: selected, onSaved: props.onChanged, setError: props.setError })));
 		}
 
 		/**
@@ -1275,88 +1443,398 @@ window.__ModuleLoader__.load({
 		 */
 		function SkillPane(props) {
 			var t = props.t;
-			var call = props.call;
 			var skill = props.skill;
 			var root = props.root;
-			var [detail, setDetail] = useState({ loading: true, data: null, error: '' });
+			var [doc, setDoc] = useState({ loading: true, data: null, error: '' });
 			var [note, setNote] = useState('');
 			var [editing, setEditing] = useState(false);
 			var [saving, setSaving] = useState(false);
+			var [copied, setCopied] = useState(false);
 
 			useEffect(function () {
 				var alive = true;
-				setDetail({ loading: true, data: null, error: '' });
+				setDoc({ loading: true, data: null, error: '' });
 				setEditing(false);
-				call('detail', { root: root.key, name: skill.name }).then(function (data) {
+				props.call('detail', { root: root.key, name: skill.name }).then(function (data) {
 					if (!alive) return;
-					setDetail({ loading: false, data: data, error: '' });
+					setDoc({ loading: false, data: data, error: '' });
 					setNote(data?.customNote ?? '');
 				}).catch(function (reason) {
-					if (alive) setDetail({ loading: false, data: null, error: messageOf(reason) });
+					if (alive) setDoc({ loading: false, data: null, error: messageOf(reason) });
 				});
 				return function () { alive = false; };
-			}, [root.key, skill.name, call]);
+			}, [root.key, skill.name, props.call]);
 
-			if (detail.loading) return h(Loading, { label: t('state.loading') });
-			if (detail.error !== '') return h('div', { className: 'mgrErrorBox' }, detail.error);
+			if (doc.loading) return h('div', { className: 'skxEmpty skxEmptyTall' }, t('state.loading'));
+			if (doc.error !== '') return h('div', { className: 'skxEmpty skxEmptyTall' }, doc.error);
 
-			var data = detail.data ?? {};
+			var data = doc.data ?? {};
 			var saveNote = function () {
 				setSaving(true);
-				call('skill-note', { root: root.key, name: skill.name, note: note }).then(function () {
+				props.call('skill-note', { root: root.key, name: skill.name, note: note }).then(function () {
 					setEditing(false);
 					if (props.onSaved) props.onSaved();
 				}).catch(function (reason) {
-					setDetail({ loading: false, data: data, error: messageOf(reason) });
+					props.setError(messageOf(reason));
 				}).finally(function () { setSaving(false); });
 			};
+			var copyBody = function () {
+				var text = data.body ?? '';
+				if (typeof navigator === 'undefined' || navigator.clipboard === undefined) return;
+				navigator.clipboard.writeText(text).then(function () {
+					setCopied(true);
+					setTimeout(function () { setCopied(false); }, 1500);
+				}).catch(function () {});
+			};
 
-			return h('div', { className: 'skxDetailBody' },
-				h('div', { className: 'skxDetailHead' },
-					h('div', { className: 'skxDetailTitle' }, data.declaredName ?? skill.name),
-					h('div', { className: 'skxDetailActions' },
-						h('button', {
-							type: 'button',
-							className: classes('mgrBtn', skill.enabled !== false && 'mgrBtnPrimary'),
-							disabled: props.busy,
-							onClick: props.onToggle,
-						}, skill.enabled === false ? t('skx.enable') : t('skx.disable')))),
-				h('div', { className: 'skxTokens' },
-					h('span', null, t('skx.descTokens', { n: data.descriptionTokens ?? 0 })),
-					h('span', null, t('skx.bodyTokens', { n: data.bodyTokens ?? 0 }))),
-				h('div', { className: 'skxSection' },
-					h('div', { className: 'skxSectionTitle' }, t('skx.description')),
-					h('div', { className: 'skxText' }, data.description === '' ? t('skx.noDescription') : data.description)),
-				h('div', { className: 'skxSection' },
-					h('div', { className: 'skxSectionTitle' },
-						t('skx.note'),
-						editing
-							? null
-							: h('button', { type: 'button', className: 'skxLink', onClick: function () { setEditing(true); } }, t('skx.editNote'))),
+			return h('div', { className: 'skxDoc' },
+				h('div', { className: 'skxDocHead' },
+					h('h2', { className: 'skxDocTitle' }, data.declaredName ?? skill.name),
+					h('div', { className: 'skxTokens' },
+						h('span', { className: 'skxToken', title: t('skx.descTokensTip') }, String(data.descriptionTokens ?? 0) + ' ' + t('skx.tokenDesc')),
+						h('span', { className: 'skxToken', title: t('skx.bodyTokensTip') }, String(data.bodyTokens ?? 0) + ' ' + t('skx.tokenBody')))),
+				h('div', { className: 'skxDocSection' },
+					h('div', { className: 'skxLabel' }, t('skx.description')),
+					h('p', { className: 'skxProse' }, (data.description ?? '') === '' ? t('skx.noDescription') : data.description)),
+				h('div', { className: 'skxDocSection' },
+					h('div', { className: 'skxLabelRow' },
+						h('span', { className: 'skxLabel' }, t('skx.note')),
+						editing ? null : h('button', { type: 'button', className: 'skxLink', onClick: function () { setEditing(true); } }, t('skx.editNote'))),
 					editing
 						? h('div', null,
 							h('textarea', {
-								className: 'mgrTextarea',
+								className: 'skxTextarea',
 								rows: 3,
 								value: note,
 								placeholder: t('skx.notePlaceholder'),
 								onChange: function (event) { setNote(event.target.value); },
 							}),
-							h('div', { className: 'skxEditActions' },
-								h('button', { type: 'button', className: 'mgrBtn mgrBtnPrimary', disabled: saving, onClick: saveNote }, t('skx.save')),
-								h('button', { type: 'button', className: 'mgrBtn', onClick: function () { setEditing(false); setNote(data.customNote ?? ''); } }, t('action.cancel'))))
-						: h('div', { className: 'skxText' }, (data.customNote ?? '') === '' ? t('skx.noNote') : data.customNote)),
-				data.body === undefined || data.body === ''
-					? null
-					: h('div', { className: 'skxSection' },
-						h('div', { className: 'skxSectionTitle' }, t('skx.body')),
-						h('pre', { className: 'skxPre' }, data.body)),
-				h('div', { className: 'skxSection' },
-					h('div', { className: 'skxSectionTitle' }, t('skx.path')),
-					h('div', { className: 'skxText skxMono' }, data.path ?? '')));
+							h('div', { className: 'skxRowActions' },
+								h('button', { type: 'button', className: 'skxBtn skxBtnPrimary', disabled: saving, onClick: saveNote }, saving ? t('state.loading') : t('skx.save')),
+								h('button', { type: 'button', className: 'skxBtn', onClick: function () { setEditing(false); setNote(data.customNote ?? ''); } }, t('action.cancel'))))
+						: h('p', { className: 'skxProse' }, (data.customNote ?? '') === '' ? t('skx.noNote') : data.customNote)),
+				(data.body ?? '') === '' ? null : h('div', { className: 'skxDocSection' },
+					h('div', { className: 'skxLabelRow' },
+						h('span', { className: 'skxLabel' }, t('skx.body')),
+						h('button', { type: 'button', className: 'skxLink', onClick: copyBody }, copied ? t('skx.copied') : t('skx.copyBody'))),
+					h('pre', { className: 'skxPre' }, data.body)),
+				h('div', { className: 'skxDocSection' },
+					h('div', { className: 'skxLabel' }, t('skx.path')),
+					h('code', { className: 'skxCode skxCodeBlock' }, data.path ?? '')));
 		}
 
-		//#endregion
+		/**
+		 * Project-scoped skills, grouped by registered workspace.
+		 *
+		 * @param {object} props - Kernel caller and error sink.
+		 * @returns {object} React node.
+		 */
+		function ProjectSkillsPanel(props) {
+			var t = props.t;
+			var call = props.call;
+			var [loading, setLoading] = useState(true);
+			var [workspaces, setWorkspaces] = useState([]);
+			var [detail, setDetail] = useState(null);
+			var [activePath, setActivePath] = useState('');
+			var [error] = useState('');
+
+			useEffect(function () {
+				call('workspaces').then(function (data) {
+					var items = Array.isArray(data?.items) ? data.items : [];
+					setWorkspaces(items);
+					var first = items.find(function (item) { return item.available !== false; });
+					if (first !== undefined) setActivePath(first.path);
+				}).catch(function (reason) {
+					props.setError(messageOf(reason));
+				}).finally(function () { setLoading(false); });
+			}, [call]);
+
+			useEffect(function () {
+				if (activePath === '') return undefined;
+				var alive = true;
+				setDetail(null);
+				call('workspace-skills', { workspace: activePath }).then(function (data) {
+					if (alive) setDetail(data);
+				}).catch(function (reason) {
+					if (alive) setDetail({ error: messageOf(reason) });
+				});
+				return function () { alive = false; };
+			}, [activePath, call]);
+
+			if (loading) return h('div', { className: 'skxEmpty skxEmptyTall' }, t('state.loading'));
+			if (workspaces.length === 0) return h('div', { className: 'skxEmpty skxEmptyTall' }, t('skx.noWorkspaces'));
+
+			var roots = Array.isArray(detail?.roots) ? detail.roots : [];
+			var visible = roots.filter(function (root) { return (root.skills ?? []).length > 0; });
+
+			return h('div', { className: 'skxSplit' },
+				h('div', { className: 'skxListCol' },
+					h('div', { className: 'skxHead' },
+						h('div', { className: 'skxHeadMain' },
+							h('h2', { className: 'skxTitle' }, t('skx.tab.project')),
+							h('span', { className: 'skxTitleMeta' }, t('skx.projectHint')))),
+					h('div', { className: 'skxChips' }, workspaces.map(function (item) {
+						return h('button', {
+							type: 'button',
+							key: item.path,
+							className: classes('skxChip', item.path === activePath && 'skxChipOn', item.available === false && 'skxChipOff'),
+							title: item.available === false ? t('skx.workspaceUnavailable') : item.path,
+							onClick: function () { setActivePath(item.path); },
+						}, item.name, h('span', { className: 'skxNavCount' }, String(item.skillCount ?? 0)));
+					})),
+					detail === null
+						? h('div', { className: 'skxEmpty' }, t('state.loading'))
+						: detail.error !== undefined
+							? h('div', { className: 'skxEmpty' }, detail.error)
+							: visible.length === 0
+								? h('div', { className: 'skxEmpty' }, t('skx.workspaceNoSkills'))
+								: h('div', null, visible.map(function (root) {
+									return h('div', { className: 'skxGroup', key: root.key },
+										h('div', { className: 'skxGroupHead' },
+											h('span', { className: 'skxLabel' }, root.label ?? root.key),
+											h('span', { className: 'skxSourceCount' }, String((root.skills ?? []).length))),
+										h('ul', { className: 'skxRows' }, collapseSkills(root.skills).map(function (skill) {
+											return h('li', { key: skill.name, className: 'skxRow skxRowStatic' },
+												h('div', { className: 'skxRowMain' },
+													h('div', { className: 'skxRowTitle' }, h('span', { className: 'skxRowName' }, skill.name)),
+													h('p', { className: 'skxRowDesc' }, (skill.description ?? '') === '' ? t('skx.noDescription') : skill.description)));
+										})));
+								}))),
+				h('div', { className: 'skxDetailCol' },
+					h('div', { className: 'skxEmpty skxEmptyTall' }, t('skx.projectReadOnly'))));
+		}
+
+		/**
+		 * Discovery: ClawHub charts, ClawHub search, and skills.sh search.
+		 *
+		 * @param {object} props - Kernel caller, live roots, install callback.
+		 * @returns {object} React node.
+		 */
+		function DiscoverPanel(props) {
+			var t = props.t;
+			var call = props.call;
+			var [source, setSource] = useState('clawhub');
+			var [query, setQuery] = useState('');
+			var [busy, setBusy] = useState(false);
+			var [items, setItems] = useState([]);
+			var [note, setNote] = useState('');
+			var [target, setTarget] = useState('dsh');
+			var [installing, setInstalling] = useState('');
+			var [preview, setPreview] = useState(null);
+
+			useEffect(function () {
+				if (source !== 'clawhub') return undefined;
+				var alive = true;
+				setBusy(true);
+				call('clawhub/list', undefined, { method: 'GET', query: 'limit=24&sort=downloads' }).then(function (data) {
+					if (!alive) return;
+					setItems(Array.isArray(data?.items) ? data.items : []);
+					setNote(data?.nextCursor === undefined ? '' : '');
+				}).catch(function (reason) {
+					if (alive) { setItems([]); setNote(messageOf(reason)); }
+				}).finally(function () {
+					if (alive) setBusy(false);
+				});
+				return function () { alive = false; };
+			}, [source, call]);
+
+			var runSearch = function () {
+				var text = query.trim();
+				if (text === '') return;
+				setBusy(true);
+				setPreview(null);
+				var request = source === 'clawhub'
+					? call('clawhub/search', undefined, { method: 'GET', query: 'q=' + encodeURIComponent(text) + '&limit=24' })
+					: call('skills-sh/search', undefined, { method: 'GET', query: 'q=' + encodeURIComponent(text) });
+				request.then(function (data) {
+					var rows = source === 'clawhub' ? (Array.isArray(data?.results) ? data.results : (data?.items ?? [])) : (Array.isArray(data?.skills) ? data.skills : []);
+					setItems(rows);
+					setNote(rows.length === 0 ? t('skx.discoverNone') : '');
+				}).catch(function (reason) {
+					setItems([]);
+					setNote(messageOf(reason));
+				}).finally(function () { setBusy(false); });
+			};
+
+			var inspect = function (item) {
+				var body = source === 'clawhub'
+					? { catalog: 'clawhub', owner: item.ownerHandle ?? item.owner, slug: item.slug ?? item.skillId }
+					: { catalog: 'skillsh', source: item.source, skillId: item.skillId };
+				setPreview({ loading: true, item: item });
+				call('catalog/detail', body, { method: 'POST' }).then(function (data) {
+					setPreview({ loading: false, item: item, detail: data });
+				}).catch(function (reason) {
+					setPreview({ loading: false, item: item, error: messageOf(reason) });
+				});
+			};
+
+			var install = function (item) {
+				var key = item.slug ?? item.id ?? item.name;
+				setInstalling(key);
+				var body = source === 'clawhub'
+					? { catalog: 'clawhub', owner: item.ownerHandle ?? item.owner, slug: item.slug ?? item.skillId, root: target }
+					: { catalog: 'skillsh', source: item.source, skillId: item.skillId, root: target };
+				call('catalog/install', body, { method: 'POST' }).then(function () {
+					setNote(t('skx.installed', { name: item.displayName ?? item.name ?? key }));
+					setPreview(null);
+					if (props.onInstalled) props.onInstalled();
+				}).catch(function (reason) {
+					setNote(messageOf(reason));
+				}).finally(function () { setInstalling(''); });
+			};
+
+			var targets = (props.roots ?? []).filter(function (root) { return root.mutable === true || root.key === 'dsh' || root.key === 'agents'; });
+
+			return h('div', { className: 'skxSplit' },
+				h('div', { className: 'skxListCol' },
+					h('div', { className: 'skxHead' },
+						h('div', { className: 'skxHeadMain' },
+							h('h2', { className: 'skxTitle' }, t('skx.tab.discover')),
+							h('span', { className: 'skxTitleMeta' }, t('skx.discoverHint')))),
+					h('div', { className: 'skxToolbar' },
+						h('div', { className: 'skxSegmented' },
+							h('button', { type: 'button', className: classes('skxSeg', source === 'clawhub' && 'skxSegOn'), onClick: function () { setSource('clawhub'); setItems([]); } }, 'ClawHub'),
+							h('button', { type: 'button', className: classes('skxSeg', source === 'skillsh' && 'skxSegOn'), onClick: function () { setSource('skillsh'); setItems([]); } }, 'skills.sh')),
+						h('input', {
+							className: 'skxInput',
+							type: 'search',
+							value: query,
+							placeholder: t('skx.discoverSearch'),
+							onChange: function (event) { setQuery(event.target.value); },
+							onKeyDown: function (event) { if (event.key === 'Enter') runSearch(); },
+						}),
+						h('button', { type: 'button', className: 'skxBtn', onClick: runSearch, disabled: busy }, t('skx.searchAction'))),
+					h('div', { className: 'skxToolbar' },
+						h('span', { className: 'skxLabel' }, t('skx.installTo')),
+						h('select', {
+							className: 'skxSelect',
+							value: target,
+							onChange: function (event) { setTarget(event.target.value); },
+						}, (targets.length === 0 ? [{ key: 'dsh', label: 'DSH' }] : targets).map(function (root) {
+							return h('option', { value: root.key, key: root.key }, root.label ?? root.key);
+						}))),
+					note === '' ? null : h('div', { className: 'skxNote' }, note),
+					busy
+						? h('div', { className: 'skxEmpty' }, t('state.loading'))
+						: items.length === 0
+							? h('div', { className: 'skxEmpty' }, t('skx.discoverEmpty'))
+							: h('ul', { className: 'skxRows' }, items.map(function (item) {
+								var key = item.slug ?? item.id ?? item.name;
+								var title = item.displayName ?? item.name ?? item.skillId ?? key;
+								var desc = item.summary ?? item.description ?? '';
+								var meta = source === 'clawhub'
+									? (item.stats !== undefined ? t('skx.downloads', { n: item.stats.downloads ?? 0 }) : '')
+									: (item.installs !== undefined ? t('skx.installs', { n: item.installs }) : '');
+								return h('li', { key: key, className: 'skxRow skxRowStatic' },
+									h('div', { className: 'skxRowMain' },
+										h('div', { className: 'skxRowTitle' },
+											h('span', { className: 'skxRowName' }, title),
+											meta === '' ? null : h('span', { className: 'skxBadge' }, meta)),
+										h('p', { className: 'skxRowDesc' }, desc === '' ? t('skx.noDescription') : desc)),
+									h('div', { className: 'skxRowEnd' },
+										h('button', { type: 'button', className: 'skxBtn skxBtnSmall', onClick: function () { inspect(item); } }, t('skx.preview')),
+										h('button', {
+											type: 'button',
+											className: 'skxBtn skxBtnPrimary skxBtnSmall',
+											disabled: installing === key,
+											onClick: function () { install(item); },
+										}, installing === key ? t('state.loading') : t('skx.install'))));
+							}))),
+				h('div', { className: 'skxDetailCol' },
+					preview === null
+						? h('div', { className: 'skxEmpty skxEmptyTall' }, t('skx.discoverPick'))
+						: preview.loading
+							? h('div', { className: 'skxEmpty skxEmptyTall' }, t('state.loading'))
+							: h('div', { className: 'skxDoc' },
+								h('div', { className: 'skxDocHead' },
+									h('h2', { className: 'skxDocTitle' }, preview.detail?.name ?? preview.item.displayName ?? preview.item.name ?? ''),
+									h('div', { className: 'skxTokens' },
+										preview.detail === undefined ? null : h('span', { className: 'skxToken' }, String(preview.detail.descriptionTokens ?? 0) + ' ' + t('skx.tokenDesc')),
+										preview.detail === undefined ? null : h('span', { className: 'skxToken' }, String(preview.detail.bodyTokens ?? 0) + ' ' + t('skx.tokenBody')))),
+								preview.error !== undefined
+									? h('div', { className: 'skxEmpty' }, preview.error)
+									: h('div', null,
+										h('div', { className: 'skxDocSection' },
+											h('div', { className: 'skxLabel' }, t('skx.description')),
+											h('p', { className: 'skxProse' }, preview.detail?.description ?? '')),
+										(preview.detail?.body ?? '') === '' ? null : h('div', { className: 'skxDocSection' },
+											h('div', { className: 'skxLabel' }, t('skx.body')),
+											h('pre', { className: 'skxPre' }, preview.detail.body)),
+										h('div', { className: 'skxRowActions' },
+											h('button', { type: 'button', className: 'skxBtn skxBtnPrimary', onClick: function () { install(preview.item); } }, t('skx.install')))))));
+		}
+
+		/**
+		 * The kernel's trash: restore or delete forever.
+		 *
+		 * @param {object} props - Kernel caller and restore callback.
+		 * @returns {object} React node.
+		 */
+		function TrashPanel(props) {
+			var t = props.t;
+			var call = props.call;
+			var [items, setItems] = useState(null);
+			var [busy, setBusy] = useState(false);
+
+			var load = useCallback(function () {
+				setBusy(true);
+				return call('state').then(function (data) {
+					setItems(Array.isArray(data?.trash) ? data.trash : []);
+				}).catch(function (reason) {
+					props.setError(messageOf(reason));
+				}).finally(function () { setBusy(false); });
+			}, [call]);
+
+			useEffect(function () { void load(); }, [load]);
+
+			var restore = function (item) {
+				setBusy(true);
+				call('trash-restore', { id: item.id }).then(function () {
+					if (props.onRestored) props.onRestored();
+					return load();
+				}).catch(function (reason) {
+					props.setError(messageOf(reason));
+				}).finally(function () { setBusy(false); });
+			};
+			var purge = function (item) {
+				setBusy(true);
+				call('trash-delete', { id: item.id }).then(load).catch(function (reason) {
+					props.setError(messageOf(reason));
+				}).finally(function () { setBusy(false); });
+			};
+			var when = function (value) {
+				if (typeof value !== 'string' || value === '') return '';
+				try {
+					return new Date(value).toLocaleString();
+				} catch {
+					return value;
+				}
+			};
+
+			if (items === null) return h('div', { className: 'skxEmpty skxEmptyTall' }, t('state.loading'));
+
+			return h('div', { className: 'skxSplit' },
+				h('div', { className: 'skxListCol' },
+					h('div', { className: 'skxHead' },
+						h('div', { className: 'skxHeadMain' },
+							h('h2', { className: 'skxTitle' }, t('skx.tab.trash')),
+							h('span', { className: 'skxTitleMeta' }, t('skx.trashHint')))),
+					items.length === 0
+						? h('div', { className: 'skxEmpty' }, t('skx.trashEmpty'))
+						: h('ul', { className: 'skxRows' }, items.map(function (item) {
+							return h('li', { key: item.id, className: 'skxRow skxRowStatic' },
+								h('div', { className: 'skxRowMain' },
+									h('div', { className: 'skxRowTitle' },
+										h('span', { className: 'skxRowName' }, item.name ?? item.id),
+										h('span', { className: 'skxBadge' }, when(item.deletedAt))),
+									h('p', { className: 'skxRowDesc' }, t('skx.trashFrom', { root: typeof item.root === 'string' ? item.root : (item.root?.key ?? '') }))),
+								h('div', { className: 'skxRowEnd' },
+									h('button', { type: 'button', className: 'skxBtn skxBtnSmall', disabled: busy, onClick: function () { restore(item); } }, t('skx.restore')),
+									h('button', { type: 'button', className: 'skxBtn skxBtnDanger skxBtnSmall', disabled: busy, onClick: function () { purge(item); } }, t('skx.purge'))));
+						}))),
+				h('div', { className: 'skxDetailCol' },
+					h('div', { className: 'skxEmpty skxEmptyTall' }, t('skx.trashHint'))));
+		}
 
 		//#endregion
 
