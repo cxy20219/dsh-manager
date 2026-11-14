@@ -123,8 +123,6 @@ window.__ModuleLoader__.load({
 			'mcp.form.invalidEnv': '环境变量格式不对：每行 KEY=VALUE，名称只能包含字母、数字、下划线',
 			'mcp.form.required': '请填写服务名和启动命令',
 			'mcp.form.submit': '保存',
-			'search.noteMerge': '查询会并发发给所有已启用的渠道，按 URL 去重后合并；每个渠道单独显示成功或失败。',
-			'search.noteFallback': '按渠道优先级逐个尝试，第一个返回结果的渠道生效；失败渠道会短暂冷却。',
 			'search.mode': '搜索模式',
 			'search.time': '时间',
 			'search.timeAny': '不限',
@@ -138,7 +136,6 @@ window.__ModuleLoader__.load({
 			'search.modeFallbackHint': '按下方顺序逐个试，命中即停。',
 			'search.modeAuto': '智能路由',
 			'search.modeAutoHint': '按查询语言和意图选前几个渠道，命中即停。',
-			'search.noteAuto': '按查询语言与意图排序渠道，最多试 4 个，第一个有结果的生效。',
 			'search.cached': '缓存',
 			'search.allCooling': '所有启用的渠道都在冷却中，稍后再试或点“重置冷却”。',
 			'search.resetCooldowns': '重置冷却',
@@ -159,7 +156,7 @@ window.__ModuleLoader__.load({
 			'search.placeholder': '输入关键词，回车搜索…',
 			'search.running': '搜索中…',
 			'search.maxResults': '合并后最多 {n} 条 · 每渠道最多 {per} 条',
-			'search.emptyIdle': '输入关键词开始搜索；至少启用一个渠道。',
+			'search.emptyIdle': '在上方输入关键词，回车或点「搜索」；结果会出现在这里。',
 			'search.queryRequired': '请输入搜索关键词。',
 			'search.failed': '搜索失败',
 			'search.resultCount': '{n} 条结果 · {ms} ms',
@@ -171,6 +168,23 @@ window.__ModuleLoader__.load({
 			'search.channels': '搜索渠道',
 			'search.channelsCount': '已启用 {enabled}/{total}',
 			'search.statusError': '读取搜索渠道失败：{error}',
+			'search.subtabs': '联网搜索分区',
+			'search.sub.results': '结果',
+			'search.sub.channels': '渠道',
+			'search.sub.filter': '过滤',
+			'search.submit': '搜索',
+			'search.submitBusy': '搜索中…',
+			'search.modeCurrent': '当前模式：{mode}',
+			'search.modeJump': '调整',
+			'search.timeTitle': '时间过滤只对支持它的渠道生效；改完需要重新搜索。',
+			'search.enabledNoneAction': '去启用',
+			'search.channelFilterPlaceholder': '按名称或说明筛选渠道…',
+			'search.onlyEnabled': '只看已启用',
+			'search.filteredCount': '显示 {shown}/{total}',
+			'search.filteredEmpty': '没有匹配的渠道；换个关键词或取消筛选。',
+			'search.testTitle': '渠道测试',
+			'search.testHint': '用当前查询逐个测试已启用渠道；查询为空时用 DeepSeek Harness。',
+			'search.filterScope': '屏蔽域名对面板搜索和 agent 的搜索工具同时生效；保存后会清空搜索缓存。',
 			'search.channel.enable': '启用',
 			'search.channel.configure': '配置',
 			'search.channel.hide': '收起',
@@ -201,7 +215,7 @@ window.__ModuleLoader__.load({
 			'search.channel.testQuery': '查询：{query}',
 			'search.chipOk': '{label} {n} 条',
 			'search.chipFail': '{label} {code}',
-			'search.enabledNone': '先在下面启用至少一个渠道。',
+			'search.enabledNone': '还没有启用任何搜索渠道，先在「渠道」页打开一个。',
 			'search.channel.exa.desc': '语义搜索与 highlights，适合资料和论文；不填 Key 走匿名 MCP。',
 			'search.channel.tavily.desc': 'AI 优化搜索，正文摘要密度高；不填 Key 走 keyless 档。',
 			'search.channel.firecrawl.desc': '带正文片段的搜索引擎，适合资料聚合；不填 Key 走免 Key 档。',
@@ -360,8 +374,6 @@ window.__ModuleLoader__.load({
 			'mcp.form.invalidEnv': 'Invalid environment lines: use KEY=VALUE with letters, numbers and underscores in the name',
 			'mcp.form.required': 'A server name and a command are required',
 			'mcp.form.submit': 'Save',
-			'search.noteMerge': 'The query fans out to every enabled channel and the results merge by URL; each channel reports success or failure separately.',
-			'search.noteFallback': 'Channels are tried in priority order; the first one that returns results wins, and failures rest briefly.',
 			'search.mode': 'Search mode',
 			'search.time': 'Time',
 			'search.timeAny': 'Any time',
@@ -375,7 +387,6 @@ window.__ModuleLoader__.load({
 			'search.modeFallbackHint': 'Try channels in order and stop at the first hit.',
 			'search.modeAuto': 'Auto route',
 			'search.modeAutoHint': 'Pick the top channels by query language and intent, then stop at the first hit.',
-			'search.noteAuto': 'Order channels by query language and intent, try at most four, and keep the first hit.',
 			'search.cached': 'cached',
 			'search.allCooling': 'Every enabled channel is cooling down; retry shortly or reset the cooldowns.',
 			'search.resetCooldowns': 'Reset cooldowns',
@@ -396,7 +407,7 @@ window.__ModuleLoader__.load({
 			'search.placeholder': 'Type a query and press Enter…',
 			'search.running': 'Searching…',
 			'search.maxResults': 'Up to {n} merged · {per} per channel',
-			'search.emptyIdle': 'Type a query to search; enable at least one channel first.',
+			'search.emptyIdle': 'Type a query above, then press Enter or Search; the answer lands here.',
 			'search.queryRequired': 'Enter a search query.',
 			'search.failed': 'Search failed',
 			'search.resultCount': '{n} results · {ms} ms',
@@ -408,6 +419,23 @@ window.__ModuleLoader__.load({
 			'search.channels': 'Search channels',
 			'search.channelsCount': '{enabled}/{total} enabled',
 			'search.statusError': 'Could not read the search channels: {error}',
+			'search.subtabs': 'Web search sections',
+			'search.sub.results': 'Results',
+			'search.sub.channels': 'Channels',
+			'search.sub.filter': 'Filter',
+			'search.submit': 'Search',
+			'search.submitBusy': 'Searching…',
+			'search.modeCurrent': 'Mode: {mode}',
+			'search.modeJump': 'Change',
+			'search.timeTitle': 'The time filter only applies to the channels that support it; search again after changing it.',
+			'search.enabledNoneAction': 'Enable one',
+			'search.channelFilterPlaceholder': 'Filter channels by name or description…',
+			'search.onlyEnabled': 'Enabled only',
+			'search.filteredCount': 'Showing {shown}/{total}',
+			'search.filteredEmpty': 'No channel matches; try another word or clear the filter.',
+			'search.testTitle': 'Channel check',
+			'search.testHint': 'Tests every enabled channel with the current query, or DeepSeek Harness when it is empty.',
+			'search.filterScope': 'The blocklist applies to panel searches and the agent search tools alike; saving it clears the search cache.',
 			'search.channel.enable': 'Enable',
 			'search.channel.configure': 'Configure',
 			'search.channel.hide': 'Hide',
@@ -438,7 +466,7 @@ window.__ModuleLoader__.load({
 			'search.channel.testQuery': 'Test query: {query}',
 			'search.chipOk': '{label} {n}',
 			'search.chipFail': '{label} {code}',
-			'search.enabledNone': 'Enable at least one channel below first.',
+			'search.enabledNone': 'No search channel is enabled yet; turn one on under Channels.',
 			'search.channel.exa.desc': 'Semantic search with highlights; good for papers and references. Leave the key blank for anonymous MCP.',
 			'search.channel.tavily.desc': 'AI-optimized search with dense page summaries. Leave the key blank for the keyless tier.',
 			'search.channel.firecrawl.desc': 'Search with page excerpts; good for gathering references. Leave the key blank for the free tier.',
@@ -660,9 +688,23 @@ window.__ModuleLoader__.load({
 			'.mgrSearchOrder .mgrBtn{padding:2px 6px;min-width:0;line-height:1.5}',
 			'.mgrSearchBar{display:flex;align-items:center;gap:8px;margin-bottom:10px}',
 			'.mgrSearchBar .mgrInput{flex:1;width:auto;min-width:0;height:36px;font-size:13.5px}',
+			'.mgrSearchGo{flex:none;height:36px;padding:0 18px}',
+			'.mgrSearchMeta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px}',
+			'.mgrSearchMeta .mgrHint{max-width:none}',
+			'.mgrLinkBtn{flex:none;padding:0;border:0;background:transparent;color:var(--dsw-alias-state-business-primary);font:inherit;font-size:11.5px;text-decoration:underline;cursor:pointer}',
+			'.mgrLinkBtn:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}',
+			'.mgrSubTabs{display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin:0 0 14px}',
+			'.mgrSearchCard{border:1px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-lg);background:var(--dsw-alias-bg-layer-1);padding:11px 13px;margin-bottom:10px}',
+			'.mgrSearchCardHead{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}',
+			'.mgrSearchCardTitle{font-size:12.5px;font-weight:600;color:var(--dsw-alias-label-primary)}',
+			'.mgrSearchCard .mgrSearchControls{margin:9px 0 0}',
+			'.mgrSearchCard .mgrSearchChips{margin:9px 0 0}',
+			'.mgrSearchChannelFilter{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:2px 0 8px}',
+			'.mgrSearchChannelFilter .mgrInput{flex:1;min-width:180px;max-width:320px;height:30px;font-size:12px}',
+			'.mgrSearchFilterCount{margin-bottom:8px}',
 			'.mgrSearchResults{margin-bottom:18px}',
 			'.mgrSearchList{display:flex;flex-direction:column;gap:10px}',
-			'.mgrSearchChannels{margin-top:22px;padding-top:16px;border-top:1px solid var(--dsw-alias-border-l2)}',
+			'.mgrSearchChannels{margin-top:16px;padding-top:14px;border-top:1px solid var(--dsw-alias-border-l1)}',
 			'.mgrSearchChannelsHead{display:flex;align-items:center;gap:8px;margin-bottom:10px}',
 			'.mgrSearchChannelsTitle{font-size:13px;font-weight:600;color:var(--dsw-alias-label-primary)}',
 			'.mgrSearchChannel{border:1px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-1);margin-bottom:8px;overflow:hidden}',
@@ -1682,54 +1724,33 @@ window.__ModuleLoader__.load({
 		}
 
 		/**
-		 * The web-search tab.
+		 * The results page of the web-search tab.
 		 *
-		 * The search box fans out to every enabled channel; the channel list
-		 * below owns the switches, base URLs and write-only API keys. Results
-		 * render as plain text and HTTP(S) links only.
+		 * Per-channel chips say which channel answered or why it failed; the
+		 * sources are plain text and HTTP(S) links only.
 		 *
-		 * @param {object} props - Status, query state, result and callbacks.
+		 * @param {object} props - `t`, `busy`, `result` and `error`.
 		 * @returns {object} React node.
 		 */
-		function SearchSection(props) {
+		function SearchResults(props) {
 			var t = props.t;
-			var status = props.status;
+			if (props.busy === true) return h(Loading, { label: t('search.running') });
+			if (props.error !== null && props.error !== undefined) {
+				var error = props.error;
+				return h('div', { className: 'mgrErrorBox' },
+					h('span', null,
+						h('b', null, t('search.failed') + (typeof error.code === 'string' && error.code !== '' ? ' · ' + error.code : '')),
+						h('br'),
+						error.message));
+			}
 			var result = props.result;
-			var error = props.error;
-			var busy = props.busy;
-			var channels = status !== null && Array.isArray(status.channels) ? status.channels : [];
-			var enabled = 0;
-			for (var index = 0; index < channels.length; index += 1) {
-				if (channels[index].enabled === true) enabled += 1;
+			if (result === null || result === undefined) {
+				return h('div', { className: 'mgrEmpty' }, t('search.emptyIdle'));
 			}
-			var maxResults = status !== null && Number.isFinite(status.maxResults) ? status.maxResults : 20;
-			var perChannel = status !== null && Number.isFinite(status.perChannelResults) ? status.perChannelResults : 10;
-			var available = status !== null && enabled > 0;
-			var mode = status !== null && status.mode === 'fallback'
-				? 'fallback'
-				: status !== null && status.mode === 'auto' ? 'auto' : 'merge';
-			var safeSearch = status === null || status.safeSearch !== false;
-			var cooldowns = status !== null && status.cooldowns !== null && typeof status.cooldowns === 'object' ? status.cooldowns : {};
-			var hasCooldown = Object.keys(cooldowns).length > 0;
-			var statusError = status !== null && typeof status.error === 'string' ? status.error : '';
-			var sources = result === null || !Array.isArray(result.sources) ? [] : result.sources;
-			var channelResults = result === null || !Array.isArray(result.channels) ? [] : result.channels;
-			var content = result !== null && typeof result.content === 'string' ? result.content : '';
+			var sources = Array.isArray(result.sources) ? result.sources : [];
+			var channelResults = Array.isArray(result.channels) ? result.channels : [];
+			var content = typeof result.content === 'string' ? result.content : '';
 			var allFailed = channelResults.length > 0 && channelResults.every(function (channel) { return channel.ok !== true; });
-
-			function submit() {
-				if (!busy && available) props.onSearch();
-			}
-
-			function onKeyDown(event) {
-				// Enter also confirms an IME candidate; searching there would
-				// fire before the Chinese/Japanese text is committed.
-				if (event.isComposing === true || event.keyCode === 229) return;
-				if (event.key !== 'Enter' || event.shiftKey) return;
-				event.preventDefault();
-				submit();
-			}
-
 			var chips = channelResults.map(function (channel) {
 				var failed = channel.ok !== true;
 				return h('span', {
@@ -1740,8 +1761,7 @@ window.__ModuleLoader__.load({
 					? t('search.chipFail', { label: channel.label, code: channel.error ? channel.error.code : 'error' })
 					: t('search.chipOk', { label: channel.label, n: channel.count }));
 			});
-
-			var resultView = result === null ? null : h('div', { className: 'mgrSearchResults' },
+			return h('div', { className: 'mgrSearchResults' },
 				h('div', { className: 'mgrSearchSummary' },
 					h('span', null, t('search.resultCount', { n: sources.length, ms: result.elapsedMs || 0 })),
 					result.cached === true ? h(Badge, { tone: 'Ok' }, t('search.cached')) : null),
@@ -1774,143 +1794,311 @@ window.__ModuleLoader__.load({
 								source.snippet === '' ? null : h('div', { className: 'mgrSearchSnippet' }, source.snippet),
 								source.publishedAt === '' ? null : h('div', { className: 'mgrSearchDate' }, source.publishedAt));
 						})));
+		}
 
-			var channelView = status === null || channels.length === 0 ? null : h('div', { className: 'mgrSearchChannels' },
-				h('div', { className: 'mgrSearchChannelsHead' },
-					h('span', { className: 'mgrSearchChannelsTitle' }, t('search.channels')),
-					h('span', { className: 'mgrCount' }, t('search.channelsCount', { enabled: enabled, total: channels.length }))),
-				channels.map(function (channel, index) {
-					return h(SearchChannelRow, {
-						key: channel.id,
-						channel: channel,
-						t: t,
-						defaultQuery: props.query.trim() === '' ? 'DeepSeek Harness' : props.query.trim(),
-						onSave: props.onSave,
-						onTest: props.onTest,
-						onMove: props.onMove,
-						canMoveUp: index > 0,
-						canMoveDown: index < channels.length - 1,
-					});
-				}));
+		/**
+		 * The channel page: the search mode, the all-channel check and one row
+		 * per channel. The filter box exists because thirty-seven rows are more
+		 * than scrolled reading can carry without a needle.
+		 *
+		 * @param {object} props - Status fields and callbacks.
+		 * @returns {object} React node.
+		 */
+		function SearchChannels(props) {
+			var t = props.t;
+			var channels = props.channels;
+			var [filter, setFilter] = useState('');
+			var [onlyEnabled, setOnlyEnabled] = useState(false);
+			var needle = filter.trim().toLowerCase();
+			var visible = [];
+			for (var index = 0; index < channels.length; index += 1) {
+				var channel = channels[index];
+				if (onlyEnabled === true && channel.enabled !== true) continue;
+				if (needle !== '') {
+					var haystack = (channel.label + ' ' + channel.description + ' ' + channel.id).toLowerCase();
+					if (haystack.indexOf(needle) < 0) continue;
+				}
+				visible.push(channel);
+			}
+			var filtering = needle !== '' || onlyEnabled === true;
+			var mode = props.mode;
+			var testAll = props.testAll === null || props.testAll === undefined ? null : props.testAll;
+
+			function modeButton(id, label) {
+				return h('button', {
+					type: 'button',
+					key: id,
+					className: classes('mgrBtn', mode === id && 'mgrBtnPrimary'),
+					onClick: function () { if (mode !== id) void props.onMode(id); },
+				}, label);
+			}
 
 			return h('div', null,
-				h('div', { className: 'mgrSearchBar' },
-					h('input', {
-						className: 'mgrInput',
-						type: 'search',
-						value: props.query,
-						placeholder: t('search.placeholder'),
-						'aria-label': t('search.placeholder'),
-						enterKeyHint: 'search',
-						autoFocus: true,
-						disabled: !available,
-						onChange: function (event) { props.setQuery(event.target.value); },
-						onKeyDown: onKeyDown,
-					})),
-				h('div', { className: 'mgrHint', style: { marginBottom: '10px' } },
-					(mode === 'fallback' ? t('search.noteFallback') : mode === 'auto' ? t('search.noteAuto') : t('search.noteMerge')) + ' ' + t('search.maxResults', { n: maxResults, per: perChannel })),
-				status === null ? null : h('div', { className: 'mgrSearchControls' },
-					h('span', { className: 'mgrLabel' }, t('search.mode')),
-					h('button', {
-						type: 'button',
-						className: classes('mgrBtn', mode === 'merge' && 'mgrBtnPrimary'),
-						disabled: !available,
-						onClick: function () { if (mode !== 'merge') void props.onMode('merge'); },
-					}, t('search.modeMerge')),
-					h('button', {
-						type: 'button',
-						className: classes('mgrBtn', mode === 'fallback' && 'mgrBtnPrimary'),
-						disabled: !available,
-						onClick: function () { if (mode !== 'fallback') void props.onMode('fallback'); },
-					}, t('search.modeFallback')),
-					h('button', {
-						type: 'button',
-						className: classes('mgrBtn', mode === 'auto' && 'mgrBtnPrimary'),
-						disabled: !available,
-						onClick: function () { if (mode !== 'auto') void props.onMode('auto'); },
-					}, t('search.modeAuto')),
-					h('span', { className: 'mgrHint' }, mode === 'fallback'
-						? t('search.modeFallbackHint')
-						: mode === 'auto' ? t('search.modeAutoHint') : t('search.modeMergeHint')),
-					h('label', { className: 'mgrSearchTimeWrap' },
-						h('span', { className: 'mgrHint' }, t('search.time')),
-						h('select', {
-							className: 'mgrInput mgrSearchTime',
-							value: props.timeRange || '',
-							'aria-label': t('search.time'),
-							onChange: function (event) { props.onTimeRange(event.target.value); },
-						},
-							h('option', { value: '' }, t('search.timeAny')),
-							h('option', { value: 'day' }, t('search.timeDay')),
-							h('option', { value: 'week' }, t('search.timeWeek')),
-							h('option', { value: 'month' }, t('search.timeMonth')),
-							h('option', { value: 'year' }, t('search.timeYear')))),
-					h('label', { className: 'mgrSearchSafeWrap' },
-						h('input', {
-							type: 'checkbox',
-							checked: safeSearch,
-							onChange: function (event) { void props.onSafeSearch(event.target.checked); },
-						}),
-						h('span', { className: 'mgrHint' }, t('search.safeSearch'))),
-					h('button', {
-						type: 'button',
-						className: 'mgrBtn',
-						disabled: !available || props.testAllBusy === true,
-						onClick: function () { void props.onTestAll(); },
-					}, props.testAllBusy === true ? t('search.testAllRunning') : t('search.testAll')),
-					hasCooldown ? h('button', {
-						type: 'button',
-						className: 'mgrBtn',
-						onClick: function () { void props.onResetCooldowns(); },
-					}, t('search.resetCooldowns')) : null),
-				props.testAll === null || props.testAll === undefined ? null : h('div', { className: 'mgrSearchChips', style: { marginBottom: '10px' } },
-					h('span', { className: 'mgrHint' }, t('search.testAllSummary', { ok: props.testAll.ok, total: props.testAll.total })),
-					props.testAll.results.map(function (entry) {
-						return h('span', {
-							className: classes('mgrSearchChip', entry.ok !== true && 'mgrSearchChipError'),
-							key: entry.id,
-							title: entry.ok === true ? '' : entry.failure ? entry.failure.message : '',
-						}, entry.ok === true
-							? t('search.chipOk', { label: entry.label, n: entry.count })
-							: t('search.chipFail', { label: entry.label, code: entry.failure ? entry.failure.code : 'error' }));
-					})),
-				status === null ? h(Loading, { label: t('state.loading') }) : null,
-				status !== null && statusError !== ''
-					? h('div', { className: 'mgrErrorBox' }, h('span', null, t('search.statusError', { error: statusError })))
-					: null,
-				status !== null && enabled === 0 && statusError === ''
-					? h('div', { className: 'mgrWarn' }, h('span', null, t('search.enabledNone')))
-					: null,
-				error === null ? null : h('div', { className: 'mgrErrorBox' },
-					h('span', null,
-						h('b', null, t('search.failed') + (typeof error.code === 'string' && error.code !== '' ? ' · ' + error.code : '')),
-						h('br'),
-						error.message)),
-				busy ? h(Loading, { label: t('search.running') }) : null,
-				!busy && result !== null ? resultView : null,
-				!busy && result === null && error === null && status !== null && available
-					? h('div', { className: 'mgrEmpty' }, t('search.emptyIdle'))
-					: null,
-				channelView,
-				status === null ? null : h('div', { className: 'mgrSearchBlocked' },
-					h('div', { className: 'mgrSearchBlockedHead' },
-						h('span', { className: 'mgrLabel' }, t('search.blocked')),
-						h('span', { className: 'mgrHint' }, t('search.blockedHint'))),
-					h('textarea', {
-						className: 'mgrInput mgrSearchBlockedInput',
-						rows: 2,
-						value: props.blocked === null || props.blocked === undefined ? '' : props.blocked,
-						placeholder: t('search.blockedPlaceholder'),
-						'aria-label': t('search.blocked'),
-						onChange: function (event) { props.onBlockedChange(event.target.value); },
-					}),
-					h('div', { className: 'mgrSearchBlockedFoot' },
+				h('div', { className: 'mgrSearchCard' },
+					h('div', { className: 'mgrSearchCardHead' },
+						h('span', { className: 'mgrSearchCardTitle' }, t('search.mode')),
+						h('span', { className: 'mgrHint' }, t('search.maxResults', { n: props.maxResults, per: props.perChannel }))),
+					h('div', { className: 'mgrSearchControls' },
+						modeButton('merge', t('search.modeMerge')),
+						modeButton('fallback', t('search.modeFallback')),
+						modeButton('auto', t('search.modeAuto')),
+						h('span', { className: 'mgrHint' }, mode === 'fallback'
+							? t('search.modeFallbackHint')
+							: mode === 'auto' ? t('search.modeAutoHint') : t('search.modeMergeHint')))),
+				h('div', { className: 'mgrSearchCard' },
+					h('div', { className: 'mgrSearchCardHead' },
+						h('span', { className: 'mgrSearchCardTitle' }, t('search.testTitle')),
+						h('span', { className: 'mgrHint' }, t('search.testHint'))),
+					h('div', { className: 'mgrSearchControls' },
 						h('button', {
 							type: 'button',
 							className: 'mgrBtn',
-							onClick: function () { void props.onSaveBlocked(); },
-						}, t('search.blockedSave')))),
-);
+							disabled: props.available !== true || props.testAllBusy === true,
+							onClick: function () { void props.onTestAll(); },
+						}, props.testAllBusy === true ? t('search.testAllRunning') : t('search.testAll')),
+						props.hasCooldown === true
+							? h('button', {
+								type: 'button',
+								className: 'mgrBtn',
+								onClick: function () { void props.onResetCooldowns(); },
+							}, t('search.resetCooldowns'))
+							: null),
+					testAll === null ? null : h('div', { className: 'mgrSearchChips' },
+						h('span', { className: 'mgrHint' }, t('search.testAllSummary', { ok: testAll.ok, total: testAll.total })),
+						testAll.results.map(function (entry) {
+							return h('span', {
+								className: classes('mgrSearchChip', entry.ok !== true && 'mgrSearchChipError'),
+								key: entry.id,
+								title: entry.ok === true ? '' : entry.failure ? entry.failure.message : '',
+							}, entry.ok === true
+								? t('search.chipOk', { label: entry.label, n: entry.count })
+								: t('search.chipFail', { label: entry.label, code: entry.failure ? entry.failure.code : 'error' }));
+						}))),
+				h('div', { className: 'mgrSearchChannels' },
+					h('div', { className: 'mgrSearchChannelsHead' },
+						h('span', { className: 'mgrSearchChannelsTitle' }, t('search.channels')),
+						h('span', { className: 'mgrCount' }, t('search.channelsCount', { enabled: props.enabled, total: channels.length }))),
+					h('div', { className: 'mgrSearchChannelFilter' },
+						h('input', {
+							className: 'mgrInput',
+							type: 'search',
+							value: filter,
+							placeholder: t('search.channelFilterPlaceholder'),
+							'aria-label': t('search.channelFilterPlaceholder'),
+							onChange: function (event) { setFilter(event.target.value); },
+						}),
+						h('label', { className: 'mgrSearchSafeWrap' },
+							h('input', {
+								type: 'checkbox',
+								checked: onlyEnabled,
+								onChange: function (event) { setOnlyEnabled(event.target.checked); },
+							}),
+							h('span', { className: 'mgrHint' }, t('search.onlyEnabled')))),
+					filtering === true
+						? h('div', { className: 'mgrHint mgrSearchFilterCount' }, t('search.filteredCount', { shown: visible.length, total: channels.length }))
+						: null,
+					visible.length === 0
+						? h('div', { className: 'mgrEmpty' }, t('search.filteredEmpty'))
+						: null,
+					visible.map(function (row) {
+						var full = channels.indexOf(row);
+						return h(SearchChannelRow, {
+							key: row.id,
+							channel: row,
+							t: t,
+							defaultQuery: props.query.trim() === '' ? 'DeepSeek Harness' : props.query.trim(),
+							onSave: props.onSave,
+							onTest: props.onTest,
+							onMove: props.onMove,
+							canMoveUp: full > 0,
+							canMoveDown: full >= 0 && full < channels.length - 1,
+						});
+					})));
+		}
+
+		/**
+		 * The web-search tab.
+		 *
+		 * The query box stays at the top because it is the primary action of the
+		 * whole tab. Everything else is split into three sub-tabs — results,
+		 * channels and filter — so a thirty-seven-row channel list no longer
+		 * pushes the answer off the screen. The inactive pages stay mounted but
+		 * hidden, so an unsaved key or an open channel form survives a look at
+		 * the results.
+		 *
+		 * @param {object} props - Status, query state, result, sub-tab and callbacks.
+		 * @returns {object} React node.
+		 */
+		function SearchSection(props) {
+			var t = props.t;
+			var status = props.status;
+			var result = props.result;
+			var error = props.error;
+			var busy = props.busy;
+			var sub = props.sub;
+			var channels = status !== null && Array.isArray(status.channels) ? status.channels : [];
+			var enabled = 0;
+			for (var index = 0; index < channels.length; index += 1) {
+				if (channels[index].enabled === true) enabled += 1;
+			}
+			var maxResults = status !== null && Number.isFinite(status.maxResults) ? status.maxResults : 20;
+			var perChannel = status !== null && Number.isFinite(status.perChannelResults) ? status.perChannelResults : 10;
+			var available = status !== null && enabled > 0;
+			var mode = status !== null && status.mode === 'fallback'
+				? 'fallback'
+				: status !== null && status.mode === 'auto' ? 'auto' : 'merge';
+			var modeLabel = mode === 'fallback' ? t('search.modeFallback') : mode === 'auto' ? t('search.modeAuto') : t('search.modeMerge');
+			var safeSearch = status === null || status.safeSearch !== false;
+			var cooldowns = status !== null && status.cooldowns !== null && typeof status.cooldowns === 'object' ? status.cooldowns : {};
+			var hasCooldown = Object.keys(cooldowns).length > 0;
+			var statusError = status !== null && typeof status.error === 'string' ? status.error : '';
+			var sources = result === null || !Array.isArray(result.sources) ? [] : result.sources;
+			var blockedDomains = status !== null && Array.isArray(status.blockedDomains) ? status.blockedDomains : [];
+
+			function submit() {
+				if (busy === true || !available) return;
+				if (props.query.trim() === '') return;
+				props.onSearch();
+			}
+
+			function onKeyDown(event) {
+				// Enter also confirms an IME candidate; searching there would
+				// fire before the Chinese/Japanese text is committed.
+				if (event.isComposing === true || event.keyCode === 229) return;
+				if (event.key !== 'Enter' || event.shiftKey) return;
+				event.preventDefault();
+				submit();
+			}
+
+			var tabs = [
+				{ id: 'results', label: t('search.sub.results'), count: sources.length > 0 ? String(sources.length) : '' },
+				{ id: 'channels', label: t('search.sub.channels'), count: channels.length > 0 ? enabled + '/' + channels.length : '' },
+				{ id: 'filter', label: t('search.sub.filter'), count: blockedDomains.length > 0 ? String(blockedDomains.length) : '' },
+			];
+			var tabView = h('div', { className: 'mgrSubTabs', role: 'tablist', 'aria-label': t('search.subtabs') },
+				tabs.map(function (entry) {
+					return h('button', {
+						type: 'button',
+						role: 'tab',
+						key: entry.id,
+						'aria-selected': sub === entry.id,
+						className: classes('mgrTab', sub === entry.id && 'mgrTabActive'),
+						onClick: function () { props.setSub(entry.id); },
+					},
+						entry.label,
+						entry.count === '' ? null : h('span', { className: 'mgrTabCount' }, entry.count));
+				}));
+
+			var barView = h('div', { className: 'mgrSearchBar' },
+				h('input', {
+					className: 'mgrInput',
+					type: 'search',
+					value: props.query,
+					placeholder: t('search.placeholder'),
+					'aria-label': t('search.placeholder'),
+					enterKeyHint: 'search',
+					autoFocus: true,
+					disabled: !available,
+					onChange: function (event) { props.setQuery(event.target.value); },
+					onKeyDown: onKeyDown,
+				}),
+				h('button', {
+					type: 'button',
+					className: 'mgrBtn mgrBtnPrimary mgrSearchGo',
+					disabled: !available || busy === true || props.query.trim() === '',
+					onClick: submit,
+				}, busy === true ? t('search.submitBusy') : t('search.submit')));
+
+			var metaView = h('div', { className: 'mgrSearchMeta' },
+				h('span', { className: 'mgrHint' }, t('search.modeCurrent', { mode: modeLabel })),
+				h('button', {
+					type: 'button',
+					className: 'mgrLinkBtn',
+					onClick: function () { props.setSub('channels'); },
+				}, t('search.modeJump')),
+				h('span', { className: 'mgrSpacer' }),
+				h('label', { className: 'mgrSearchTimeWrap', title: t('search.timeTitle') },
+					h('span', { className: 'mgrHint' }, t('search.time')),
+					h('select', {
+						className: 'mgrInput mgrSearchTime',
+						value: props.timeRange || '',
+						'aria-label': t('search.time'),
+						onChange: function (event) { props.onTimeRange(event.target.value); },
+					},
+						h('option', { value: '' }, t('search.timeAny')),
+						h('option', { value: 'day' }, t('search.timeDay')),
+						h('option', { value: 'week' }, t('search.timeWeek')),
+						h('option', { value: 'month' }, t('search.timeMonth')),
+						h('option', { value: 'year' }, t('search.timeYear')))),
+				h('label', { className: 'mgrSearchSafeWrap' },
+					h('input', {
+						type: 'checkbox',
+						checked: safeSearch,
+						onChange: function (event) { void props.onSafeSearch(event.target.checked); },
+					}),
+					h('span', { className: 'mgrHint' }, t('search.safeSearch'))));
+
+			var panes = h('div', null,
+				h('div', { style: sub === 'results' ? undefined : { display: 'none' } },
+					h(SearchResults, { t: t, busy: busy, result: result, error: error })),
+				h('div', { style: sub === 'channels' ? undefined : { display: 'none' } },
+					h(SearchChannels, {
+						t: t,
+						channels: channels,
+						enabled: enabled,
+						available: available,
+						mode: mode,
+						maxResults: maxResults,
+						perChannel: perChannel,
+						query: props.query,
+						hasCooldown: hasCooldown,
+						testAll: props.testAll,
+						testAllBusy: props.testAllBusy,
+						onMode: props.onMode,
+						onSave: props.onSave,
+						onTest: props.onTest,
+						onMove: props.onMove,
+						onTestAll: props.onTestAll,
+						onResetCooldowns: props.onResetCooldowns,
+					})),
+				h('div', { style: sub === 'filter' ? undefined : { display: 'none' } },
+					h('div', { className: 'mgrSearchBlocked' },
+						h('div', { className: 'mgrSearchBlockedHead' },
+							h('span', { className: 'mgrLabel' }, t('search.blocked')),
+							h('span', { className: 'mgrHint' }, t('search.blockedHint'))),
+						h('textarea', {
+							className: 'mgrInput mgrSearchBlockedInput',
+							rows: 2,
+							value: props.blocked === null || props.blocked === undefined ? '' : props.blocked,
+							placeholder: t('search.blockedPlaceholder'),
+							'aria-label': t('search.blocked'),
+							onChange: function (event) { props.onBlockedChange(event.target.value); },
+						}),
+						h('div', { className: 'mgrHint', style: { marginTop: '6px' } }, t('search.filterScope')),
+						h('div', { className: 'mgrSearchBlockedFoot' },
+							h('button', {
+								type: 'button',
+								className: 'mgrBtn mgrBtnPrimary',
+								onClick: function () { void props.onSaveBlocked(); },
+							}, t('search.blockedSave'))))));
+
+			return h('div', null,
+				barView,
+				metaView,
+				statusError === ''
+					? null
+					: h('div', { className: 'mgrErrorBox' }, h('span', null, t('search.statusError', { error: statusError }))),
+				status !== null && enabled === 0 && statusError === ''
+					? h('div', { className: 'mgrWarn' },
+						h('span', null, t('search.enabledNone')),
+						h('span', { className: 'mgrSpacer' }),
+						h('button', {
+							type: 'button',
+							className: 'mgrBtn',
+							onClick: function () { props.setSub('channels'); },
+						}, t('search.enabledNoneAction')))
+					: null,
+				status === null ? h(Loading, { label: t('state.loading') }) : h('div', null, tabView, panes));
 		}
 
 		//#endregion
@@ -2144,6 +2332,9 @@ window.__ModuleLoader__.load({
 			var [searchBlocked, setSearchBlocked] = useState(null);
 			var [searchTestAll, setSearchTestAll] = useState(null);
 			var [searchTestAllBusy, setSearchTestAllBusy] = useState(false);
+			// Which sub-tab of the search page is open; it lives here so a run
+			// that lands while another tab is open can bring the results back.
+			var [searchSub, setSearchSub] = useState('results');
 
 			var searchRequest = useCallback(function (payload) {
 				// Channel calls have their own 20s budget; the wider browser
@@ -2420,6 +2611,7 @@ window.__ModuleLoader__.load({
 					setSearchError({ code: '', message: t('search.queryRequired') });
 					return Promise.resolve();
 				}
+				setSearchSub('results');
 				setSearchBusy(true);
 				setSearchError(null);
 				setSearchResult(null);
@@ -2579,6 +2771,8 @@ window.__ModuleLoader__.load({
 									? h(SearchSection, {
 										t: t,
 										status: searchStatus,
+										sub: searchSub,
+										setSub: setSearchSub,
 										query: searchQuery,
 										setQuery: setSearchQuery,
 										onSearch: searchWeb,
