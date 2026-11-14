@@ -23,6 +23,7 @@ const kernel = await import('../skills/index.js')
 const kernelCore = await import('../skills/core.js')
 const adapter = await import('../src/skills-adapter.js')
 const bridge = await import('../src/skills-kernel.js')
+const repositoryGit = await import('../skills/repository-git.js')
 
 const skillDoc = (name, description = `${name} description`) => `---\nname: ${name}\ndescription: ${description}\n---\n\n# ${name}\n\nBody for ${name}.\n`
 
@@ -57,6 +58,17 @@ test('the kernel carries this plugin API prefix and client header', async () => 
 	assert.match(index, /const API_PREFIX = "\/api\/manager"/)
 	assert.match(index, /const CLIENT_MARKER_HEADER = "x-dsh-manager-client"/)
 	assert.equal(bridge.KERNEL_EXTERNAL_PROVIDER, 'manager-external')
+})
+
+test('only the DSH and shared agent roots are enabled by default', async () => {
+	// A fresh state must not expose the other agents' skill directories to this
+	// agent; they are opt-in from the panel.
+	const snapshot = await kernelCore.state({})
+	const byKey = new Map(snapshot.roots.map((root) => [root.key, root]))
+	assert.equal(byKey.get('dsh').enabled, true)
+	assert.equal(byKey.get('agents').enabled, true)
+	assert.equal(byKey.get('claude').enabled, false)
+	assert.equal(byKey.get('codex').enabled, false)
 })
 
 test('the kernel has no runtime npm dependency', async () => {
@@ -213,4 +225,31 @@ test('a taken create_skill tool does not abort the mount', () => {
 
 test.after(async () => {
 	await rm(home, { recursive: true, force: true })
+})
+
+test('repository URLs cannot point at loopback or private networks', () => {
+	// git would fetch these, which makes "add repository" a blind SSRF probe.
+	for (const url of [
+		'http://127.0.0.1/x.git',
+		'http://10.0.0.5/x.git',
+		'http://172.16.0.1/x.git',
+		'http://192.168.1.2/x.git',
+		'http://169.254.169.254/latest/meta-data',
+		'http://localhost:8080/x.git',
+		'http://[::1]/x.git',
+	]) {
+		assert.throws(() => repositoryGit.parseGitUrl({ url }), /内网|本机|不安全/, url)
+	}
+	assert.doesNotThrow(() => repositoryGit.parseGitUrl({ url: 'https://github.com/owner/repo' }))
+	assert.doesNotThrow(() => repositoryGit.parseGitUrl({ url: 'https://example.com/owner/repo.git' }))
+})
+
+test('upload paths reject segments Windows would normalise', () => {
+	// ".. " (dot-dot-space) is not "..", but Win32 trims the trailing space and
+	// then resolves it as a traversal. Rejecting it keeps both platforms equal.
+	assert.throws(() => kernelCore.normalizeUploadPath('.. /escape.md'), /路径非法/)
+	assert.throws(() => kernelCore.normalizeUploadPath('dir./escape.md'), /路径非法/)
+	assert.throws(() => kernelCore.normalizeUploadPath('name:stream/x.md'), /路径非法/)
+	assert.equal(kernelCore.normalizeUploadPath('ok/skill.md').path, 'ok/skill.md')
+	assert.equal(kernelCore.normalizeUploadPath('目录/skill.md').path, '目录/skill.md')
 })

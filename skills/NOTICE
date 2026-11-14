@@ -50,6 +50,21 @@ Per Apache-2.0 section 4(b), these modified files are marked as changed above.
 Upstream's own copyright and license notices are retained in ./LICENSE and in
 each file's original header comments.
 
+SECURITY HARDENING (this project, not upstream)
+------------------------------------------------
+  1. upload paths: normalizeUploadPath also rejects segments that end in a dot
+     or a space and segments containing Windows-reserved characters, so a name
+     such as ".. " cannot turn into a traversal after Win32 normalisation.
+  2. repository URLs: parseGitUrl rejects loopback / private / link-local hosts
+     and runGit passes `-c http.followRedirects=false`, so adding a repository
+     cannot make the plugin probe the local network.
+  3. default sources: defaultManagerState enables only the `dsh` and `agents`
+     roots. The other agent directories are opt-in from the panel, so a fresh
+     install (or an upgrade with no kernel state yet) does not silently add
+     Claude Code / Codex / Cursor skills to this agent's catalog.
+These are deliberate hardening changes; the algorithms are otherwise as
+upstream.
+
 UPGRADING
 ---------
 `node scripts/check-vendored.mjs` records and verifies the SHA-256 of every

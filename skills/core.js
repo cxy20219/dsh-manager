@@ -1726,7 +1726,11 @@ function defaultManagerState() {
   const disabledSkills = /* @__PURE__ */ Object.create(null);
   const enabledSkills = /* @__PURE__ */ Object.create(null);
   for (const root of userRoots()) {
-    sources[root.key] = true;
+    // Only this harness's own root and the shared agent root start on. The
+    // other agent directories (Claude Code, Codex, Cursor, …) are opt-in from
+    // the panel, so a fresh install never silently feeds those skills to this
+    // agent's catalog. Sources the user added themselves start on.
+    sources[root.key] = root.custom === true || root.key === "dsh" || root.key === "agents";
     disabledSkills[root.key] = [];
     enabledSkills[root.key] = [];
   }
@@ -1814,11 +1818,13 @@ const BASELINE_SOURCES = /* @__PURE__ */ new Set([
 function migrateManagerStateDocument(value) {
   if (!value || typeof value !== "object" || Array.isArray(value) || value.version !== 1)
     return value;
-  const addedSources = userRoots().map((root) => root.key).filter((key) => !BASELINE_SOURCES.has(key));
+  const addedSources = userRoots().map((root) => root.key).filter((key) => !BASELINE_SOURCES.has(key) && !key.startsWith("custom:"));
   for (const key of addedSources) {
     for (const field of ["sources", "disabledSkills", "enabledSkills"]) {
+      // Sources added by a later release are opt-in: a state file written by an
+      // older version must not silently turn them on during migration.
       if (value[field] && typeof value[field] === "object" && !Array.isArray(value[field]) && value[field][key] === void 0)
-        value[field][key] = field === "sources" ? true : [];
+        value[field][key] = field === "sources" ? false : [];
     }
   }
   return value;
@@ -3187,7 +3193,7 @@ function normalizeUploadPath(input) {
     (part, index, all) => directory && index === all.length - 1 ? false : true
   );
   if (!parts.length || parts.length > MAX_SOURCE_DEPTH || parts.some(
-    (part) => !part || part === "." || part === ".." || part.length > MAX_ENTRY_NAME_LENGTH || WINDOWS_DEVICE_NAME_RE.test(part)
+    (part) => !part || part === "." || part === ".." || part.length > MAX_ENTRY_NAME_LENGTH || WINDOWS_DEVICE_NAME_RE.test(part) || /[\\/:*?"<>|\0]/.test(part) || /[. ]$/.test(part)
   )) {
     throw codedError(`\u4E0A\u4F20\u6761\u76EE\u8DEF\u5F84\u975E\u6CD5: ${raw}`, "error.upload.path", {
       path: raw
@@ -3866,6 +3872,7 @@ export {
   managerHomePath,
   managerStatePath,
   moveSkillInCategory,
+  normalizeUploadPath,
   parseBoolValue,
   parseSkillDoc,
   permanentlyDeleteTrash,

@@ -9,6 +9,24 @@ function failure(message, code = "error.repo.invalid", params) {
     ...params && typeof params === "object" && !Array.isArray(params) ? { params } : {}
   });
 }
+/**
+ * Whether a hostname points at the local machine or a private network.
+ *
+ * Git would happily fetch these, so "add repository" would become a blind SSRF
+ * probe for anything listening on loopback or the LAN. DNS rebinding is out of
+ * scope; literal address classes and the obvious names are covered.
+ *
+ * @param {string} hostname - Hostname from `URL`.
+ * @returns {boolean} True when the host must not be fetched.
+ */
+function isPrivateHostname(hostname) {
+  const host = String(hostname).toLowerCase();
+  if (host === "localhost" || host.endsWith(".localhost") || host === "0.0.0.0" || host === "[::]" || host === "[::1]") return true;
+  if (/^127\./.test(host) || /^10\./.test(host) || /^192\.168\./.test(host) || /^169\.254\./.test(host)) return true;
+  if (/^172\.(1[6-9]|2\d|3[01])\./.test(host)) return true;
+  if (host.startsWith("[fe80") || host.startsWith("[fc") || host.startsWith("[fd")) return true;
+  return false;
+}
 function safePath(value, allowEmpty = false) {
   if (typeof value !== "string" || value.length > 512 || !value && !allowEmpty) throw failure("\u4ED3\u5E93\u8DEF\u5F84\u65E0\u6548");
   if (!value) return value;
@@ -89,6 +107,9 @@ function parseGitUrl(input = {}) {
   }
   if (!urlObj.hostname || urlObj.hostname.startsWith("-")) {
     throw failure("\u4ED3\u5E93\u5730\u5740\u65E0\u6548");
+  }
+  if (isPrivateHostname(urlObj.hostname)) {
+    throw failure("\u4ED3\u5E93\u5730\u5740\u4E0D\u80FD\u6307\u5411\u672C\u673A\u6216\u5185\u7F51\u5730\u5740");
   }
   let pathname = urlObj.pathname;
   let extractedRef = "";
@@ -203,6 +224,8 @@ function runGit(args, cwd, optionsOrTimeout, legacyGitBinary = "git") {
         // 只支持公开仓库：禁用凭据助手，避免 Git Credential Manager 弹出账号选择窗口并卡住插件进程。
         "-c",
         "credential.helper=",
+        "-c",
+        "http.followRedirects=false",
         "-c",
         "http.lowSpeedLimit=1000",
         "-c",

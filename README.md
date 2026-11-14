@@ -5,8 +5,10 @@ DeepSeek Harness Web UI 左侧的一个入口，管理 Agent 运行所需的东�
 
 - **技能** — 自带一套完整的技能管理内核（`skills/`，派生自 `@michengai/dsh-skills-manager`，Apache-2.0）。
   **不依赖任何其他技能插件**，装这一个就够。内核发现本机 20+ 个 Agent 技能来源（`~/.dsh/skills`、
-  `~/.agents/skills`、Claude Code、Codex、Cursor、Windsurf、Trae、Copilot、Qoder、OpenClaw 等），
-  每个来源可整体启停，单个技能也可启停；同名技能按来源 rank 决胜，其余记为副本而不是重复列出。
+  `~/.agents/skills`、Claude Code、Codex、Cursor、Windsurf、Trae、Copilot、Qoder、OpenClaw 等）。
+  **默认只启用 `~/.dsh/skills` 与 `~/.agents/skills`**，其它来源在面板里按需打开——新装或升级都不会
+  悄悄把别的 Agent 目录里的技能喂给本 Agent。每个来源可整体启停，单个技能也可启停；同名技能按来源
+  rank 决胜，其余记为副本而不是重复列出。
 - **技能界面** — 三栏工作台：左栏来源、中栏技能列表（同名副本自动折叠成 `+N`）、右栏详情
   （简介、token 估算、自定义备注、SKILL.md 正文、源文件路径）。备注只存在本插件，绝不写回 `SKILL.md`。
 - **目录核对** — 技能页还会报告 Agent 的注册表实际提供了什么，把所有 provider 合并后统计
@@ -249,7 +251,11 @@ Harness 的 web 服务只拥有一个监听器，并且绑定回环地址；内�
 | 搜索渠道 API Key | 宿主凭证库，记录 `dsh-manager/search-<渠道>` |
 | 技能文件 | 内核发现的各 Agent 来源（`~/.dsh/skills/`、`~/.agents/skills/` 等），只在可写来源里创建 |
 
-在该行配置里填一个绝对路径 `dataDir` 可以改设置目录的位置。插件不会改写 profile 的 patch 文件。
+在该行配置里填一个绝对路径 `dataDir` 可以改设置目录的位置（技能内核的状态目录固定为
+`<DSH_HOME>/manager/skills/`，不跟随 `dataDir`）。插件不会改写 profile 的 patch 文件。
+
+升级说明：内核状态（启停、分类、备注）从空开始，旧版 `settings.json` 里的分类/技能开关不会迁移；
+首次启动时按上面的默认来源策略启用，其它来源需要重新打开。
 
 ## 限制
 
@@ -259,7 +265,10 @@ Harness 的 web 服务只拥有一个监听器，并且绑定回环地址；内�
 - MCP 只支持 stdio，没有实现 Streamable HTTP。
 - 用内置 `@deepseek-ai/dsh-mcp-client` 行配置的服务不会被导入。本面板管理自己的一套 stdio 列表，两者
   不会悄悄共用服务命名空间。
-- 不提供删除技能——面板负责创建和开关，删除交给文件管理器。
+- 删除技能会先进回收站（`~/.dsh/manager/skills/trash/`），可以恢复到原位；只有回收站里的 **永久删除**
+  才会真正移除目录。删除入口只对可写来源显示，符号链接的技能不可删。
+- 新建技能写在当前来源下（默认 `~/.dsh/skills`）；`SKILL.md` 的正文和 frontmatter 由内核按与上游一致的
+  规则校验，非法名会被拒绝而不是清洗。
 - 标签页打开时，MCP 列表面板每四秒轮询一次状态。
 - 搜索渠道本身只负责搜索；正文抓取、多轮 research 和检索缓存由 `agent-fetch` / `research` 负责。X / 小红书站内检索没有接。
 - 免 Key 的 HTML 渠道（Bing/DDG）没有浏览器渲染和代理池，反爬、验证码或出口 IP 被限流时会失败；这是免费抓取的固有限制，
