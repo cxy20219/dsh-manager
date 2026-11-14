@@ -32,14 +32,15 @@ DeepSeek Harness Web UI 左侧的一个入口，管理 Agent 运行所需的东�
 
 ## 安装
 
-在本目录下执行：
+在本仓库根目录下执行（把路径换成你自己的检出位置）：
 
 ```bash
-dsh plugin --profile desktop add /Users/chengxinyu/Desktop/AI-work/dsh-manger
+dsh plugin --profile desktop add .
 ```
 
-也可以用 Web UI 里的插件管理器安装。这个 bundle 会插入一行宿主配置（`dsh-manager`）和一个客户端模块；
-不安装任何依赖，所以离线也能装。
+也可以用 Web UI 里的插件管理器安装：先 `npm pack` 打包，再选中生成的 `.tgz`。
+这个 bundle 会插入一行宿主配置（`dsh-manager`）和一个客户端模块。
+运行时只有一个依赖 `fflate`（ZIP 导入用），`pnpm` 会一并装好。
 
 装完后刷新一次网页，入口就出现在左侧栏的其他全局面板旁边。
 
