@@ -62,6 +62,10 @@ SECURITY HARDENING (this project, not upstream)
      roots. The other agent directories are opt-in from the panel, so a fresh
      install (or an upgrade with no kernel state yet) does not silently add
      Claude Code / Codex / Cursor skills to this agent's catalog.
+  4. resource caps: SKILL.md reads are capped at 256 KiB (an oversized document
+     stays out of the catalog instead of making every panel open expensive), and
+     git output is capped at 8 MiB (a huge tree or a hostile remote cannot grow
+     the Host process without bound).
 These are deliberate hardening changes; the algorithms are otherwise as
 upstream.
 

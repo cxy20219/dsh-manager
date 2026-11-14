@@ -2,6 +2,9 @@ import { promises as fs } from "node:fs";
 import { join } from "node:path";
 import { randomUUID } from "node:crypto";
 import { spawn } from "node:child_process";
+// A git command that streams more than this is a hostile or broken remote, not
+// a skill repository. It is killed instead of accumulated.
+const MAX_GIT_OUTPUT_BYTES = 8 << 20;
 function failure(message, code = "error.repo.invalid", params) {
   return Object.assign(new Error(message), {
     code,
@@ -272,11 +275,20 @@ function runGit(args, cwd, optionsOrTimeout, legacyGitBinary = "git") {
     const stopWatchdog = () => {
       if (watchdog) clearInterval(watchdog);
     };
+    const capOutput = () => {
+      if (killed || stdout.length + stderr.length <= MAX_GIT_OUTPUT_BYTES) return;
+      killed = true;
+      stopWatchdog();
+      killProcessTree(child);
+      reject(failure("Git \u8F93\u51FA\u8D85\u8FC7\u4E0A\u9650", "error.repo.outputTooLarge", { limit: MAX_GIT_OUTPUT_BYTES }));
+    };
     child.stdout.on("data", (chunk) => {
       stdout += chunk;
+      capOutput();
     });
     child.stderr.on("data", (chunk) => {
       stderr += chunk;
+      capOutput();
     });
     const timer = setTimeout(() => {
       killed = true;

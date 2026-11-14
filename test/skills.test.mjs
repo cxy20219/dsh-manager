@@ -60,6 +60,21 @@ test('the kernel carries this plugin API prefix and client header', async () => 
 	assert.equal(bridge.KERNEL_EXTERNAL_PROVIDER, 'manager-external')
 })
 
+test('an oversized SKILL.md stays out of the catalog', async () => {
+	const directory = join(home, 'skills', 'huge-fixture')
+	await mkdir(directory, { recursive: true })
+	await writeFile(join(directory, 'SKILL.md'), '---\nname: huge-fixture\ndescription: huge fixture\n---\n' + 'x'.repeat(300 * 1024))
+	try {
+		const snapshot = await kernelCore.state({})
+		const names = snapshot.roots.flatMap((root) => (root.skills ?? []).map((skill) => skill.name))
+		assert.ok(!names.includes('huge-fixture'), 'the oversized document was read into the catalog')
+		const detail = await kernelCore.skillDetail('dsh', 'huge-fixture')
+		assert.equal(detail.ok, false)
+	} finally {
+		await rm(directory, { recursive: true, force: true })
+	}
+})
+
 test('only the DSH and shared agent roots are enabled by default', async () => {
 	// A fresh state must not expose the other agents' skill directories to this
 	// agent; they are opt-in from the panel.

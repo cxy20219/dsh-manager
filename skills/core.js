@@ -102,12 +102,21 @@ const WINDOWS_DEVICE_NAME_RE = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\..*)?$/i
 const MAX_SOURCE_DEPTH = 64;
 const MAX_ENTRY_NAME_LENGTH = 128;
 const MAX_BROWSE_ENTRIES = 500;
+// A SKILL.md is prose, not a data file. The catalog reads every document it
+// finds, so one oversized file would make every panel open expensive.
+const MAX_SKILL_DOC_BYTES = 256 << 10;
 const MAX_UPLOAD_ARCHIVE_BYTES = 32 << 20;
 const MAX_UPLOAD_ENTRY_BYTES = 32 << 20;
 const MAX_UPLOAD_TOTAL_BYTES = 64 << 20;
 const MAX_UPLOAD_ENTRIES = 1e3;
 const MAX_UPLOAD_PATH_LENGTH = 512;
 const TRANSIENT_RENAME_CODES = /* @__PURE__ */ new Set(["EACCES", "EBUSY", "EPERM"]);
+async function readSkillDocFile(path) {
+  const info = await fs.stat(path);
+  if (info.size > MAX_SKILL_DOC_BYTES)
+    throw codedError(`SKILL.md \u8D85\u8FC7 ${MAX_SKILL_DOC_BYTES} \u5B57\u8282\u4E0A\u9650`, "error.skill.tooLarge", { limit: MAX_SKILL_DOC_BYTES });
+  return fs.readFile(path, "utf8");
+}
 function codedError(message, code, params) {
   const error = new Error(message);
   error.code = code;
@@ -1607,7 +1616,7 @@ async function scanEntries(root, options = {}) {
             entry.name,
             entry.kind,
             entry.docPath,
-            parseSkillDoc(await fs.readFile(entry.realDocPath, "utf8"))
+            parseSkillDoc(await readSkillDocFile(entry.realDocPath))
           ),
           ...entry
         });
@@ -1633,7 +1642,7 @@ async function scanEntries(root, options = {}) {
       if (it.isSymbolicLink() || process.platform === "win32" && it.isDirectory()) {
         const linked = await linkedDirectoryBundle(directory, it.name);
         if (linked) {
-          const doc = options.metadataOnly ? { map: {}, hasFrontmatter: false } : parseSkillDoc(await fs.readFile(linked.realDocPath, "utf8"));
+          const doc = options.metadataOnly ? { map: {}, hasFrontmatter: false } : parseSkillDoc(await readSkillDocFile(linked.realDocPath));
           byName.set(it.name, {
             ...entryOf(it.name, "bundle", linked.docPath, doc),
             ...linked
@@ -1647,7 +1656,7 @@ async function scanEntries(root, options = {}) {
         const st = await lstatOrNull(docPath);
         if (!st || !st.isFile() || st.isSymbolicLink() || !await isInsideResolvedRoot(rootReal, docPath))
           continue;
-        const doc = options.metadataOnly ? { map: {}, hasFrontmatter: false } : parseSkillDoc(await fs.readFile(docPath, "utf8"));
+        const doc = options.metadataOnly ? { map: {}, hasFrontmatter: false } : parseSkillDoc(await readSkillDocFile(docPath));
         byName.set(it.name, {
           ...entryOf(it.name, "bundle", docPath, doc),
           entryPath: join(directory, it.name),
@@ -1660,7 +1669,7 @@ async function scanEntries(root, options = {}) {
         if (byName.has(skillName)) continue;
         const docPath = join(directory, it.name);
         if (!await isInsideResolvedRoot(rootReal, docPath)) continue;
-        const doc = options.metadataOnly ? { map: {}, hasFrontmatter: false } : parseSkillDoc(await fs.readFile(docPath, "utf8"));
+        const doc = options.metadataOnly ? { map: {}, hasFrontmatter: false } : parseSkillDoc(await readSkillDocFile(docPath));
         const realDocPath = await fs.realpath(docPath);
         byName.set(skillName, {
           ...entryOf(skillName, "flat", docPath, doc),
@@ -2127,7 +2136,7 @@ async function applyPolicySkillEnabled(definition, name, enabled, state2) {
       resolved.kind,
       resolved.docPath,
       parseSkillDoc(
-        await fs.readFile(resolved.realDocPath || resolved.docPath, "utf8")
+        await readSkillDocFile(resolved.realDocPath || resolved.docPath)
       )
     );
   } catch {
@@ -3335,7 +3344,7 @@ async function prepareUploadedSource(sessionRoot, input) {
   const rootSkill = join(contentRoot, "SKILL.md");
   const rootSkillStat = await lstatOrNull(rootSkill);
   if (!rootSkillStat || !rootSkillStat.isFile()) return contentRoot;
-  const doc = parseSkillDoc(await fs.readFile(rootSkill, "utf8"));
+  const doc = parseSkillDoc(await readSkillDocFile(rootSkill));
   const fallback = String(input && input.name || "uploaded-skill").replace(/\.zip$/i, "").replace(/^skill\.md$/i, "uploaded-skill");
   const skillName = toKebab(doc.map.name || fallback);
   if (!skillName || !KEBAB_RE.test(skillName) || entryPath(contentRoot, skillName) === null) {
@@ -3449,7 +3458,7 @@ async function skillDetail(key, name, options = {}) {
     };
   let raw;
   try {
-    raw = await fs.readFile(entry.realDocPath || entry.docPath, "utf8");
+    raw = await readSkillDocFile(entry.realDocPath || entry.docPath);
   } catch {
     return {
       ok: false,
