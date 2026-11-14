@@ -157,6 +157,7 @@ function makeOverview() {
 			conflicts: [],
 		},
 		catalog: { total: 0, visible: 0, managed: 0, external: [], missing: [], unavailable: false, error: '' },
+		kernel: { mounted: true, routes: 48, error: '' },
 		mcp: { available: true, servers: [], credentials: true, note: '' },
 		lan: { enabled: false, running: false, address: '', port: 0, upstream: '', error: '' },
 		modes: { available: true, modes: [] },
@@ -170,13 +171,76 @@ function makeOverview() {
  *   `failQuery`, `failStatus`.
  * @returns {Promise<object>} The application handle.
  */
+/** The kernel `state` payload the skills workspace reads. */
+function makeKernelState(overrides = {}) {
+	return {
+		roots: [
+			{
+				key: 'dsh',
+				label: 'DSH',
+				path: '/tmp/dsh/skills',
+				exists: true,
+				mutable: true,
+				enabled: true,
+				skills: [
+					{ name: 'demo-skill', description: 'Demo description', enabled: true, loadable: true, effectiveModelInvocable: true },
+				],
+			},
+		],
+		trash: [],
+		warnings: [],
+		...overrides,
+	}
+}
+
+/** The kernel `detail` payload for one skill. */
+function makeKernelDetail(payload) {
+	return {
+		name: payload.name,
+		declaredName: payload.name,
+		description: 'Demo description',
+		descriptionTokens: 4,
+		bodyTokens: 12,
+		customNote: '',
+		path: '/tmp/dsh/skills/' + payload.name + '/SKILL.md',
+		body: '# Demo body',
+		document: '---\nname: demo-skill\n---\n\n# Demo body\n',
+		diagnostics: [],
+		loadable: true,
+		sourceReadOnly: false,
+	}
+}
+
 async function createApp(options = {}) {
 	const channels = options.channels ?? makeChannels()
 	const status = makeStatus(channels, options.status ?? {})
 	const result = makeResult()
 	const requests = []
+	const kernelState = options.kernelState ?? makeKernelState()
 	const handlers = {
 		overview: () => makeOverview(),
+		// Kernel routes answer the kernel envelope `{ ok, data }`; host actions
+		// above answer the bare value the panel reads.
+		state: () => ({ ok: true, data: kernelState }),
+		detail: (payload) => ({ ok: true, data: makeKernelDetail(payload) }),
+		'skill-note': () => ({ ok: true, data: {} }),
+		create: () => ({ ok: true, data: {} }),
+		enable: () => ({ ok: true, data: {} }),
+		disable: () => ({ ok: true, data: {} }),
+		'source-enable': () => ({ ok: true, data: {} }),
+		'source-disable': () => ({ ok: true, data: {} }),
+		'workspaces': () => ({ ok: true, data: { items: [] } }),
+		'workspace-skills': () => ({ ok: true, data: { roots: [] } }),
+		'trash-restore': () => ({ ok: true, data: {} }),
+		'trash-delete': () => ({ ok: true, data: {} }),
+		'clawhub/list': () => ({
+			ok: true,
+			data: { items: [{ ownerHandle: 'owner', slug: 'tool', displayName: 'Tool', summary: 'Tool summary', stats: { downloads: 10, installs: 3, stars: 2 } }] },
+		}),
+		'clawhub/search': () => ({
+			ok: true,
+			data: { results: [{ ownerHandle: 'owner', slug: 'hit', displayName: 'Hit', summary: 'Hit summary' }] },
+		}),
 		'search-status': () => {
 			if (options.failStatus === true) {
 				return { error: { code: 'dsh-manager/unavailable', message: '搜索服务未注册' } }
@@ -208,9 +272,13 @@ async function createApp(options = {}) {
 	 */
 	async function fakeFetch(input, init) {
 		const url = String(input)
-		const endpoint = url.slice(url.lastIndexOf('/') + 1)
+		// Every route this plugin owns lives under `/api/manager/`; the rest is
+		// the kernel path (`state`, `clawhub/list`, …) or the host action.
+		const endpoint = url.includes('/api/manager/')
+			? url.split('/api/manager/')[1].split('?')[0]
+			: url.slice(url.lastIndexOf('/') + 1)
 		const payload = typeof init?.body === 'string' && init.body !== '' ? JSON.parse(init.body) : {}
-		requests.push({ endpoint, payload })
+		requests.push({ endpoint, payload, url })
 		// `client.js` reads the raw body and parses it itself so a non-JSON
 		// answer (an unloaded plugin, an authenticating proxy) becomes a readable
 		// error instead of `Unexpected token`. The stand-in therefore has to
@@ -319,6 +387,8 @@ async function createApp(options = {}) {
 			createElement() { return { dataset: {}, textContent: '', remove() {}, click() {}, appendChild() {} } },
 			head: { appendChild() {} },
 			body: { appendChild() {}, removeChild() {} },
+			addEventListener() {},
+			removeEventListener() {},
 		},
 		navigator: {},
 		URL,
@@ -477,6 +547,28 @@ async function createApp(options = {}) {
 		input,
 		select,
 		settle,
+		findVisible,
+		textOf,
+		/** Click a node found by the test (for rows that are not <button>). */
+		async clickNode(node) {
+			node.props.onClick()
+			await settle()
+			return app
+		},
+		/** Click the last visible button carrying `label` (dialog footer wins). */
+		async clickLast(label) {
+			const matches = findVisible((node) => node.type === 'button' && textOf(node).includes(label))
+			assert.ok(matches.length > 0, `no visible button containing "${label}"`)
+			matches[matches.length - 1].props.onClick()
+			await settle()
+			return app
+		},
+		/** The first visible textarea. */
+		textarea() {
+			const [node] = findVisible((candidate) => candidate.type === 'textarea')
+			assert.ok(node !== undefined, 'no visible textarea')
+			return node
+		},
 		/**
 		 * The checkbox inside the visible label whose text carries `label`.
 		 *
@@ -688,4 +780,103 @@ test('the channel filter narrows the list and the enabled-only box hides the res
 	assert.match(text, /Exa/)
 	assert.match(text, /Tavily/)
 	assert.doesNotMatch(text, /SearXNG/, 'enabled-only hides the disabled rows')
+})
+
+// ---- skills workspace ---------------------------------------------------
+
+test('the skills workspace renders the kernel roots and their skills', async () => {
+	const app = await createApp()
+	await app.mount()
+	await app.settle()
+	const text = app.text()
+	assert.match(text, /DSH/)
+	assert.match(text, /demo-skill/)
+	assert.ok(app.requests.some((entry) => entry.endpoint === 'state'), 'the kernel state was not read')
+})
+
+test('a skill row opens the detail pane and a saved note shows immediately', async () => {
+	const app = await createApp()
+	await app.mount()
+	await app.settle()
+	const [row] = app.findVisible((node) => node.props?.role === 'button' && app.textOf(node).includes('demo-skill'))
+	assert.ok(row !== undefined, 'no skill row')
+	await app.clickNode(row)
+	assert.match(app.text(), /Demo description/)
+	await app.click('skx.editNote')
+	app.textarea().props.onChange({ target: { value: 'remember this' } })
+	await app.settle()
+	await app.click('skx.save')
+	const sent = app.requests.filter((entry) => entry.endpoint === 'skill-note').at(-1)
+	assert.deepEqual(sent.payload, { root: 'dsh', name: 'demo-skill', note: 'remember this' })
+	assert.match(app.text(), /remember this/, 'the saved note must be visible without another fetch')
+})
+
+test('moving a skill to the trash asks first and then calls delete', async () => {
+	const app = await createApp()
+	await app.mount()
+	await app.settle()
+	const [row] = app.findVisible((node) => node.props?.role === 'button' && app.textOf(node).includes('demo-skill'))
+	await app.clickNode(row)
+	await app.click('skx.trash')
+	assert.match(app.text(), /skx.confirmTrashTitle/)
+	assert.ok(app.requests.every((entry) => entry.endpoint !== 'delete'), 'delete must wait for confirmation')
+	await app.click('skx.trashConfirm')
+	assert.ok(app.requests.some((entry) => entry.endpoint === 'delete'))
+})
+
+test('permanent delete in the trash asks first', async () => {
+	const kernelState = makeKernelState({
+		trash: [{ id: 'trash-1', name: 'old-skill', root: 'dsh', deletedAt: '2026-01-01T00:00:00.000Z' }],
+	})
+	const app = await createApp(({ kernelState }))
+	await app.mount()
+	await app.settle()
+	await app.click('skx.tab.trash')
+	await app.settle()
+	assert.match(app.text(), /old-skill/)
+	await app.click('skx.purge')
+	assert.match(app.text(), /skx.purgeConfirmTitle/)
+	assert.ok(app.requests.every((entry) => entry.endpoint !== 'trash-delete'), 'purge must wait for confirmation')
+	await app.clickLast('skx.purge')
+	assert.ok(app.requests.some((entry) => entry.endpoint === 'trash-delete'))
+})
+
+test('switching sub-tabs keeps the skill list filter', async () => {
+	const app = await createApp()
+	await app.mount()
+	await app.settle()
+	app.input('skx.search').props.onChange({ target: { value: 'demo' } })
+	await app.settle()
+	await app.click('skx.tab.project')
+	await app.settle()
+	await app.click('skx.tab.installed')
+	await app.settle()
+	assert.equal(app.input('skx.search').props.value, 'demo')
+})
+
+test('the discovery chart uses the kernel limit and no unsupported sort', async () => {
+	const app = await createApp()
+	await app.mount()
+	await app.settle()
+	await app.click('skx.tab.discover')
+	await app.settle()
+	const chart = app.requests.filter((entry) => entry.endpoint === 'clawhub/list').at(-1)
+	assert.ok(chart !== undefined, 'the chart was not requested')
+	assert.match(chart.url, /[?&]limit=10\b/)
+	assert.doesNotMatch(chart.url, /sort=/)
+	assert.match(app.text(), /Tool/)
+})
+
+test('creating a skill posts to the kernel after the dialog is filled', async () => {
+	const app = await createApp()
+	await app.mount()
+	await app.settle()
+	await app.click('skx.create')
+	assert.match(app.text(), /skx.createTitle/)
+	const [name] = app.findVisible((node) => node.type === 'input' && node.props.className === 'mgrInput')
+	name.props.onChange({ target: { value: 'new-skill' } })
+	await app.settle()
+	await app.click('skx.createSubmit')
+	const sent = app.requests.filter((entry) => entry.endpoint === 'create').at(-1)
+	assert.deepEqual(sent.payload, { root: 'dsh', name: 'new-skill', description: '', body: '' })
 })

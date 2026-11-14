@@ -92,7 +92,19 @@ window.__ModuleLoader__.load({
 			'skx.installed': '已安装：{name}',
 			'skx.preview': '预览',
 			'skx.downloads': '{n} 次下载',
-			'skx.installs': '{n} 次安装',
+			'skx.create': '新建技能',
+			'skx.createTitle': '在来源里新建技能',
+			'skx.createName': '名称（kebab-case）',
+			'skx.createDescription': '简介（何时使用）',
+			'skx.createBody': 'SKILL.md 正文（Markdown）',
+			'skx.createSubmit': '创建',
+			'skx.createNameRequired': '技能名不能为空',
+			'skx.purgeConfirmTitle': '永久删除「{name}」？',
+			'skx.purgeConfirmDesc': '这一步不可恢复，技能目录会被直接删除。',
+			'skx.kernelError': '技能内核未就绪：{detail}',
+			'skx.kernelNotWired': '未接线',
+			'skx.kernelDetail': '已挂载={mounted}，路由数={routes}，错误：{error}',
+			'skx.kernelNoError': '无',
 			'skx.trashHint': '删除的技能先进回收站，可以恢复。',
 			'skx.trashEmpty': '回收站是空的。',
 			'skx.trashFrom': '来自 {root}',
@@ -102,7 +114,6 @@ window.__ModuleLoader__.load({
 			'action.refresh': '重新扫描',
 			'action.close': '关闭',
 			'action.cancel': '取消',
-			'action.create': '创建',
 			'action.edit': '编辑',
 			'action.delete': '删除',
 			'action.reconnect': '重新连接',
@@ -110,49 +121,7 @@ window.__ModuleLoader__.load({
 			'state.loading': '读取中…',
 			'state.saved': '已保存',
 			'state.deleted': '已删除',
-			'state.created': '已创建',
 			'state.refreshed': '已重新扫描',
-			'skills.search': '搜索技能或分类…',
-			'skills.new': '新建技能',
-			'skills.refresh': '重新扫描',
-			'skills.count': '{categories} 个分类 · {skills} 个技能 · {enabled} 个生效',
-			'skills.catalog': 'Agent 目录 {total} 个技能（模型可见 {visible}）· 本插件 {managed} · 其他来源 {external}',
-			'skills.catalogNames': '：{names}',
-			'skills.catalogMissing': '{n} 个已启用的技能没有进入 Agent 目录：{names}。可能是同名技能被更高优先级的来源覆盖，或该来源没有列出。',
-			'skills.catalogError': '读取 Agent 目录失败：{error}',
-			'skills.catalogUnavailable': '当前 Host 没有技能注册表，无法核对 Agent 目录。',
-			'skills.roots': '扫描目录',
-			'skills.rootMissing': '目录不存在',
-			'skills.rootError': '无法读取',
-			'skills.categoryEmpty': '这个分类下还没有技能',
-			'skills.categoryDisabled': '分类已停用',
-			'skills.skillDisabled': '已停用',
-			'skills.conflict': '重名，未注册',
-			'skills.conflictWith': '与 {owner} 重名',
-			'skills.broken': '解析失败',
-			'skills.modelHidden': '模型不主动调用',
-			'skills.userHidden': '用户不可调用',
-			'skills.empty': '没有匹配的技能。新建一个，或检查扫描目录。',
-			'skills.detail.description': '描述',
-			'skills.detail.whenToUse': '何时使用',
-			'skills.detail.path': '文件',
-			'skills.detail.content': '正文',
-			'skills.detail.invocation': '调用策略',
-			'skills.detail.invocation.both': '模型与用户都可调用',
-			'skills.detail.invocation.modelOnly': '仅模型可调用',
-			'skills.detail.invocation.userOnly': '仅用户可调用',
-			'skills.detail.invocation.none': '都不可调用',
-			'skills.create.title': '新建技能',
-			'skills.create.category': '分类',
-			'skills.create.categoryHint': '例如 dev、office；不存在时自动创建目录。',
-			'skills.create.name': '技能名',
-			'skills.create.nameHint': 'kebab-case，例如 webapp-testing。',
-			'skills.create.description': '描述',
-			'skills.create.descriptionHint': '一句话说明什么时候用它；这段文字会进入 Agent 的技能目录。',
-			'skills.create.location': '创建到 {path}',
-			'skills.create.invalidCategory': '分类名只能包含字母、数字、点、横线和下划线',
-			'skills.create.invalidName': '技能名必须是 kebab-case',
-			'skills.create.invalidDescription': '请填写描述',
 			'mcp.note': 'stdio 启动；工具以 mcp__<服务>__<工具> 注入 Agent。环境变量的值保存在本机凭证库，面板不回显。',
 			'mcp.add': '添加 MCP 服务',
 			'mcp.empty': '还没有 MCP 服务。添加一个本地 stdio 服务，它的工具会出现在 Agent 的工具列表里。',
@@ -409,7 +378,19 @@ window.__ModuleLoader__.load({
 			'skx.installed': 'Installed: {name}',
 			'skx.preview': 'Preview',
 			'skx.downloads': '{n} downloads',
-			'skx.installs': '{n} installs',
+			'skx.create': 'New skill',
+			'skx.createTitle': 'Create a skill',
+			'skx.createName': 'Name (kebab-case)',
+			'skx.createDescription': 'Description (when to use it)',
+			'skx.createBody': 'SKILL.md body (Markdown)',
+			'skx.createSubmit': 'Create',
+			'skx.createNameRequired': 'A skill name is required',
+			'skx.purgeConfirmTitle': 'Delete “{name}” forever?',
+			'skx.purgeConfirmDesc': 'This cannot be undone. The skill folder is removed outright.',
+			'skx.kernelError': 'The skill kernel is not ready: {detail}',
+			'skx.kernelNotWired': 'not wired',
+			'skx.kernelDetail': 'mounted={mounted}, routes={routes}, error: {error}',
+			'skx.kernelNoError': 'none',
 			'skx.trashHint': 'A deleted skill goes to the trash first and can be restored.',
 			'skx.trashEmpty': 'The trash is empty.',
 			'skx.trashFrom': 'From {root}',
@@ -419,7 +400,6 @@ window.__ModuleLoader__.load({
 			'action.refresh': 'Rescan',
 			'action.close': 'Close',
 			'action.cancel': 'Cancel',
-			'action.create': 'Create',
 			'action.edit': 'Edit',
 			'action.delete': 'Delete',
 			'action.reconnect': 'Reconnect',
@@ -427,49 +407,7 @@ window.__ModuleLoader__.load({
 			'state.loading': 'Loading…',
 			'state.saved': 'Saved',
 			'state.deleted': 'Deleted',
-			'state.created': 'Created',
 			'state.refreshed': 'Rescanned',
-			'skills.search': 'Search skills or categories…',
-			'skills.new': 'New skill',
-			'skills.refresh': 'Rescan',
-			'skills.count': '{categories} categories · {skills} skills · {enabled} active',
-			'skills.catalog': 'Agent catalog: {total} skills ({visible} model-visible) · {managed} from this manager · {external} from other providers',
-			'skills.catalogNames': ': {names}',
-			'skills.catalogMissing': '{n} active skills are missing from the agent catalog: {names}. A same-name skill from a higher-priority provider may shadow them, or that provider failed to list.',
-			'skills.catalogError': 'Could not read the agent catalog: {error}',
-			'skills.catalogUnavailable': 'This Host has no skill registry, so the agent catalog cannot be checked.',
-			'skills.roots': 'Scanned roots',
-			'skills.rootMissing': 'Directory missing',
-			'skills.rootError': 'Unreadable',
-			'skills.categoryEmpty': 'No skills in this category yet',
-			'skills.categoryDisabled': 'Category disabled',
-			'skills.skillDisabled': 'Disabled',
-			'skills.conflict': 'Duplicate name, not registered',
-			'skills.conflictWith': 'Duplicates {owner}',
-			'skills.broken': 'Parse failed',
-			'skills.modelHidden': 'Not model-invocable',
-			'skills.userHidden': 'Not user-invocable',
-			'skills.empty': 'No matching skills. Create one, or check the scanned roots.',
-			'skills.detail.description': 'Description',
-			'skills.detail.whenToUse': 'When to use',
-			'skills.detail.path': 'File',
-			'skills.detail.content': 'Body',
-			'skills.detail.invocation': 'Invocation',
-			'skills.detail.invocation.both': 'Model and user invocable',
-			'skills.detail.invocation.modelOnly': 'Model invocable only',
-			'skills.detail.invocation.userOnly': 'User invocable only',
-			'skills.detail.invocation.none': 'Not invocable',
-			'skills.create.title': 'New skill',
-			'skills.create.category': 'Category',
-			'skills.create.categoryHint': 'For example dev or office; the directory is created when missing.',
-			'skills.create.name': 'Skill name',
-			'skills.create.nameHint': 'kebab-case, for example webapp-testing.',
-			'skills.create.description': 'Description',
-			'skills.create.descriptionHint': 'One sentence about when to use it; this text enters the agent skill catalog.',
-			'skills.create.location': 'Creates {path}',
-			'skills.create.invalidCategory': 'Category names only allow letters, numbers, dots, dashes and underscores',
-			'skills.create.invalidName': 'Skill names must be kebab-case',
-			'skills.create.invalidDescription': 'A description is required',
 			'mcp.note': 'Started over stdio; tools reach the agent as mcp__<server>__<tool>. Environment values live in the Host credential store and are never shown here.',
 			'mcp.add': 'Add MCP server',
 			'mcp.empty': 'No MCP servers yet. Add a local stdio server and its tools join the agent tool list.',
@@ -898,6 +836,8 @@ window.__ModuleLoader__.load({
 			'.skxMissingList{display:flex;flex-direction:column;gap:1px;padding:0 0 4px 12px}',
 			'.skxMissingRow{padding:4px 10px;font-size:13px;color:var(--skx-fg-subtle);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
 			'.skxMain{display:flex;flex-direction:column;min-height:0;border:1px solid var(--skx-line);border-radius:12px;background:var(--skx-surface);box-shadow:var(--skx-shadow);overflow:hidden}',
+			'.skxSubViews{display:flex;flex-direction:column;flex:1;min-height:0}',
+			'.skxSubView{display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden}',
 			'.skxSplit{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);height:100%;min-height:0}',
 			'.skxListCol{display:flex;flex-direction:column;min-height:0;overflow-y:auto;border-right:1px solid var(--skx-line)}',
 			'.skxDetailCol{display:flex;flex-direction:column;min-height:0;overflow-y:auto;background:var(--skx-canvas);scrollbar-gutter:stable}',
@@ -1376,7 +1316,13 @@ window.__ModuleLoader__.load({
 			useEffect(function () { void load(); }, [load]);
 
 			if (roots === null) {
-				return h('div', { className: 'skxRoot' }, error === '' ? h(Loading, { label: t('state.loading') }) : h('div', { className: 'mgrErrorBox' }, error));
+				return h('div', { className: 'skxRoot' },
+					error === ''
+						? h(Loading, { label: t('state.loading') })
+						: h('div', { className: 'mgrErrorBox' },
+							h('span', null, error),
+							h('span', { className: 'mgrSpacer' }),
+							h('button', { type: 'button', className: 'mgrBtn', onClick: function () { void load(); } }, t('action.retry'))));
 			}
 
 			var liveRoots = roots.filter(function (entry) { return entry.exists !== false; });
@@ -1390,18 +1336,21 @@ window.__ModuleLoader__.load({
 				}).finally(function () { setBusy(false); });
 			};
 
-			var subView;
-			if (tab === 'installed') {
-				subView = h(SkillListPanel, {
-					t: t, call: call, root: active, busy: busy, onToggleSource: toggleSource, onChanged: load, setError: setError,
-				});
-			} else if (tab === 'project') {
-				subView = h(ProjectSkillsPanel, { t: t, call: call, setError: setError });
-			} else if (tab === 'discover') {
-				subView = h(DiscoverPanel, { t: t, call: call, roots: liveRoots, onInstalled: load, setError: setError });
-			} else {
-				subView = h(TrashPanel, { t: t, call: call, onRestored: load, setError: setError });
-			}
+			// Every sub-view stays mounted (the inactive ones are hidden) so a tab
+			// switch never drops a filter, a preview, or a half-written note. The
+			// panels that fetch on their own only do so once they first become
+			// active, so opening the skill page costs one request, not four.
+			var subViews = h('div', { className: 'skxSubViews' },
+				h('div', { className: 'skxSubView', style: { display: tab === 'installed' ? undefined : 'none' } },
+					h(SkillListPanel, {
+						t: t, call: call, root: active, busy: busy, onToggleSource: toggleSource, onChanged: load, setError: setError,
+					})),
+				h('div', { className: 'skxSubView', style: { display: tab === 'project' ? undefined : 'none' } },
+					h(ProjectSkillsPanel, { t: t, call: call, active: tab === 'project', setError: setError })),
+				h('div', { className: 'skxSubView', style: { display: tab === 'discover' ? undefined : 'none' } },
+					h(DiscoverPanel, { t: t, call: call, roots: liveRoots, active: tab === 'discover', onInstalled: load, setError: setError })),
+				h('div', { className: 'skxSubView', style: { display: tab === 'trash' ? undefined : 'none' } },
+					h(TrashPanel, { t: t, call: call, active: tab === 'trash', onRestored: load, setError: setError })));
 
 			return h('div', { className: 'skxRoot' },
 				error === '' ? null : h('div', { className: 'skxBanner' },
@@ -1440,7 +1389,7 @@ window.__ModuleLoader__.load({
 									return h('div', { className: 'skxMissingRow', key: entry.key, title: entry.path }, entry.label ?? entry.key);
 								}))
 								: null)),
-					h('section', { className: 'skxMain' }, subView)),
+					h('section', { className: 'skxMain' }, subViews)),
 				h('div', { className: 'skxFoot' },
 					h('span', { className: 'skxFootText' }, t('skx.footer', { n: liveRoots.length, m: missingRoots.length })),
 					h('span', { className: 'mgrSpacer' }),
@@ -1468,6 +1417,10 @@ window.__ModuleLoader__.load({
 			var [query, setQuery] = useState('');
 			var [showBroken, setShowBroken] = useState(false);
 			var [selected, setSelected] = useState(null);
+			var [creating, setCreating] = useState(false);
+			var [draft, setDraft] = useState({ name: '', description: '', body: '' });
+			var [createBusy, setCreateBusy] = useState(false);
+			var [createError, setCreateError] = useState('');
 
 			useEffect(function () { setSelected(null); }, [root === undefined ? '' : root.key]);
 
@@ -1488,7 +1441,36 @@ window.__ModuleLoader__.load({
 				});
 			};
 
-			return h('div', { className: 'skxSplit' },
+			/** Only a writable source accepts a new skill. */
+			var writable = root.mutable === true || root.key === 'dsh' || root.key === 'agents';
+			var openCreate = function () {
+				setDraft({ name: '', description: '', body: '' });
+				setCreateError('');
+				setCreating(true);
+			};
+			var submitCreate = function () {
+				var name = draft.name.trim();
+				if (name === '') {
+					setCreateError(t('skx.createNameRequired'));
+					return;
+				}
+				setCreateBusy(true);
+				setCreateError('');
+				props.call('create', {
+					root: root.key,
+					name: name,
+					description: draft.description.trim(),
+					body: draft.body,
+				}).then(function () {
+					setCreating(false);
+					return props.onChanged();
+				}).catch(function (reason) {
+					setCreateError(messageOf(reason));
+				}).finally(function () { setCreateBusy(false); });
+			};
+
+			return h('div', { style: { height: '100%' } },
+				h('div', { className: 'skxSplit' },
 				h('div', { className: 'skxListCol' },
 					h('div', { className: 'skxHead' },
 						h('div', { className: 'skxHeadMain' },
@@ -1498,7 +1480,7 @@ window.__ModuleLoader__.load({
 							h('span', { className: 'skxSwitchLabel' }, root.enabled === false ? t('skx.disabled') : t('skx.enabled')),
 							h(PillSwitch, {
 								checked: root.enabled !== false,
-								label: t('skx.toggleSource'),
+								label: t('skx.toggleSource') + '：' + (root.label ?? root.key),
 								disabled: props.busy,
 								onChange: function (next) { props.onToggleSource(root, next); },
 							}))),
@@ -1513,7 +1495,9 @@ window.__ModuleLoader__.load({
 						}),
 						h('label', { className: 'skxCheck' },
 							h('input', { type: 'checkbox', checked: showBroken, onChange: function (event) { setShowBroken(event.target.checked); } }),
-							h('span', null, t('skx.showBroken')))),
+							h('span', null, t('skx.showBroken'))),
+						writable ? h('span', { className: 'mgrSpacer' }) : null,
+						writable ? h('button', { type: 'button', className: 'skxBtn skxBtnSmall', onClick: openCreate }, t('skx.create')) : null),
 					rows.length === 0
 						? h('div', { className: 'skxEmpty' }, needle === '' ? t('skx.noSkills') : t('skx.noMatch'))
 						: h('ul', { className: 'skxRows' }, rows.map(function (skill) {
@@ -1521,7 +1505,15 @@ window.__ModuleLoader__.load({
 							return h('li', {
 								key: skill.name,
 								className: classes('skxRow', selected !== null && selected.name === skill.name && 'skxRowOn', !on && 'skxRowOff'),
+								role: 'button',
+								tabIndex: 0,
+								'aria-pressed': selected !== null && selected.name === skill.name,
 								onClick: function () { setSelected(skill); },
+								onKeyDown: function (event) {
+									if (event.key !== 'Enter' && event.key !== ' ') return;
+									event.preventDefault();
+									setSelected(skill);
+								},
 							},
 							h('div', { className: 'skxRowMain' },
 								h('div', { className: 'skxRowTitle' },
@@ -1532,7 +1524,7 @@ window.__ModuleLoader__.load({
 								h('p', { className: 'skxRowDesc' }, (skill.description ?? '') === '' ? t('skx.noDescription') : skill.description)),
 							h(PillSwitch, {
 								checked: on,
-								label: t('skx.toggleSkill'),
+								label: t('skx.toggleSkill') + '：' + skill.name,
 								size: 'sm',
 								onChange: function (next) { void flip(skill, next); },
 							}));
@@ -1540,7 +1532,44 @@ window.__ModuleLoader__.load({
 				h('div', { className: 'skxDetailCol' },
 					selected === null
 						? h('div', { className: 'skxEmpty skxEmptyTall' }, t('skx.pickSkill'))
-						: h(SkillPane, { t: t, call: props.call, root: root, skill: selected, onSaved: props.onChanged, setError: props.setError })));
+						: h(SkillPane, {
+							t: t, call: props.call, root: root, skill: selected,
+							onSaved: props.onChanged,
+							onDeleted: function () { setSelected(null); },
+							setError: props.setError,
+						}))),
+			creating
+				? h(Modal, {
+					title: t('skx.createTitle'),
+					onClose: function () { if (!createBusy) setCreating(false); },
+					footer: h('div', { className: 'skxRowActions' },
+						h('button', { type: 'button', className: 'skxBtn skxBtnPrimary', disabled: createBusy, onClick: submitCreate }, createBusy ? t('state.loading') : t('skx.createSubmit')),
+						h('button', { type: 'button', className: 'skxBtn', disabled: createBusy, onClick: function () { setCreating(false); } }, t('action.cancel'))),
+				},
+					h('div', null,
+						h(Field, { label: t('skx.createName') },
+							h('input', {
+								className: 'mgrInput',
+								value: draft.name,
+								placeholder: 'my-skill',
+								onChange: function (event) { setDraft({ ...draft, name: event.target.value }); },
+							})),
+						h(Field, { label: t('skx.createDescription') },
+							h('input', {
+								className: 'mgrInput',
+								value: draft.description,
+								onChange: function (event) { setDraft({ ...draft, description: event.target.value }); },
+							})),
+						h(Field, { label: t('skx.createBody') },
+							h('textarea', {
+								className: 'mgrInput',
+								rows: 8,
+								value: draft.body,
+								onChange: function (event) { setDraft({ ...draft, body: event.target.value }); },
+							})),
+						createError === '' ? null : h('div', { className: 'skxBanner' },
+							h('span', { className: 'skxBannerText' }, createError))))
+				: null);
 		}
 
 		/**
@@ -1582,6 +1611,9 @@ window.__ModuleLoader__.load({
 			var saveNote = function () {
 				setSaving(true);
 				props.call('skill-note', { root: root.key, name: skill.name, note: note }).then(function () {
+					// The detail effect is keyed on the skill, not on the note, so
+					// showing the saved text has to update the loaded copy here.
+					if (doc.data !== null) setDoc({ loading: false, data: { ...doc.data, customNote: note }, error: '' });
 					setEditing(false);
 					if (props.onSaved) props.onSaved();
 				}).catch(function (reason) {
@@ -1652,26 +1684,28 @@ window.__ModuleLoader__.load({
 				// thousands of lines long, and an in-flow confirmation would render
 				// off-screen at its end.
 				confirming
-					? h('div', { className: 'skxModal', role: 'dialog', 'aria-modal': 'true' },
-						h('div', { className: 'skxModalCard' },
-							h('div', { className: 'skxConfirmTitle' }, t('skx.confirmTrashTitle', { name: data.declaredName ?? skill.name })),
-							h('p', { className: 'skxProse' }, t('skx.confirmTrashDesc')),
-							h('div', { className: 'skxRowActions' },
-								h('button', {
-									type: 'button',
-									className: 'skxBtn skxBtnDanger',
-									disabled: deleting,
-									onClick: function () {
-										setDeleting(true);
-										props.call('delete', { root: root.key, name: skill.name }, { method: 'POST' }).then(function () {
-											setConfirming(false);
-											if (props.onSaved) props.onSaved();
-										}).catch(function (reason) {
-											props.setError(messageOf(reason));
-										}).finally(function () { setDeleting(false); });
-									},
-								}, deleting ? t('state.loading') : t('skx.trashConfirm')),
-								h('button', { type: 'button', className: 'skxBtn', onClick: function () { setConfirming(false); } }, t('action.cancel')))))
+					? h(Modal, {
+						title: t('skx.confirmTrashTitle', { name: data.declaredName ?? skill.name }),
+						onClose: function () { if (!deleting) setConfirming(false); },
+						footer: h('div', { className: 'skxRowActions' },
+							h('button', {
+								type: 'button',
+								className: 'skxBtn skxBtnDanger',
+								disabled: deleting,
+								onClick: function () {
+									setDeleting(true);
+									props.call('delete', { root: root.key, name: skill.name }, { method: 'POST' }).then(function () {
+										setConfirming(false);
+										if (props.onDeleted) props.onDeleted();
+										if (props.onSaved) props.onSaved();
+									}).catch(function (reason) {
+										props.setError(messageOf(reason));
+									}).finally(function () { setDeleting(false); });
+								},
+							}, deleting ? t('state.loading') : t('skx.trashConfirm')),
+							h('button', { type: 'button', className: 'skxBtn', onClick: function () { setConfirming(false); } }, t('action.cancel'))),
+					},
+						h('p', { className: 'skxProse' }, t('skx.confirmTrashDesc')))
 					: null);
 		}
 
@@ -1688,18 +1722,28 @@ window.__ModuleLoader__.load({
 			var [workspaces, setWorkspaces] = useState([]);
 			var [detail, setDetail] = useState(null);
 			var [activePath, setActivePath] = useState('');
-			var [error] = useState('');
+			var [loadError, setLoadError] = useState('');
+			var [nonce, setNonce] = useState(0);
+			var loadedRef = useRef(false);
+
+			var retry = function () {
+				loadedRef.current = false;
+				setNonce(function (value) { return value + 1; });
+			};
 
 			useEffect(function () {
+				if (props.active !== true || loadedRef.current) return;
+				loadedRef.current = true;
 				call('workspaces').then(function (data) {
 					var items = Array.isArray(data?.items) ? data.items : [];
 					setWorkspaces(items);
 					var first = items.find(function (item) { return item.available !== false; });
 					if (first !== undefined) setActivePath(first.path);
 				}).catch(function (reason) {
+					setLoadError(messageOf(reason));
 					props.setError(messageOf(reason));
 				}).finally(function () { setLoading(false); });
-			}, [call]);
+			}, [props.active, call, nonce]);
 
 			useEffect(function () {
 				if (activePath === '') return undefined;
@@ -1714,6 +1758,11 @@ window.__ModuleLoader__.load({
 			}, [activePath, call]);
 
 			if (loading) return h('div', { className: 'skxEmpty skxEmptyTall' }, t('state.loading'));
+			if (loadError !== '') {
+				return h('div', { className: 'skxEmpty skxEmptyTall' },
+					h('span', null, loadError),
+					h('button', { type: 'button', className: 'skxBtn', onClick: retry }, t('action.retry')));
+			}
 			if (workspaces.length === 0) return h('div', { className: 'skxEmpty skxEmptyTall' }, t('skx.noWorkspaces'));
 
 			var roots = Array.isArray(detail?.roots) ? detail.roots : [];
@@ -1773,7 +1822,7 @@ window.__ModuleLoader__.load({
 			var [installing, setInstalling] = useState('');
 			var [preview, setPreview] = useState(null);
 			var [sort, setSort] = useState('downloads');
-			var [chartNonce, setChartNonce] = useState(0);
+			var loadedRef = useRef(false);
 			/**
 			 * The only request allowed to write `items`.
 			 *
@@ -1818,8 +1867,10 @@ window.__ModuleLoader__.load({
 			}, [call, t]);
 
 			useEffect(function () {
+				if (props.active !== true || loadedRef.current) return;
+				loadedRef.current = true;
 				load('chart', '');
-			}, [load, chartNonce]);
+			}, [props.active, load]);
 
 			var runSearch = function () {
 				var text = query.trim();
@@ -1831,7 +1882,7 @@ window.__ModuleLoader__.load({
 				setQuery('');
 				setPreview(null);
 				setNote('');
-				setChartNonce(function (value) { return value + 1; });
+				load('chart', '');
 			};
 
 			var inspect = function (item) {
@@ -1996,17 +2047,24 @@ window.__ModuleLoader__.load({
 			var call = props.call;
 			var [items, setItems] = useState(null);
 			var [busy, setBusy] = useState(false);
+			var [purging, setPurging] = useState(null);
+			var loadedRef = useRef(false);
 
 			var load = useCallback(function () {
 				setBusy(true);
 				return call('state').then(function (data) {
 					setItems(Array.isArray(data?.trash) ? data.trash : []);
 				}).catch(function (reason) {
+					setItems([]);
 					props.setError(messageOf(reason));
 				}).finally(function () { setBusy(false); });
 			}, [call]);
 
-			useEffect(function () { void load(); }, [load]);
+			useEffect(function () {
+				if (props.active !== true || loadedRef.current) return;
+				loadedRef.current = true;
+				void load();
+			}, [props.active, load]);
 
 			var restore = function (item) {
 				setBusy(true);
@@ -2034,7 +2092,8 @@ window.__ModuleLoader__.load({
 
 			if (items === null) return h('div', { className: 'skxEmpty skxEmptyTall' }, t('state.loading'));
 
-			return h('div', { className: 'skxSplit' },
+			return h('div', { style: { height: '100%' } },
+				h('div', { className: 'skxSplit' },
 				h('div', { className: 'skxListCol' },
 					h('div', { className: 'skxHead' },
 						h('div', { className: 'skxHeadMain' },
@@ -2051,10 +2110,27 @@ window.__ModuleLoader__.load({
 									h('p', { className: 'skxRowDesc' }, t('skx.trashFrom', { root: typeof item.root === 'string' ? item.root : (item.root?.key ?? '') }))),
 								h('div', { className: 'skxRowEnd' },
 									h('button', { type: 'button', className: 'skxBtn skxBtnSmall', disabled: busy, onClick: function () { restore(item); } }, t('skx.restore')),
-									h('button', { type: 'button', className: 'skxBtn skxBtnDanger skxBtnSmall', disabled: busy, onClick: function () { purge(item); } }, t('skx.purge'))));
+									h('button', { type: 'button', className: 'skxBtn skxBtnDanger skxBtnSmall', disabled: busy, onClick: function () { setPurging(item); } }, t('skx.purge'))));
 						}))),
 				h('div', { className: 'skxDetailCol' },
-					h('div', { className: 'skxEmpty skxEmptyTall' }, t('skx.trashHint'))));
+					h('div', { className: 'skxEmpty skxEmptyTall' }, t('skx.trashHint')))),
+			purging === null ? null : h(Modal, {
+				title: t('skx.purgeConfirmTitle', { name: purging.name ?? purging.id }),
+				onClose: function () { setPurging(null); },
+				footer: h('div', { className: 'skxRowActions' },
+					h('button', {
+						type: 'button',
+						className: 'skxBtn skxBtnDanger',
+						disabled: busy,
+						onClick: function () {
+							var item = purging;
+							setPurging(null);
+							purge(item);
+						},
+					}, t('skx.purge')),
+					h('button', { type: 'button', className: 'skxBtn', onClick: function () { setPurging(null); } }, t('action.cancel'))),
+			},
+				h('p', { className: 'skxProse' }, t('skx.purgeConfirmDesc'))));
 		}
 
 		//#endregion
@@ -3154,7 +3230,7 @@ window.__ModuleLoader__.load({
 			var call = useCallback(function (endpoint, payload) { return callHost(ctx, endpoint, payload); }, [ctx]);
 			// The vendored kernel answers its own envelope, so it gets its own
 			// caller; `call` above stays for this plugin's endpoints.
-			var kernelCall = useCallback(function (path, payload) { return callKernel(ctx, path, payload); }, [ctx]);
+			var kernelCall = useCallback(function (path, payload, options) { return callKernel(ctx, path, payload, options); }, [ctx]);
 			var [tab, setTab] = useState('skills');
 			var [data, setData] = useState(null);
 			var [lan, setLan] = useState(null);
@@ -3556,9 +3632,15 @@ window.__ModuleLoader__.load({
 							? (data.kernel !== undefined && data.kernel.routes > 0
 								? h(SkillsWorkspace, { t: t, callKernel: kernelCall })
 								: h('div', { className: 'mgrErrorBox' },
-									h('span', null, '技能内核未就绪：' + (data.kernel === undefined
-										? '未接线'
-										: ('已挂载=' + String(data.kernel.mounted) + '，路由数=' + String(data.kernel.routes) + (data.kernel.error === '' ? '' : '，错误：' + data.kernel.error)))),
+									h('span', null, t('skx.kernelError', {
+										detail: data.kernel === undefined
+											? t('skx.kernelNotWired')
+											: t('skx.kernelDetail', {
+												mounted: String(data.kernel.mounted),
+												routes: String(data.kernel.routes),
+												error: data.kernel.error === '' ? t('skx.kernelNoError') : data.kernel.error,
+											}),
+									})),
 									h('span', { className: 'mgrSpacer' }),
 									h('button', { type: 'button', className: 'mgrBtn', onClick: function () { void load(); } }, t('action.retry'))))
 							: tab === 'mcp'
