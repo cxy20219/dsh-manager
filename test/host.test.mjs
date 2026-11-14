@@ -131,6 +131,9 @@ test('the Host half serves skills, toggles sources, and stores MCP rows', async 
 		// contribution is asserted here.
 		assert.equal(overview.value.catalog.total, 2)
 		assert.equal(overview.value.catalog.visible, 2)
+		// The fake registry lists one entry under the kernel's provider name; the
+		// overview must attribute it to this plugin, not to another provider.
+		assert.equal(overview.value.catalog.managed, 1)
 		assert.ok(overview.value.catalog.external.includes('builtin-skill'))
 
 		// The mode is registered detached from this row's own activation, so

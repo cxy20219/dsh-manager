@@ -12,13 +12,15 @@
  *      plugin's own `ctx`, so the kernel only ever registers the two things it
  *      is responsible for (its skill provider and its `create_skill` tool) and
  *      cannot reach the manager's other services;
- *   2. mounts it inside `ctx.effect`, so unloading this plugin unloads the
- *      kernel's routes and provider with it;
+ *   2. calls the kernel's `apply` directly and forwards its effects, so the
+ *      routes, provider, and tool it registers join this plugin's lifecycle.
+ *      Wrapping `apply` in another `ctx.effect` would move those registrations
+ *      into a second generation and the Host would never see them;
  *   3. degrades instead of throwing: a kernel that fails to activate logs one
  *      warning and leaves the rest of the panel working.
  *
- * The kernel's 44 route names do not collide with this plugin's own endpoints,
- * so both tables share the `/api/manager` prefix unchanged.
+ * The kernel's route paths do not collide with this plugin's own endpoints, so
+ * both tables share the `/api/manager` prefix unchanged.
  *
  * @module dsh-manager/skills-kernel
  */
