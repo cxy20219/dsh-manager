@@ -73,7 +73,17 @@ window.__ModuleLoader__.load({
 			'skx.copyBody': '复制正文',
 			'skx.copied': '已复制',
 			'skx.path': '源文件',
-			'skx.discoverHint': '从 ClawHub 榜单或 skills.sh 搜索安装技能。',
+			'skx.discoverHint': '从 ClawHub 榜单或搜索安装技能。',
+			'skx.sortDownloads': '按下载',
+			'skx.sortInstalls': '按安装',
+			'skx.sortStars': '按星标',
+			'skx.sortRecent': '最近更新',
+			'skx.backToChart': '回到榜单',
+			'skx.trash': '移到回收站',
+			'skx.trashConfirm': '确认移入',
+			'skx.confirmTrashTitle': '把「{name}」移到回收站？',
+			'skx.confirmTrashDesc': '技能会从当前来源移入回收站，之后可以在回收站里恢复到原位。源文件不会被直接删除。',
+			'skx.deleteUnavailable': '这个来源是只读的，不能删除里面的技能。',
 			'skx.discoverSearch': '搜索技能名、关键词…',
 			'skx.discoverEmpty': '还没有结果。换一个关键词，或在上方搜索。',
 			'skx.discoverNone': '没有搜索到匹配的技能。',
@@ -355,7 +365,17 @@ window.__ModuleLoader__.load({
 			'skx.copyBody': 'Copy body',
 			'skx.copied': 'Copied',
 			'skx.path': 'Source file',
-			'skx.discoverHint': 'Install skills from the ClawHub chart or a skills.sh search.',
+			'skx.discoverHint': 'Install skills from the ClawHub chart or a search.',
+			'skx.sortDownloads': 'Downloads',
+			'skx.sortInstalls': 'Installs',
+			'skx.sortStars': 'Stars',
+			'skx.sortRecent': 'Recent',
+			'skx.backToChart': 'Back to chart',
+			'skx.trash': 'Move to trash',
+			'skx.trashConfirm': 'Move to trash',
+			'skx.confirmTrashTitle': 'Move “{name}” to the trash?',
+			'skx.confirmTrashDesc': 'The skill moves from its source into the trash and can be restored to the same place later. The source file is not deleted outright.',
+			'skx.deleteUnavailable': 'This source is read-only, so its skills cannot be deleted.',
 			'skx.discoverSearch': 'Search skill name or keyword…',
 			'skx.discoverEmpty': 'No results yet. Try another keyword or search above.',
 			'skx.discoverNone': 'No matching skill was found.',
@@ -786,18 +806,18 @@ window.__ModuleLoader__.load({
 			'.mgrSearchAnswerBody{max-height:220px;overflow:auto;font-size:12px;line-height:1.65;color:var(--dsw-alias-label-secondary);white-space:pre-wrap;word-break:break-word}',
 
 			/* ---- skill workspace: GitHub-flavoured, larger type ---------- */
-			'.skxRoot{--skx-line:#30363d;--skx-line-soft:#21262d;--skx-canvas:#0d1117;--skx-surface:#161b22;--skx-raised:#1c2128;--skx-fg:#e6edf3;--skx-fg-muted:#8b949e;--skx-fg-subtle:#6e7681;--skx-accent:#2f81f7;--skx-accent-soft:rgba(47,129,247,.14);--skx-green:#3fb950;--skx-red:#f85149;--skx-amber:#d29922;display:flex;flex-direction:column;gap:14px;height:100%;min-height:0;color:var(--skx-fg);font-size:15px;line-height:1.6}',
+			'.skxRoot{--skx-line:#30363d;--skx-line-soft:#21262d;--skx-canvas:#0d1117;--skx-surface:#161b22;--skx-raised:#1c2128;--skx-fg:#e6edf3;--skx-fg-muted:#8b949e;--skx-fg-subtle:#6e7681;--skx-accent:#2f81f7;--skx-accent-soft:rgba(47,129,247,.14);--skx-green:#3fb950;--skx-red:#f85149;--skx-amber:#d29922;--skx-shadow:0 1px 0 rgba(255,255,255,.03) inset,0 8px 24px rgba(1,4,9,.5);--skx-shadow-sm:0 1px 3px rgba(1,4,9,.4);display:flex;flex-direction:column;gap:14px;height:100%;min-height:0;color:var(--skx-fg);font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}',
 			'.skxShell{display:grid;grid-template-columns:260px minmax(0,1fr);gap:14px;flex:1;min-height:0}',
-			'.skxRail{display:flex;flex-direction:column;gap:2px;min-height:0;overflow-y:auto;padding:10px;border:1px solid var(--skx-line);border-radius:10px;background:var(--skx-surface)}',
+			'.skxRail{display:flex;flex-direction:column;gap:2px;min-height:0;overflow-y:auto;padding:10px;border:1px solid var(--skx-line);border-radius:12px;background:var(--skx-surface);box-shadow:var(--skx-shadow)}',
 			'.skxRailLabel{padding:10px 10px 6px;font-size:12.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--skx-fg-subtle)}',
 			'.skxRailDivider{height:1px;margin:8px 4px;background:var(--skx-line-soft)}',
 			'.skxNav{display:flex;align-items:center;gap:8px;width:100%;padding:9px 11px;border:0;border-radius:7px;background:transparent;color:var(--skx-fg);font:inherit;font-size:15px;text-align:left;cursor:pointer}',
 			'.skxNav:hover{background:var(--skx-raised)}',
-			'.skxNavOn{background:var(--skx-accent-soft);color:#79c0ff;font-weight:600}',
+			'.skxNavOn{background:var(--skx-accent-soft);color:#79c0ff;font-weight:600;box-shadow:inset 3px 0 0 var(--skx-accent)}',
 			'.skxNavCount{margin-left:auto;font-size:12.5px;color:var(--skx-fg-subtle)}',
 			'.skxSourceRow{display:flex;align-items:center;gap:8px;width:100%;padding:8px 11px;border:0;border-radius:7px;background:transparent;color:var(--skx-fg);font:inherit;font-size:15px;text-align:left;cursor:pointer}',
 			'.skxSourceRow:hover{background:var(--skx-raised)}',
-			'.skxSourceRowOn{background:var(--skx-accent-soft);color:#79c0ff;font-weight:600}',
+			'.skxSourceRowOn{background:var(--skx-accent-soft);color:#79c0ff;font-weight:600;box-shadow:inset 3px 0 0 var(--skx-accent)}',
 			'.skxSourceRowOff{opacity:.55}',
 			'.skxSourceDot{width:7px;height:7px;border-radius:50%;background:var(--skx-green);flex:none}',
 			'.skxSourceRowOff .skxSourceDot{background:var(--skx-fg-subtle)}',
@@ -808,10 +828,10 @@ window.__ModuleLoader__.load({
 			'.skxChevron{width:12px;font-size:11px;color:var(--skx-fg-subtle)}',
 			'.skxMissingList{display:flex;flex-direction:column;gap:1px;padding:0 0 4px 12px}',
 			'.skxMissingRow{padding:4px 10px;font-size:13px;color:var(--skx-fg-subtle);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
-			'.skxMain{display:flex;flex-direction:column;min-height:0;border:1px solid var(--skx-line);border-radius:10px;background:var(--skx-surface);overflow:hidden}',
+			'.skxMain{display:flex;flex-direction:column;min-height:0;border:1px solid var(--skx-line);border-radius:12px;background:var(--skx-surface);box-shadow:var(--skx-shadow);overflow:hidden}',
 			'.skxSplit{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);height:100%;min-height:0}',
 			'.skxListCol{display:flex;flex-direction:column;min-height:0;overflow-y:auto;border-right:1px solid var(--skx-line)}',
-			'.skxDetailCol{display:flex;flex-direction:column;min-height:0;overflow-y:auto;background:var(--skx-canvas)}',
+			'.skxDetailCol{display:flex;flex-direction:column;min-height:0;overflow-y:auto;background:var(--skx-canvas);scrollbar-gutter:stable}',
 			'.skxHead{display:flex;align-items:flex-start;gap:12px;padding:16px 18px;border-bottom:1px solid var(--skx-line-soft)}',
 			'.skxHeadMain{display:flex;flex-direction:column;gap:4px;min-width:0;flex:1}',
 			'.skxHeadSide{display:flex;align-items:center;gap:8px;flex:none;padding-top:2px}',
@@ -820,7 +840,7 @@ window.__ModuleLoader__.load({
 			'.skxCode{font-family:var(--dsw-font-mono,ui-monospace,SFMono-Regular,Menlo,monospace);font-size:12.5px;color:var(--skx-fg-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
 			'.skxCodeBlock{display:block;padding:8px 10px;border:1px solid var(--skx-line);border-radius:6px;background:var(--skx-surface);word-break:break-all;white-space:normal}',
 			'.skxToolbar{display:flex;align-items:center;gap:10px;padding:12px 18px;border-bottom:1px solid var(--skx-line-soft);flex-wrap:wrap}',
-			'.skxInput{flex:1;min-width:160px;padding:8px 12px;border:1px solid var(--skx-line);border-radius:6px;background:var(--skx-canvas);color:var(--skx-fg);font:inherit;font-size:15px;outline:none}',
+			'.skxInput{flex:1;min-width:160px;padding:8px 12px;border:1px solid var(--skx-line);border-radius:8px;background:var(--skx-canvas);color:var(--skx-fg);font:inherit;font-size:15px;outline:none;transition:border-color .15s ease,box-shadow .15s ease}',
 			'.skxInput:focus{border-color:var(--skx-accent);box-shadow:0 0 0 3px var(--skx-accent-soft)}',
 			'.skxInput::placeholder{color:var(--skx-fg-subtle)}',
 			'.skxCheck{display:inline-flex;align-items:center;gap:6px;font-size:14px;color:var(--skx-fg-muted);white-space:nowrap;cursor:pointer}',
@@ -829,7 +849,8 @@ window.__ModuleLoader__.load({
 			'.skxSegmented{display:inline-flex;border:1px solid var(--skx-line);border-radius:6px;overflow:hidden}',
 			'.skxSeg{padding:7px 14px;border:0;background:transparent;color:var(--skx-fg-muted);font:inherit;font-size:14px;cursor:pointer}',
 			'.skxSegOn{background:var(--skx-accent);color:#fff;font-weight:600}',
-			'.skxBtn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:7px 14px;border:1px solid var(--skx-line);border-radius:6px;background:var(--skx-raised);color:var(--skx-fg);font:inherit;font-size:14px;font-weight:500;cursor:pointer;white-space:nowrap}',
+			'.skxBtn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:7px 14px;border:1px solid var(--skx-line);border-radius:7px;background:var(--skx-raised);color:var(--skx-fg);font:inherit;font-size:14px;font-weight:500;cursor:pointer;white-space:nowrap;transition:background .12s ease,border-color .12s ease,transform .06s ease}',
+			'.skxBtn:active:not(:disabled){transform:translateY(1px)}',
 			'.skxBtn:hover:not(:disabled){background:#262c36;border-color:#484f58}',
 			'.skxBtn:disabled{opacity:.55;cursor:not-allowed}',
 			'.skxBtnPrimary{background:#238636;border-color:#2ea043;color:#fff}',
@@ -838,9 +859,10 @@ window.__ModuleLoader__.load({
 			'.skxBtnDanger:hover:not(:disabled){background:#da3633;border-color:#f85149;color:#fff}',
 			'.skxBtnSmall{padding:5px 11px;font-size:13.5px}',
 			'.skxRows{list-style:none;margin:0;padding:6px;display:flex;flex-direction:column;gap:2px}',
-			'.skxRow{display:flex;align-items:flex-start;gap:12px;padding:12px 13px;border-radius:8px;cursor:pointer;border:1px solid transparent}',
+			'.skxRow{position:relative;display:flex;align-items:flex-start;gap:12px;padding:12px 14px;border-radius:9px;cursor:pointer;border:1px solid transparent;transition:background .12s ease,border-color .12s ease}',
 			'.skxRow:hover{background:var(--skx-raised)}',
-			'.skxRowOn{background:var(--skx-accent-soft);border-color:#1f6feb}',
+			'.skxRowOn{background:var(--skx-accent-soft);border-color:#1f6feb;box-shadow:var(--skx-shadow-sm)}',
+			'.skxRowOn:before{content:"";position:absolute;left:0;top:8px;bottom:8px;width:3px;border-radius:3px;background:var(--skx-accent)}',
 			'.skxRowStatic{cursor:default}',
 			'.skxRowOff{opacity:.6}',
 			'.skxRowMain{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}',
@@ -861,7 +883,9 @@ window.__ModuleLoader__.load({
 			'.skxSwitchSm.skxSwitchOn .skxSwitchKnob{transform:translateX(17px)}',
 			'.skxSwitchLabel{font-size:13.5px;color:var(--skx-fg-muted)}',
 			'.skxDoc{display:flex;flex-direction:column;gap:18px;padding:20px 22px}',
-			'.skxDocHead{display:flex;flex-direction:column;gap:8px}',
+			'.skxDocHead{position:sticky;top:0;z-index:2;display:flex;align-items:flex-start;gap:14px;padding:18px 22px 14px;margin:-20px -22px 0;background:linear-gradient(var(--skx-canvas) 78%,transparent);border-bottom:1px solid var(--skx-line-soft)}',
+			'.skxDocHeadMain{display:flex;flex-direction:column;gap:8px;min-width:0;flex:1}',
+			'.skxDocAction{flex:none;margin-top:2px}',
 			'.skxDocTitle{margin:0;font-size:22px;line-height:1.3;font-weight:600;color:var(--skx-fg);word-break:break-word}',
 			'.skxDocSection{display:flex;flex-direction:column;gap:7px}',
 			'.skxLabel{font-size:13px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;color:var(--skx-fg-subtle)}',
@@ -883,10 +907,25 @@ window.__ModuleLoader__.load({
 			'.skxNote{margin:0 18px 8px;padding:9px 12px;border:1px solid #1f6feb;border-radius:6px;background:var(--skx-accent-soft);font-size:14px;color:#79c0ff}',
 			'.skxBanner{display:flex;align-items:center;gap:12px;padding:11px 14px;border:1px solid #f85149;border-radius:8px;background:rgba(248,81,73,.1);font-size:14.5px;color:#ffa198}',
 			'.skxBannerText{flex:1;word-break:break-word}',
-			'.skxEmpty{padding:32px 20px;text-align:center;font-size:14.5px;line-height:1.7;color:var(--skx-fg-muted)}',
 			'.skxEmptyTall{flex:1;display:flex;align-items:center;justify-content:center;min-height:220px}',
 			'.skxFoot{display:flex;align-items:center;gap:10px;flex:none}',
 			'.skxFootText{font-size:13px;color:var(--skx-fg-muted)}',
+			'.skxSearchField{display:flex;align-items:center;gap:8px;flex:1;min-width:180px;padding:0 12px;border:1px solid var(--skx-line);border-radius:8px;background:var(--skx-canvas);transition:border-color .15s ease,box-shadow .15s ease}',
+			'.skxSearchField:focus-within{border-color:var(--skx-accent);box-shadow:0 0 0 3px var(--skx-accent-soft)}',
+			'.skxSearchIcon{font-size:16px;color:var(--skx-fg-subtle);flex:none;line-height:1}',
+			'.skxInputBare{flex:1;min-width:0;padding:9px 0;border:0;background:transparent;box-shadow:none!important}',
+			'.skxInputBare:focus{border:0;box-shadow:none}',
+			'.skxTabs{display:flex;align-items:center;gap:6px;flex-wrap:wrap}',
+			'.skxChipTight{padding:5px 12px;font-size:13.5px}',
+			'.skxRowMeta{font-size:12.5px;color:var(--skx-fg-subtle);font-family:var(--dsw-font-mono,ui-monospace,SFMono-Regular,Menlo,monospace);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+			'.skxDocSections{display:flex;flex-direction:column;gap:18px}',
+			'.skxDocFoot{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:auto;padding-top:16px;border-top:1px solid var(--skx-line-soft)}',
+			'.skxHint{font-size:12.5px;line-height:1.6;color:var(--skx-fg-subtle)}',
+			'.skxModal{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(1,4,9,.72);backdrop-filter:blur(2px)}',
+			'.skxModalCard{width:min(460px,100%);display:flex;flex-direction:column;gap:12px;padding:22px 24px;border:1px solid var(--skx-line);border-radius:14px;background:var(--skx-surface);box-shadow:0 24px 60px rgba(1,4,9,.7)}',
+			'.skxModalCard .skxProse{font-size:14.5px;line-height:1.7;color:var(--skx-fg-muted)}',
+			'.skxConfirmTitle{font-size:15px;font-weight:600;color:var(--skx-fg)}',
+			'.skxEmpty{padding:32px 20px;text-align:center;font-size:14.5px;line-height:1.7;color:var(--skx-fg-muted)}',
 			'body[data-theme="light"] .skxRoot{--skx-line:#d0d7de;--skx-line-soft:#d8dee4;--skx-canvas:#ffffff;--skx-surface:#f6f8fa;--skx-raised:#eaeef2;--skx-fg:#1f2328;--skx-fg-muted:#656d76;--skx-fg-subtle:#818b98;--skx-accent-soft:rgba(9,105,218,.1)}',
 			'body[data-theme="light"] .skxBtn:hover:not(:disabled){background:#eaeef2;border-color:#afb8c1}',
 			'body[data-theme="light"] .skxNavOn,body[data-theme="light"] .skxSourceRowOn,body[data-theme="light"] .skxRowOn{color:#0969da}',
@@ -1450,6 +1489,8 @@ window.__ModuleLoader__.load({
 			var [editing, setEditing] = useState(false);
 			var [saving, setSaving] = useState(false);
 			var [copied, setCopied] = useState(false);
+			var [confirming, setConfirming] = useState(false);
+			var [deleting, setDeleting] = useState(false);
 
 			useEffect(function () {
 				var alive = true;
@@ -1489,10 +1530,21 @@ window.__ModuleLoader__.load({
 
 			return h('div', { className: 'skxDoc' },
 				h('div', { className: 'skxDocHead' },
-					h('h2', { className: 'skxDocTitle' }, data.declaredName ?? skill.name),
-					h('div', { className: 'skxTokens' },
-						h('span', { className: 'skxToken', title: t('skx.descTokensTip') }, String(data.descriptionTokens ?? 0) + ' ' + t('skx.tokenDesc')),
-						h('span', { className: 'skxToken', title: t('skx.bodyTokensTip') }, String(data.bodyTokens ?? 0) + ' ' + t('skx.tokenBody')))),
+					h('div', { className: 'skxDocHeadMain' },
+						h('h2', { className: 'skxDocTitle' }, data.declaredName ?? skill.name),
+						h('div', { className: 'skxTokens' },
+							h('span', { className: 'skxToken', title: t('skx.descTokensTip') }, String(data.descriptionTokens ?? 0) + ' ' + t('skx.tokenDesc')),
+							h('span', { className: 'skxToken', title: t('skx.bodyTokensTip') }, String(data.bodyTokens ?? 0) + ' ' + t('skx.tokenBody')))),
+					// Kept in the header so it stays reachable no matter how long the
+					// document is; the body below can run for thousands of lines.
+					root.mutable === true && data.sourceReadOnly !== true && data.linked !== true
+						? h('button', {
+							type: 'button',
+							className: 'skxBtn skxBtnDanger skxBtnSmall skxDocAction',
+							title: t('skx.trash'),
+							onClick: function () { setConfirming(true); },
+						}, t('skx.trash'))
+						: null),
 				h('div', { className: 'skxDocSection' },
 					h('div', { className: 'skxLabel' }, t('skx.description')),
 					h('p', { className: 'skxProse' }, (data.description ?? '') === '' ? t('skx.noDescription') : data.description)),
@@ -1520,7 +1572,38 @@ window.__ModuleLoader__.load({
 					h('pre', { className: 'skxPre' }, data.body)),
 				h('div', { className: 'skxDocSection' },
 					h('div', { className: 'skxLabel' }, t('skx.path')),
-					h('code', { className: 'skxCode skxCodeBlock' }, data.path ?? '')));
+					h('code', { className: 'skxCode skxCodeBlock' }, data.path ?? '')),
+				// The button itself lives in the header so it is always reachable;
+				// this only explains why it is absent when the source is read-only.
+				root.mutable === true && data.sourceReadOnly !== true && data.linked !== true
+					? null
+					: h('div', { className: 'skxDocFoot' },
+						h('span', { className: 'skxHint' }, t('skx.deleteUnavailable'))),
+				// A fixed overlay, not an in-flow block: the document below can be
+				// thousands of lines long, and an in-flow confirmation would render
+				// off-screen at its end.
+				confirming
+					? h('div', { className: 'skxModal', role: 'dialog', 'aria-modal': 'true' },
+						h('div', { className: 'skxModalCard' },
+							h('div', { className: 'skxConfirmTitle' }, t('skx.confirmTrashTitle', { name: data.declaredName ?? skill.name })),
+							h('p', { className: 'skxProse' }, t('skx.confirmTrashDesc')),
+							h('div', { className: 'skxRowActions' },
+								h('button', {
+									type: 'button',
+									className: 'skxBtn skxBtnDanger',
+									disabled: deleting,
+									onClick: function () {
+										setDeleting(true);
+										props.call('delete', { root: root.key, name: skill.name }, { method: 'POST' }).then(function () {
+											setConfirming(false);
+											if (props.onSaved) props.onSaved();
+										}).catch(function (reason) {
+											props.setError(messageOf(reason));
+										}).finally(function () { setDeleting(false); });
+									},
+								}, deleting ? t('state.loading') : t('skx.trashConfirm')),
+								h('button', { type: 'button', className: 'skxBtn', onClick: function () { setConfirming(false); } }, t('action.cancel')))))
+					: null);
 		}
 
 		/**
@@ -1605,7 +1688,7 @@ window.__ModuleLoader__.load({
 		}
 
 		/**
-		 * Discovery: ClawHub charts, ClawHub search, and skills.sh search.
+		 * Discovery: the ClawHub chart and its search.
 		 *
 		 * @param {object} props - Kernel caller, live roots, install callback.
 		 * @returns {object} React node.
@@ -1613,7 +1696,6 @@ window.__ModuleLoader__.load({
 		function DiscoverPanel(props) {
 			var t = props.t;
 			var call = props.call;
-			var [source, setSource] = useState('clawhub');
 			var [query, setQuery] = useState('');
 			var [busy, setBusy] = useState(false);
 			var [items, setItems] = useState([]);
@@ -1621,47 +1703,55 @@ window.__ModuleLoader__.load({
 			var [target, setTarget] = useState('dsh');
 			var [installing, setInstalling] = useState('');
 			var [preview, setPreview] = useState(null);
+			var [sort, setSort] = useState('downloads');
+			/** Bumped on every load so an older, slower response cannot win. */
+			var [generation, setGeneration] = useState(0);
+
+			var load = useCallback(function (mode, text, order) {
+				var alive = { current: true };
+				setBusy(true);
+				var query0 = mode === 'search'
+					? 'q=' + encodeURIComponent(text) + '&limit=24'
+					: 'limit=24&sort=' + encodeURIComponent(order ?? 'downloads');
+				var route = mode === 'search' ? 'clawhub/search' : 'clawhub/list';
+				call(route, undefined, { method: 'GET', query: query0 }).then(function (data) {
+					if (!alive.current) return;
+					var rows = mode === 'search'
+						? (Array.isArray(data?.results) ? data.results : (Array.isArray(data?.items) ? data.items : []))
+						: (Array.isArray(data?.items) ? data.items : []);
+					setItems(rows);
+					setNote(rows.length === 0 ? t('skx.discoverNone') : '');
+				}).catch(function (reason) {
+					if (!alive.current) return;
+					setItems([]);
+					setNote(messageOf(reason));
+				}).finally(function () {
+					if (alive.current) setBusy(false);
+				});
+				return function () { alive.current = false; };
+			}, [call, t]);
 
 			useEffect(function () {
-				if (source !== 'clawhub') return undefined;
-				var alive = true;
-				setBusy(true);
-				call('clawhub/list', undefined, { method: 'GET', query: 'limit=24&sort=downloads' }).then(function (data) {
-					if (!alive) return;
-					setItems(Array.isArray(data?.items) ? data.items : []);
-					setNote(data?.nextCursor === undefined ? '' : '');
-				}).catch(function (reason) {
-					if (alive) { setItems([]); setNote(messageOf(reason)); }
-				}).finally(function () {
-					if (alive) setBusy(false);
-				});
-				return function () { alive = false; };
-			}, [source, call]);
+				var cancel = load('chart', '', sort);
+				return cancel;
+			}, [load, sort, generation]);
 
 			var runSearch = function () {
 				var text = query.trim();
 				if (text === '') return;
-				setBusy(true);
 				setPreview(null);
-				var request = source === 'clawhub'
-					? call('clawhub/search', undefined, { method: 'GET', query: 'q=' + encodeURIComponent(text) + '&limit=24' })
-					: call('skills-sh/search', undefined, { method: 'GET', query: 'q=' + encodeURIComponent(text) });
-				request.then(function (data) {
-					var rows = source === 'clawhub' ? (Array.isArray(data?.results) ? data.results : (data?.items ?? [])) : (Array.isArray(data?.skills) ? data.skills : []);
-					setItems(rows);
-					setNote(rows.length === 0 ? t('skx.discoverNone') : '');
-				}).catch(function (reason) {
-					setItems([]);
-					setNote(messageOf(reason));
-				}).finally(function () { setBusy(false); });
+				load('search', text, sort);
+			};
+			var resetChart = function () {
+				setQuery('');
+				setPreview(null);
+				setNote('');
+				setGeneration(function (value) { return value + 1; });
 			};
 
 			var inspect = function (item) {
-				var body = source === 'clawhub'
-					? { catalog: 'clawhub', owner: item.ownerHandle ?? item.owner, slug: item.slug ?? item.skillId }
-					: { catalog: 'skillsh', source: item.source, skillId: item.skillId };
 				setPreview({ loading: true, item: item });
-				call('catalog/detail', body, { method: 'POST' }).then(function (data) {
+				call('catalog/detail', { catalog: 'clawhub', owner: item.ownerHandle ?? item.owner, slug: item.slug }, { method: 'POST' }).then(function (data) {
 					setPreview({ loading: false, item: item, detail: data });
 				}).catch(function (reason) {
 					setPreview({ loading: false, item: item, error: messageOf(reason) });
@@ -1671,10 +1761,7 @@ window.__ModuleLoader__.load({
 			var install = function (item) {
 				var key = item.slug ?? item.id ?? item.name;
 				setInstalling(key);
-				var body = source === 'clawhub'
-					? { catalog: 'clawhub', owner: item.ownerHandle ?? item.owner, slug: item.slug ?? item.skillId, root: target }
-					: { catalog: 'skillsh', source: item.source, skillId: item.skillId, root: target };
-				call('catalog/install', body, { method: 'POST' }).then(function () {
+				call('catalog/install', { catalog: 'clawhub', owner: item.ownerHandle ?? item.owner, slug: item.slug, root: target }, { method: 'POST' }).then(function () {
 					setNote(t('skx.installed', { name: item.displayName ?? item.name ?? key }));
 					setPreview(null);
 					if (props.onInstalled) props.onInstalled();
@@ -1684,6 +1771,14 @@ window.__ModuleLoader__.load({
 			};
 
 			var targets = (props.roots ?? []).filter(function (root) { return root.mutable === true || root.key === 'dsh' || root.key === 'agents'; });
+			var installTargets = targets.length === 0 ? [{ key: 'dsh', label: 'DSH' }] : targets;
+			var formatCount = function (value) {
+				var n = Number(value);
+				if (!Number.isFinite(n)) return '';
+				if (n >= 1e6) return (n / 1e6).toFixed(1).replace(/\.0$/, '') + 'M';
+				if (n >= 1e3) return (n / 1e3).toFixed(1).replace(/\.0$/, '') + 'k';
+				return String(n);
+			};
 
 			return h('div', { className: 'skxSplit' },
 				h('div', { className: 'skxListCol' },
@@ -1692,25 +1787,31 @@ window.__ModuleLoader__.load({
 							h('h2', { className: 'skxTitle' }, t('skx.tab.discover')),
 							h('span', { className: 'skxTitleMeta' }, t('skx.discoverHint')))),
 					h('div', { className: 'skxToolbar' },
-						h('div', { className: 'skxSegmented' },
-							h('button', { type: 'button', className: classes('skxSeg', source === 'clawhub' && 'skxSegOn'), onClick: function () { setSource('clawhub'); setItems([]); } }, 'ClawHub'),
-							h('button', { type: 'button', className: classes('skxSeg', source === 'skillsh' && 'skxSegOn'), onClick: function () { setSource('skillsh'); setItems([]); } }, 'skills.sh')),
-						h('input', {
-							className: 'skxInput',
-							type: 'search',
-							value: query,
-							placeholder: t('skx.discoverSearch'),
-							onChange: function (event) { setQuery(event.target.value); },
-							onKeyDown: function (event) { if (event.key === 'Enter') runSearch(); },
-						}),
-						h('button', { type: 'button', className: 'skxBtn', onClick: runSearch, disabled: busy }, t('skx.searchAction'))),
+						h('div', { className: 'skxSearchField' },
+							h('span', { className: 'skxSearchIcon', 'aria-hidden': 'true' }, '⌕'),
+							h('input', {
+								className: 'skxInput skxInputBare',
+								type: 'search',
+								value: query,
+								placeholder: t('skx.discoverSearch'),
+								onChange: function (event) { setQuery(event.target.value); },
+								onKeyDown: function (event) { if (event.key === 'Enter') runSearch(); },
+							})),
+						h('button', { type: 'button', className: 'skxBtn skxBtnPrimary', onClick: runSearch, disabled: busy }, t('skx.searchAction')),
+						query === '' && note === '' ? null : h('button', { type: 'button', className: 'skxBtn', onClick: resetChart }, t('skx.backToChart'))),
 					h('div', { className: 'skxToolbar' },
+						h('div', { className: 'skxTabs' },
+							tabChip('downloads', t('skx.sortDownloads')),
+							tabChip('installs', t('skx.sortInstalls')),
+							tabChip('stars', t('skx.sortStars')),
+							tabChip('recent', t('skx.sortRecent'))),
+						h('span', { className: 'mgrSpacer' }),
 						h('span', { className: 'skxLabel' }, t('skx.installTo')),
 						h('select', {
 							className: 'skxSelect',
 							value: target,
 							onChange: function (event) { setTarget(event.target.value); },
-						}, (targets.length === 0 ? [{ key: 'dsh', label: 'DSH' }] : targets).map(function (root) {
+						}, installTargets.map(function (root) {
 							return h('option', { value: root.key, key: root.key }, root.label ?? root.key);
 						}))),
 					note === '' ? null : h('div', { className: 'skxNote' }, note),
@@ -1720,25 +1821,30 @@ window.__ModuleLoader__.load({
 							? h('div', { className: 'skxEmpty' }, t('skx.discoverEmpty'))
 							: h('ul', { className: 'skxRows' }, items.map(function (item) {
 								var key = item.slug ?? item.id ?? item.name;
-								var title = item.displayName ?? item.name ?? item.skillId ?? key;
+								var title = item.displayName ?? item.name ?? item.slug ?? key;
 								var desc = item.summary ?? item.description ?? '';
-								var meta = source === 'clawhub'
-									? (item.stats !== undefined ? t('skx.downloads', { n: item.stats.downloads ?? 0 }) : '')
-									: (item.installs !== undefined ? t('skx.installs', { n: item.installs }) : '');
-								return h('li', { key: key, className: 'skxRow skxRowStatic' },
-									h('div', { className: 'skxRowMain' },
-										h('div', { className: 'skxRowTitle' },
-											h('span', { className: 'skxRowName' }, title),
-											meta === '' ? null : h('span', { className: 'skxBadge' }, meta)),
-										h('p', { className: 'skxRowDesc' }, desc === '' ? t('skx.noDescription') : desc)),
-									h('div', { className: 'skxRowEnd' },
-										h('button', { type: 'button', className: 'skxBtn skxBtnSmall', onClick: function () { inspect(item); } }, t('skx.preview')),
-										h('button', {
-											type: 'button',
-											className: 'skxBtn skxBtnPrimary skxBtnSmall',
-											disabled: installing === key,
-											onClick: function () { install(item); },
-										}, installing === key ? t('state.loading') : t('skx.install'))));
+								var stats = item.stats ?? {};
+								var active = preview !== null && (preview.item.slug ?? preview.item.id) === (item.slug ?? item.id);
+								return h('li', {
+									key: key,
+									className: classes('skxRow', 'skxRowStatic', active && 'skxRowOn'),
+									onClick: function () { inspect(item); },
+								},
+								h('div', { className: 'skxRowMain' },
+									h('div', { className: 'skxRowTitle' },
+										h('span', { className: 'skxRowName' }, title),
+										stats.downloads === undefined ? null : h('span', { className: 'skxBadge' }, t('skx.downloads', { n: formatCount(stats.downloads) })),
+										stats.stars === undefined || stats.stars === 0 ? null : h('span', { className: 'skxBadge' }, '★ ' + formatCount(stats.stars))),
+									h('p', { className: 'skxRowDesc' }, desc === '' ? t('skx.noDescription') : desc),
+									h('span', { className: 'skxRowMeta' }, (item.ownerHandle ?? item.owner ?? '') + ' / ' + (item.slug ?? ''))),
+								h('div', { className: 'skxRowEnd' },
+									h('button', { type: 'button', className: 'skxBtn skxBtnSmall', onClick: function (event) { event.stopPropagation(); inspect(item); } }, t('skx.preview')),
+									h('button', {
+										type: 'button',
+										className: 'skxBtn skxBtnPrimary skxBtnSmall',
+										disabled: installing === key,
+										onClick: function (event) { event.stopPropagation(); install(item); },
+									}, installing === key ? t('state.loading') : t('skx.install'))));
 							}))),
 				h('div', { className: 'skxDetailCol' },
 					preview === null
@@ -1753,15 +1859,25 @@ window.__ModuleLoader__.load({
 										preview.detail === undefined ? null : h('span', { className: 'skxToken' }, String(preview.detail.bodyTokens ?? 0) + ' ' + t('skx.tokenBody')))),
 								preview.error !== undefined
 									? h('div', { className: 'skxEmpty' }, preview.error)
-									: h('div', null,
+									: h('div', { className: 'skxDocSections' },
 										h('div', { className: 'skxDocSection' },
 											h('div', { className: 'skxLabel' }, t('skx.description')),
 											h('p', { className: 'skxProse' }, preview.detail?.description ?? '')),
 										(preview.detail?.body ?? '') === '' ? null : h('div', { className: 'skxDocSection' },
 											h('div', { className: 'skxLabel' }, t('skx.body')),
-											h('pre', { className: 'skxPre' }, preview.detail.body)),
-										h('div', { className: 'skxRowActions' },
-											h('button', { type: 'button', className: 'skxBtn skxBtnPrimary', onClick: function () { install(preview.item); } }, t('skx.install')))))));
+											h('pre', { className: 'skxPre' }, preview.detail.body))),
+								h('div', { className: 'skxDocFoot' },
+									h('button', { type: 'button', className: 'skxBtn skxBtnPrimary', onClick: function () { install(preview.item); } }, t('skx.install')),
+									h('button', { type: 'button', className: 'skxBtn', onClick: function () { setPreview(null); } }, t('action.close'))))));
+
+			function tabChip(id, label) {
+				return h('button', {
+					type: 'button',
+					key: id,
+					className: classes('skxChip', 'skxChipTight', sort === id && 'skxChipOn'),
+					onClick: function () { setSort(id); setPreview(null); },
+				}, label);
+			}
 		}
 
 		/**
