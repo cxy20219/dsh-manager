@@ -13,9 +13,9 @@
  *      to every enabled channel before the results are merged; the same engine
  *      is also exposed to the agent as the `ctx.web` provider `dsh-manager`
  *      plus the agent `web_search` / research / platform tools;
- *   4. the agent presets it ships, registered through the Host's
- *      `agentPresets` service and unregistered when the panel switches them
- *      off. A preset is how a mode decides the tools a new session gets.
+ *   4. the global preference file: it owns `$DSH_HOME/AGENTS.md`, the rules
+ *      DSH injects at the start of every session, keeping the authoritative
+ *      copy in the manager's own data directory.
  *
  * The browser half (`client.js`) renders the sidebar entry and the panel. No
  * package from the Harness installation is imported: the MCP bridge is a
@@ -32,12 +32,15 @@ import { registerAgentSearch } from './src/agent-search.js'
 import { registerSearchPrompt } from './src/agent-prompt.js'
 import { createLanAccess } from './src/lan-access.js'
 import { createMcpManager } from './src/mcp.js'
-import { createModes } from './src/modes.js'
 import { createManagerHandler, ENDPOINTS } from './src/remote.js'
 import { DEFAULT_LAN_PORT, SettingsStore } from './src/settings.js'
 import { createSearchManager } from './src/search.js'
 import { SEARCH_CHANNELS } from './src/search-providers.js'
 import { createSkillsKernel } from './src/skills-kernel.js'
+import { createToolCatalog } from './src/tool-catalog.js'
+import { createRewindFeature } from './src/rewind.js'
+import { createHistoryFeature } from './src/composer-history.js'
+import { createUiEnhancements } from './src/ui-enhancements.js'
 
 /** The plugin's row name. */
 export const name = 'dsh-manager'
@@ -54,7 +57,7 @@ const MAX_REQUEST_BYTES = 1024 * 1024
  * `tools` and `sessions` are needed by the vendored skill kernel: the first to
  * expose `create_skill`, the second to resolve which project a request is for.
  */
-export const inject = ['skills', 'connection', 'tools', 'sessions']
+export const inject = ['skills', 'connection', 'tools', 'sessions', 'commands']
 
 
 
@@ -126,7 +129,7 @@ export async function apply(ctx, config) {
 			skills: { roots: [defaultRoot] },
 			mcp: { servers: [] },
 			lan: { enabled: false, secure: false, port: DEFAULT_LAN_PORT },
-			modes: { enabled: { simple: true } },
+			ui: { features: { rewind: true } },
 			search: { channels: searchChannels, mode: 'merge', order: searchOrder, freeFallbackSeeded: false },
 		},
 	})
@@ -154,24 +157,8 @@ export async function apply(ctx, config) {
 	await search.ensureFreeFallback().catch((error) => {
 		ctx.logger.warn(`dsh-manager: 免费搜索渠道初始化失败：${error instanceof Error ? error.message : String(error)}`)
 	})
-	registerAgentSearch({ ctx, search, cachePath: join(dataDir, 'research-cache.json'), credentials, logger: ctx.logger })
+	const agentSearch = registerAgentSearch({ ctx, search, cachePath: join(dataDir, 'research-cache.json'), credentials, logger: ctx.logger })
 	registerSearchPrompt({ ctx, settings, logger: ctx.logger })
-
-	// Registering a mode mounts a whole plugin tree, which waits on the Host
-	// Loader. Kicking that off detached keeps this row's own activation out of
-	// that wait; the panel reports each mode's outcome, and a failed mount is a
-	// visible error instead of a missing entry.
-	const modes = createModes({
-		getAgentPresets: () => ctx.get('agentPresets'),
-		settings,
-		logger: ctx.logger,
-	})
-	ctx.effect(() => () => {
-		void modes.dispose()
-	}, 'dsh-manager: modes')
-	void modes.start().catch((error) => {
-		ctx.logger.warn(`dsh-manager: 模式启动失败：${error instanceof Error ? error.message : String(error)}`)
-	})
 
 	// The LAN listener needs the web server's own origin, which the Host
 	// publishes only once it is listening; the manager reads it when the
@@ -188,18 +175,38 @@ export async function apply(ctx, config) {
 		void lan.dispose()
 	}, 'dsh-manager: lan access')
 
+	// The UI enhancements are implemented inside this plugin: the manager owns
+	// the switch, the vendored code owns the behaviour.
+	const rewind = createRewindFeature({ ctx, settings, dataDir, logger: ctx.logger })
+	rewind.mount()
+	// The input history has no Host half: its feature object owns the switch and
+	// the browser half does the work, so both live in the same list.
+	const history = createHistoryFeature({ settings })
+	const ui = createUiEnhancements({ features: [rewind, history], logger: ctx.logger })
+
 	const handler = createManagerHandler({
 		mcp,
-		modes,
 		lan,
 		settings,
 		version,
 		dataDir,
+		// The preference editor owns `$DSH_HOME/AGENTS.md`, so it needs the home
+		// directory, not only the manager's data directory.
+		dshHome: dshHome(),
 		registry: ctx.skills,
 		search,
 		// Reported through `overview` so the panel can say whether the skill
 		// kernel actually came up instead of silently showing an empty list.
 		kernel,
+		// The catalog the panel's 工具 page reads: every module's tools, with
+		// their descriptions and parameter schemas.
+		catalog: createToolCatalog({
+			kernel,
+			mcp,
+			agentTools: agentSearch.tools,
+		}),
+		// The UI-enhancement switches; each one drives a profile bundle.
+		ui,
 	})
 	/** Everything that has to be undone when the plugin unloads. */
 	const disposers = []

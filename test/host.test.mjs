@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises'
+import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { createServer } from 'node:http'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -35,16 +35,50 @@ test('the Host half serves skills, toggles sources, and stores MCP rows', async 
 
 	const routes = []
 	const effects = []
-	const registeredPresets = new Map()
 	let provider
 	let searchServer
+	/** The commands the vendored rewind feature registered. */
+	const registeredCommands = new Map()
 	/** What the merged registry offers; the test changes it to simulate a shadow. */
 	let catalogEntries = [
 		{ name: 'demo-skill', description: '演示技能', provider: 'manager-external', invocation: { modelInvocable: true, userInvocable: true } },
 		{ name: 'builtin-skill', description: '内置技能', provider: 'filesystem', invocation: { modelInvocable: true, userInvocable: true } },
 	]
+	const warnings = [];
+	/**
+	 * Run one effect the way the Host does: a generator is driven to
+	 * completion and the values it yields become cleanups.
+	 *
+	 * @param {Function} fn - The effect body.
+	 * @returns {Function} The disposer.
+	 */
+	function runEffect(fn) {
+		const cleanups = []
+		const result = fn()
+		if (result !== undefined && typeof result.next === 'function') {
+			let step = result.next()
+			while (!step.done) {
+				if (typeof step.value === 'function') cleanups.push(step.value)
+				step = result.next()
+			}
+		} else if (typeof result === 'function') {
+			cleanups.push(result)
+		}
+		const dispose = () => {
+			for (const cleanup of cleanups.reverse()) {
+				try {
+					cleanup()
+				} catch {
+					// Ignore teardown noise.
+				}
+			}
+		}
+		effects.push(dispose)
+		return dispose
+	}
+
 	const ctx = {
-		logger: { info() {}, warn() {} },
+		logger: { info() {}, warn(message) { warnings.push(message); } },
 		skills: {
 			registerProvider(create) {
 				provider = create({ signal: new AbortController().signal, invalidate() {} })
@@ -55,17 +89,11 @@ test('the Host half serves skills, toggles sources, and stores MCP rows', async 
 			},
 		},
 		get(name) {
-			if (name === 'agentPresets') {
+			// The vendored rewind host configures a settings entry on mount.
+			if (name === 'settings') {
 				return {
-					async register(definition) {
-						registeredPresets.set(definition.id, definition)
-						return async () => {
-							registeredPresets.delete(definition.id)
-						}
-					},
-					async list() {
-						return [...registeredPresets.keys()].map((id) => ({ id }))
-					},
+					configure() { return () => {} },
+					entry() { return { clear() {}, update() {} } },
 				}
 			}
 			if (name === 'connection') {
@@ -87,9 +115,22 @@ test('the Host half serves skills, toggles sources, and stores MCP rows', async 
 			return undefined
 		},
 		effect(fn) {
-			const dispose = fn()
-			effects.push(dispose)
-			return () => {}
+			return runEffect(fn)
+		},
+		// The Host injects a service once it exists; the fake answers with the
+		// same `get` the rest of the fixture uses.
+		inject(names, callback) {
+			// The scope carries the requested services as properties, the way
+			// the Host's own injection does.
+			const scope = {
+				get: (name) => ctx.get(name),
+				effect(fn) {
+					return runEffect(fn)
+				},
+				on: (...args) => ctx.on(...args),
+			}
+			for (const name of names) scope[name] = ctx.get(name)
+			callback(scope)
 		},
 		// The vendored kernel subscribes to agent lifecycle events; the real Host
 		// provides these, so the fake context has to as well.
@@ -99,14 +140,31 @@ test('the Host half serves skills, toggles sources, and stores MCP rows', async 
 		emit() {},
 	}
 
+	// The Host exposes an injected service as a property of the scope, which
+	// is how the vendored rewind half reaches the command registry.
+	ctx.commands = {
+		async register(definition) {
+			registeredCommands.set(definition.name, definition)
+			return async () => { registeredCommands.delete(definition.name) }
+		},
+	}
+	ctx.settings = {
+		async configure() {},
+		async update() {},
+		async mutate() {},
+	}
+
 	try {
 		await apply(ctx, { dataDir })
 		// The panel's own endpoints, plus the vendored kernel's 44 routes that
 		// share the same /api/manager prefix.
 		assert.equal(routes.filter((route) => ENDPOINTS.some((name) => route.path === `/api/manager/${name}`)).length, ENDPOINTS.length)
 		assert.ok(routes.length > ENDPOINTS.length, 'the kernel registered its routes too')
+		// The manager's own routes live under its prefix; the vendored rewind
+		// feature keeps the two paths upstream publishes.
+		const vendored = ['/api/dsh-rewind/preview', '/api/dsh-rewind/candidates'];
 		assert.ok(
-			routes.every((route) => route.path.startsWith('/api/manager/')),
+			routes.every((route) => route.path.startsWith('/api/manager/') || vendored.includes(route.path)),
 			'every route lives under the plugin prefix',
 		)
 		assert.ok(provider !== undefined, 'the kernel registered a skill provider')
@@ -135,20 +193,6 @@ test('the Host half serves skills, toggles sources, and stores MCP rows', async 
 		// overview must attribute it to this plugin, not to another provider.
 		assert.equal(overview.value.catalog.managed, 1)
 		assert.ok(overview.value.catalog.external.includes('builtin-skill'))
-
-		// The mode is registered detached from this row's own activation, so
-		// wait for the mount to land before reading it back.
-		let modes = overview.value.modes
-		for (let attempt = 0; attempt < 100 && modes.modes[0]?.registered !== true; attempt += 1) {
-			await new Promise((resolve) => setTimeout(resolve, 10))
-			modes = (await post(routes, 'overview')).value.modes
-		}
-		assert.equal(modes.available, true)
-		assert.equal(modes.modes[0].id, 'simple')
-		assert.equal(modes.modes[0].enabled, true)
-		assert.equal(modes.modes[0].error, '')
-		assert.equal(registeredPresets.size, 1)
-		assert.ok(registeredPresets.get('simple').plugins.length > 10)
 
 		// A higher-priority provider wins the name: the manager's copy is active
 		// in its own scan but never reaches the agent, so the panel must say so.
@@ -319,11 +363,91 @@ test('the Host half serves skills, toggles sources, and stores MCP rows', async 
 		assert.equal(removed.status, 200)
 		assert.deepEqual(removed.value.mcp.servers, [])
 
-		const switchedOff = await post(routes, 'mode-toggle', { id: 'simple', enabled: false })
-		assert.equal(switchedOff.status, 200)
-		assert.equal(switchedOff.value.modes.modes[0].enabled, false)
-		assert.equal(switchedOff.value.modes.modes[0].registered, false)
-		assert.equal(registeredPresets.size, 0)
+		// The preference editor owns $DSH_HOME/AGENTS.md and keeps the
+		// authoritative copy in the manager's data directory.
+		const preferences = await post(routes, 'preferences')
+		assert.equal(preferences.status, 200)
+		assert.equal(preferences.value.readable, true)
+		assert.equal(preferences.value.content, '')
+		assert.equal(preferences.value.agentsPath, join(dshHome, 'AGENTS.md'))
+		assert.ok(preferences.value.path.startsWith(dataDir), 'the data file lives in the manager data directory')
+		assert.equal(preferences.value.cap, 65536)
+		const savedPreferences = await post(routes, 'preferences-save', { content: '# 规则\n\n- 先说结论\n' })
+		assert.equal(savedPreferences.status, 200)
+		assert.equal(savedPreferences.value.content, '# 规则\n\n- 先说结论')
+		assert.match(await readFile(join(dshHome, 'AGENTS.md'), 'utf8'), /先说结论/, 'DSH reads the injected file')
+		const oversized = await post(routes, 'preferences-save', { content: 'x'.repeat(65537) })
+		assert.equal(oversized.status, 400)
+
+		// The tool catalog: every module's tools, with the description and the
+		// parameter schema the agent receives.
+		const tools = await post(routes, 'tools-list')
+		assert.equal(tools.status, 200)
+		assert.deepEqual(tools.value.groups.map((group) => group.id), ['skills', 'mcp', 'search', 'lan'])
+		const skillTools = tools.value.groups.find((group) => group.id === 'skills').tools
+		assert.equal(skillTools.length, 1)
+		assert.equal(skillTools[0].name, 'create_skill')
+		assert.match(skillTools[0].description, /Create a new local DSH skill/)
+		assert.deepEqual(Object.keys(skillTools[0].parameters.properties).sort(), ['body', 'description', 'name'])
+		const searchTools = tools.value.groups.find((group) => group.id === 'search').tools
+		const webSearch = searchTools.find((tool) => tool.name === 'web_search')
+		assert.ok(webSearch !== undefined, 'the search bridge registered web_search')
+		assert.deepEqual(webSearch.parameters.required, ['query'])
+		assert.ok(webSearch.parameters.properties.query.description !== '')
+		assert.equal(tools.value.groups.find((group) => group.id === 'lan').tools.length, 0)
+		// The UI-enhancement switch belongs to the manager and is persisted in
+		// the manager's own settings.
+		const uiStatus = await post(routes, 'ui-status')
+		assert.equal(uiStatus.status, 200, JSON.stringify(uiStatus.value))
+		assert.equal(uiStatus.value.available, true)
+		assert.equal(uiStatus.value.features.length, 2)
+		const rewindFeature = uiStatus.value.features.find((feature) => feature.id === 'rewind')
+		assert.equal(rewindFeature.title, '对话回退')
+		assert.equal(rewindFeature.enabled, true, 'the feature is on by default')
+		assert.equal(rewindFeature.defaultEnabled, true)
+		const historyFeature = uiStatus.value.features.find((feature) => feature.id === 'composer-history')
+		assert.equal(historyFeature.title, '输入框历史')
+		assert.equal(historyFeature.enabled, true, 'on by default as well')
+		assert.equal(historyFeature.defaultEnabled, true)
+		assert.equal(historyFeature.clientOnly, true, 'it runs in the browser, not on the Host')
+		const uiToggled = await post(routes, 'ui-toggle', { id: 'rewind', enabled: false })
+		assert.equal(uiToggled.status, 200, JSON.stringify(uiToggled.value))
+		assert.equal(uiToggled.value.features.find((feature) => feature.id === 'rewind').enabled, false)
+		const historyOff = await post(routes, 'ui-toggle', { id: 'composer-history', enabled: false })
+		assert.equal(historyOff.status, 200, JSON.stringify(historyOff.value))
+		assert.equal(historyOff.value.features.find((feature) => feature.id === 'composer-history').enabled, false)
+		await post(routes, 'ui-toggle', { id: 'composer-history', enabled: true })
+		const uiAfter = await post(routes, 'ui-status')
+		assert.equal(uiAfter.value.features[0].enabled, false, 'the switch is persisted')
+
+		// The vendored rewind feature brings its own commands, and the switch
+		// decides whether they act or only answer.
+		assert.ok(registeredCommands.has('rewind'), 'the rewind command is registered: ' + JSON.stringify(warnings))
+		assert.ok(registeredCommands.has('undo'), 'the undo alias is registered')
+		const rewindCommand = registeredCommands.get('rewind')
+		const off = await rewindCommand.handler({ rawInput: '3', args: ['3'] })
+		assert.equal(off.kind, 'error', 'a disabled feature refuses to rewind')
+		assert.match(off.text, /已关闭/)
+
+		// The browser reports whether the conversation surface mounted, so the
+		// panel can say why the button is missing.
+		const report = await post(routes, 'ui-client-status', { scope: 'mount', mounted: false, reason: 'services-missing' })
+		assert.equal(report.status, 200)
+		assert.equal(report.value.mount.mounted, false)
+		assert.equal(report.value.mount.reason, 'services-missing')
+		await post(routes, 'ui-client-status', { scope: 'row', mounted: true, reason: 'row-action-mounted' })
+		const afterReport = await post(routes, 'ui-status')
+		assert.equal(afterReport.value.client.mount.mounted, false)
+		assert.equal(afterReport.value.client.mount.reason, 'services-missing')
+		assert.equal(afterReport.value.client.row.mounted, true)
+		assert.equal(afterReport.value.client.row.reason, 'row-action-mounted')
+
+		const counted = await post(routes, 'overview')
+		assert.equal(
+			counted.value.tools.total,
+			tools.value.groups.reduce((sum, group) => sum + group.tools.length, 0),
+			'the tab counter matches the catalog',
+		)
 	} finally {
 		if (searchServer !== undefined) {
 			await new Promise((resolve) => searchServer.close(resolve))

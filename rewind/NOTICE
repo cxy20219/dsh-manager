@@ -1,0 +1,77 @@
+dsh-manager — vendored conversation-rewind feature
+================================================
+
+The files in this directory are derived from:
+
+    dsh-rewind-plugin 0.22.2
+    Copyright (c) 2026 SiriLee
+    https://github.com/SiriLee/dsh-rewind
+    Licensed under the MIT License (see ./LICENSE)
+
+Upstream license: MIT.
+
+WHY THIS COPY EXISTS
+--------------------
+dsh-manager offers the conversation rewind ("把对话回退到更早的消息，可选一并还原
+工作区文件") as one of its own UI-enhancement features, with a switch in the
+manager's panel. The behaviour must be the plugin's own — a second
+implementation would drift — so the plugin's code is vendored here and the
+manager owns only *when* it runs.
+
+The host half lives in `index.js`. The client half is a browser bundle, and a
+browser bundle cannot be imported by a classic script, so it is inlined into
+`client.js` between the `rewind-client:start` and `rewind-client:end` markers.
+`npm run check:vendored` pins that region as well, so the two copies cannot
+dr apart.
+
+WHAT WAS CHANGED
+----------------
+`index.js` — four documented edits, all marked with `dsh-manager:` in the
+source:
+
+1. The three `@deepseek-ai/*` imports are gone (`dsh-llm`, `schemastery`,
+   `dsh-home-paths`). Their helpers are inlined so the vendored half imports
+   cleanly outside the Harness — the unit tests import it — and so the plugin
+   carries no Host package dependency:
+   - `createUserMessage` becomes a local function with the same behaviour
+     (fresh UUID identity, structural clone, deep freeze);
+   - `resolveDshHome` becomes a local function with the same precedence
+     (explicit value, then `$DSH_HOME`, then `~/.dsh`);
+   - the schemastery `Config` schema is replaced by a plain field list: the
+     manager keeps this feature's settings in its own settings file, so the
+     profile's config editor never sees it.
+2. A runtime gate. `apply()` reads `config.featureEnabled()` before every
+   action: the commands answer "this feature is off" and no file checkpoint is
+   recorded while the manager's switch is off. The switch therefore takes
+   effect at once, without reloading the plugin.
+3. The two query routes answer with a refusal while the feature is off.
+
+4. The **client** half is upstream's factory body, inlined into `client.js` between the
+   `rewind-client:start` and `rewind-client:end` markers. The only edit is the
+   closing `return module.exports;`: the body is cut out of upstream's
+   `window.__ModuleLoader__.load({...})` wrapper, and that last line belongs to
+   the wrapper, not the body. Without it the factory returns `undefined` and the
+   feature fails silently — `scripts/check-vendored.mjs` now refuses a region
+   without it.
+
+5. The **client** half keeps upstream's row placement but got its session from
+   the manager. Upstream appends its button to the `conversation.chat.node`
+   row's action cluster (the copy / branch icon row); its `targetOf` needs
+   `props.sessionId`, which this DSH does not put on a chat row, so the takeover
+   bailed and the button never appeared. `targetOf` now falls back to
+   `globalThis.__dshManagerRewind.session()` — the manager publishes the session
+   it is showing — and honours the manager's own switch through the same bridge
+   (`enabled()`), reporting through `report()` when a row was decorated. With
+   the bridge absent the original guard is unchanged.
+
+6. Three config fields are read through a reactive value upstream
+   (`config?.fileCheckpointingEnabled?.get()`, `autoCleanupEnabled.get()`,
+   `autoCleanupMaxAgeDays.get()`): the profile's schemastery editor handed them
+   over as observables. Edit 1 dropped that editor, so the manager passes plain
+   values — and every command threw `config?.fileCheckpointingEnabled?.get is
+   not a function` before it could run. A `configValue()` helper now accepts
+   both shapes.
+
+Nothing else was touched: the rewind mechanism, the checkpoint store, the
+file restore, the command surface, the row takeover and the client UI are
+upstream's code.

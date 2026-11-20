@@ -38,23 +38,45 @@ const KERNEL_PREFIX = '/api/manager'
  * aborts the rest of the mount — including every route. Here a refused tool is
  * logged and dropped instead, so the routes and the skill provider still land.
  *
+ * Every accepted definition is also recorded, so the panel can list the tool
+ * the kernel contributes without the kernel having to know about the panel.
+ *
  * @param {object|undefined} tools - The Host tools service.
  * @param {object} [logger] - Where to report a dropped tool.
+ * @param {object[]} [recorded] - Where the accepted definitions are collected.
  * @returns {object|undefined} A registry that never rejects a registration.
  */
-function wrapOptionalTools(tools, logger) {
+function wrapOptionalTools(tools, logger, recorded) {
 	if (tools === undefined || tools === null || typeof tools.register !== 'function') return tools
 	return {
 		...tools,
 		register: (definition) => {
 			try {
-				return tools.register(definition)
+				const dispose = tools.register(definition)
+				if (Array.isArray(recorded)) recorded.push(describeTool(definition))
+				return dispose
 			} catch (caught) {
 				const reason = caught instanceof Error ? caught.message : String(caught)
 				logger?.warn?.(`dsh-manager: create_skill 工具注册被拒绝（技能目录与面板仍可用）：${reason}`)
 				return () => {}
 			}
 		},
+	}
+}
+
+/**
+ * Project one tool definition for the panel's tool catalog.
+ *
+ * @param {object} definition - A registry-ready tool definition.
+ * @returns {{name: string, description: string, parameters: object|null}} The catalog row.
+ */
+function describeTool(definition) {
+	return {
+		name: typeof definition?.name === 'string' ? definition.name : '',
+		description: typeof definition?.description === 'string' ? definition.description : '',
+		parameters: definition?.parameters !== null && typeof definition?.parameters === 'object'
+			? definition.parameters
+			: null,
 	}
 }
 
@@ -67,9 +89,10 @@ function wrapOptionalTools(tools, logger) {
  * is absent.
  *
  * @param {object} ctx - This plugin's Host context.
+ * @param {object[]} [recorded] - Where the registered tool definitions are collected.
  * @returns {object} The narrowed context handed to the kernel.
  */
-function kernelContext(ctx, logger) {
+function kernelContext(ctx, logger, recorded) {
 	const connection = ctx.get('connection')
 	if (connection === undefined || connection === null) {
 		throw new Error('dsh-manager: the Host connection service is not available for the skill kernel')
@@ -102,7 +125,7 @@ function kernelContext(ctx, logger) {
 		// already be taken (another skill plugin, or a re-activation that has not
 		// finished unwinding). Losing that one tool must not abort the mount,
 		// because the kernel registers its routes in the same synchronous pass.
-		tools: wrapOptionalTools(ctx.get('tools'), logger),
+		tools: wrapOptionalTools(ctx.get('tools'), logger, recorded),
 		sessions: ctx.get('sessions'),
 		agents: ctx.get('agents'),
 		logger: ctx.logger,
@@ -131,12 +154,14 @@ export function createSkillsKernel(ctx, { logger } = {}) {
 	let error = ''
 	/** Routes the kernel handed over successfully; reported for diagnostics. */
 	let registered = 0
+	/** Tool definitions the kernel managed to register. */
+	const registeredTools = []
 
 	// Build the narrowed context before calling into the kernel: inside a Host
 	// effect callback the services are not resolvable, so reading `connection`
 	// there yields undefined and the kernel would silently skip its whole route
 	// table.
-	const narrowed = kernelContext(ctx, logger)
+	const narrowed = kernelContext(ctx, logger, registeredTools)
 	const registerRoute = narrowed.connection.fetch.register
 	narrowed.connection.fetch.register = (route) => {
 		try {
@@ -169,7 +194,7 @@ export function createSkillsKernel(ctx, { logger } = {}) {
 		logger?.warn?.(`dsh-manager: 技能内核挂载失败，面板其余功能不受影响：${error}`)
 	}
 
-	return { mounted, error, routes: registered }
+	return { mounted, error, routes: registered, tools: registeredTools }
 }
 
 /** The provider name the kernel registers under, for catalog attribution. */

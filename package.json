@@ -2,7 +2,7 @@
   "name": "dsh-manager",
   "version": "0.1.0",
   "private": true,
-  "description": "Manager panel for the DeepSeek Assistant: one self-contained skill workspace over every agent on this machine (vendored kernel, no extra plugin required), stdio MCP servers, per-channel web search (keyless engines, independent switches and keys, merge/fallback modes, cooldowns and cache), agent modes, and LAN access.",
+  "description": "Manager panel for the DeepSeek Assistant: one self-contained skill workspace over every agent on this machine (vendored kernel, no extra plugin required), stdio MCP servers, per-channel web search (keyless engines, independent switches and keys, merge/fallback modes, cooldowns and cache), UI enhancements, global preferences, and LAN access.",
   "type": "module",
   "main": "./index.js",
   "exports": {
@@ -17,6 +17,7 @@
     "client.js",
     "src",
     "skills",
+    "rewind",
     "cordis.patch.yml",
     "locale/*.json",
     "icon.svg",
@@ -41,7 +42,10 @@
         "@deepseek-ai/dsh-client-locale",
         "@deepseek-ai/dsh-client-ui-layout",
         "@deepseek-ai/dsh-client-ui-sidebar",
-        "@deepseek-ai/dsh-client-connection"
+        "@deepseek-ai/dsh-client-connection",
+        "@deepseek-ai/dsh-client-ui-commands",
+        "@deepseek-ai/dsh-client-ui-conversation",
+        "@deepseek-ai/dsh-client-ui-settings"
       ]
     }
   }

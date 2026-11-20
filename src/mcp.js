@@ -251,6 +251,11 @@ export function createMcpManager({ ctx, settings, credentials, version, logger }
 					raw: tool.name,
 					public: publicName,
 					description: typeof tool.description === 'string' ? tool.description : '',
+					// The server's own input schema, so the panel can show the
+					// parameters the model has to fill in.
+					parameters: tool.inputSchema !== null && typeof tool.inputSchema === 'object'
+						? tool.inputSchema
+						: null,
 				})
 			}
 		} catch (error) {

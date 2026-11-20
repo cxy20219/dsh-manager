@@ -29,8 +29,8 @@ export function normalizeSettings(raw, defaults) {
 	const skills = source.skills !== null && typeof source.skills === 'object' ? source.skills : {}
 	const mcp = source.mcp !== null && typeof source.mcp === 'object' ? source.mcp : {}
 	const lan = source.lan !== null && typeof source.lan === 'object' ? source.lan : {}
-	const modes = source.modes !== null && typeof source.modes === 'object' ? source.modes : {}
 	const search = source.search !== null && typeof source.search === 'object' ? source.search : {}
+	const ui = source.ui !== null && typeof source.ui === 'object' ? source.ui : {}
 	const roots = Array.isArray(skills.roots)
 		? uniqueStrings(skills.roots)
 		: [...defaults.skills.roots]
@@ -50,11 +50,6 @@ export function normalizeSettings(raw, defaults) {
 			secure: lan.secure === true,
 			port: normalizePort(lan.port, defaults.lan?.port ?? DEFAULT_LAN_PORT),
 		},
-		modes: {
-			// The switch the user set for each shipped mode. A mode added later
-			// starts from its default instead of reading as "off".
-			enabled: normalizeModeSwitches(modes.enabled, defaults.modes?.enabled),
-		},
 		search: {
 			// One row per search channel: the switch and an optional base URL.
 			// API keys are credentials, never settings, so they are not here.
@@ -66,7 +61,33 @@ export function normalizeSettings(raw, defaults) {
 			blockedDomains: normalizeBlockedDomains(search.blockedDomains),
 			freeFallbackSeeded: search.freeFallbackSeeded === true,
 		},
+		ui: {
+			// The switches of the UI-enhancement features this manager owns.
+			// A feature added later starts from its own default.
+			features: normalizeFeatureSwitches(ui.features, defaults.ui?.features),
+		},
 	}
+}
+
+/**
+ * Normalize the UI-enhancement feature switches.
+ *
+ * The union of defaults and stored ids is kept, so a feature added by a newer
+ * build starts from its default instead of reading as "off".
+ *
+ * @param {unknown} stored - The persisted feature map.
+ * @param {unknown} [defaults] - Default feature rows.
+ * @returns {Record<string, boolean>} The normalized switches.
+ */
+function normalizeFeatureSwitches(stored, defaults) {
+	const base = defaults !== null && typeof defaults === 'object' ? defaults : {}
+	const overrides = stored !== null && typeof stored === 'object' ? stored : {}
+	const switches = {}
+	for (const [id, value] of Object.entries({ ...base, ...overrides })) {
+		if (!/^[a-z][a-z0-9-]*$/.test(id)) continue
+		if (typeof value === 'boolean') switches[id] = value
+	}
+	return switches
 }
 
 /**
@@ -182,23 +203,6 @@ export function normalizeBlockedDomains(value) {
 		if (domains.length >= MAX_BLOCKED_DOMAINS) break
 	}
 	return domains
-}
-
-/**
- * Keep one boolean per mode id, defaults first and the stored value on top.
- *
- * @param {unknown} stored - The persisted switch map.
- * @param {object} [defaults] - Default switches for this installation.
- * @returns {Record<string, boolean>} The normalized switch map.
- */
-function normalizeModeSwitches(stored, defaults) {
-	const base = defaults !== null && typeof defaults === 'object' ? defaults : {}
-	const overrides = stored !== null && typeof stored === 'object' ? stored : {}
-	const switches = {}
-	for (const [id, value] of Object.entries({ ...base, ...overrides })) {
-		if (typeof value === 'boolean') switches[id] = value
-	}
-	return switches
 }
 
 /**

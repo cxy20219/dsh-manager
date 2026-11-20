@@ -10,6 +10,7 @@
 
 import { legacyCreate, legacyRead, legacySnapshot, legacyToggle } from './skills-adapter.js'
 import { KERNEL_EXTERNAL_PROVIDER } from './skills-kernel.js'
+import { readPreferences, writePreferences } from './preferences.js'
 
 /** The endpoints the panel may call. */
 export const ENDPOINTS = [
@@ -36,16 +37,21 @@ export const ENDPOINTS = [
 	'search-test',
 	'search-test-all',
 	'search-query',
-	'mode-toggle',
+	'tools-list',
+	'preferences',
+	'preferences-save',
+	'ui-status',
+	'ui-toggle',
+	'ui-client-status',
 ]
 
 /**
  * Build the endpoint handler.
  *
- * @param {{mcp: object, modes?: object, lan?: object, settings?: object, version: string, dataDir: string, registry?: object, search?: object}} deps - Services the endpoints use.
+ * @param {{mcp: object, lan?: object, settings?: object, version: string, dataDir: string, dshHome: string, registry?: object, search?: object, catalog?: object, ui?: object}} deps - Services the endpoints use.
  * @returns {(endpoint: string, payload: unknown) => Promise<object>} The handler.
  */
-export function createManagerHandler({ mcp, modes, lan, settings, version, dataDir, registry, search, kernel }) {
+export function createManagerHandler({ mcp, lan, settings, version, dataDir, dshHome, registry, search, kernel, catalog, ui }) {
 	/**
 	 * The catalog the agent is actually offered, projected against this scan.
 	 *
@@ -113,8 +119,10 @@ export function createManagerHandler({ mcp, modes, lan, settings, version, dataD
 			// mode that would otherwise look like "no skills".
 			kernel: kernel === undefined ? { mounted: false, routes: 0, error: 'not wired' } : { mounted: kernel.mounted, routes: kernel.routes, error: kernel.error },
 			mcp: mcp.describe(),
-			modes: modes === undefined ? { available: false, modes: [] } : modes.status(),
 			lan: lan === undefined ? { enabled: false, running: false, address: '', port: 0, upstream: '', error: '' } : lan.summary(),
+			// How many tools the panel's 工具 page will list, so the tab can
+			// show the count before the page itself is opened.
+			tools: catalog === undefined ? { total: 0 } : catalog.summary(),
 		}
 	}
 
@@ -266,10 +274,29 @@ export function createManagerHandler({ mcp, modes, lan, settings, version, dataD
 						}),
 					}
 				}
-				case 'mode-toggle': {
-					if (modes === undefined) throw new Error('当前 Host 没有模式服务')
-					await modes.setEnabled(text(payload, 'id'), payload?.enabled !== false)
-					return { ok: true, value: await overview() }
+				case 'preferences': {
+					return { ok: true, value: await readPreferences({ dshHome, dataDir }) }
+				}
+				case 'preferences-save': {
+					// The save answer is the re-read state: the panel resets its
+					// dirty baseline from it instead of assuming the write landed.
+					return { ok: true, value: await writePreferences({ dshHome, dataDir }, payload?.content) }
+				}
+				case 'tools-list': {
+					if (catalog === undefined) throw new Error('当前 Host 没有工具目录服务')
+					return { ok: true, value: catalog.describe() }
+				}
+				case 'ui-status': {
+					if (ui === undefined) throw new Error('当前 Host 没有 UI 增强服务')
+					return { ok: true, value: await ui.status() }
+				}
+				case 'ui-toggle': {
+					if (ui === undefined) throw new Error('当前 Host 没有 UI 增强服务')
+					return { ok: true, value: await ui.setEnabled(text(payload, 'id'), payload?.enabled !== false) }
+				}
+				case 'ui-client-status': {
+					if (ui === undefined) throw new Error('当前 Host 没有 UI 增强服务')
+					return { ok: true, value: ui.reportClient(payload ?? {}) }
 				}
 				default: {
 					throw new Error(`未知接口：${endpoint}`)
