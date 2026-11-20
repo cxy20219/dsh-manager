@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
 
-import { createCacheSearchTool, createResearchTool } from '../src/agent-search.js'
+import { createResearchTool } from '../src/agent-search.js'
 import { createResearchService } from '../src/research.js'
 
 /**
@@ -148,10 +148,13 @@ test('research tools render results and read the cache', async () => {
 	assert.match(rendered[0].text, /<untrusted-web-content>/)
 	assert.match(rendered[0].text, /Quality:/)
 	assert.match(rendered[0].text, /cache body/)
-	const cacheTool = createCacheSearchTool({ research: service })
-	const hits = await cacheTool.execute({ query: 'cache', limit: 2 })
-	assert.equal(hits.hits.length, 2)
-	const cacheRendered = cacheTool.output.render({}, hits)
+	// The cache look-back rides on the research tool now, answering in the same
+	// envelope: no second tool name in every request.
+	const cached = await researchTool.execute({ question: 'cache', fromCache: true, limit: 2 })
+	assert.equal(cached.quality.level, 'cache')
+	assert.equal(cached.documents.length, 2)
+	assert.equal(cached.documents[0].kind, 'cache')
+	const cacheRendered = researchTool.output.render({}, cached)
 	assert.match(cacheRendered[0].text, /Cached Page/)
 })
 

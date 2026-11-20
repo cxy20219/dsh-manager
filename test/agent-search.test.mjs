@@ -2,9 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import {
-	createAdvancedSearchTool,
-	createMultiSearchTool,
-	createFreeSearchTestTool,
+	createSourceSearchTool,
 	createResearchTool,
 	createWebSearchProvider,
 	createWebSearchTool,
@@ -96,36 +94,46 @@ test('the web_search tool merges queries, deduplicates and wraps untrusted text'
 	assert.equal(search.calls.length, 2)
 })
 
-test('advanced_search passes the time filter and returns only schema fields', async () => {
+test('web_search passes the time window and the channel list', async () => {
 	const search = fakeSearch()
-	const tool = createAdvancedSearchTool({ search })
-	assert.equal(tool.name, 'advanced_search')
-	const value = await tool.execute({ query: 'news', maxResults: 5, timeRange: 'week' })
-	assert.deepEqual(search.calls.at(-1), { query: 'news', maxResults: 5, timeRange: 'week' })
+	const tool = createWebSearchTool({ search })
+	const value = await tool.execute({ query: 'news', maxResults: 5, timeRange: 'week', sites: ['bing', 'exa'] })
+	assert.deepEqual(search.calls.at(-1), { query: 'news', maxResults: 5, timeRange: 'week', channels: ['bing', 'exa'] })
 	assert.deepEqual(Object.keys(value).sort(), ['content', 'sources', 'truncated'])
 	assert.equal(value.sources[0].url, 'https://example.com/1')
 })
 
-test('multi_search forwards the selected channels', async () => {
+test('web_search merges the extra queries with the first one', async () => {
 	const search = fakeSearch()
-	const tool = createMultiSearchTool({ search })
-	const value = await tool.execute({ query: 'hello', maxResults: 2, engines: ['bing', 'exa'] })
-	assert.deepEqual(search.calls.at(-1), { query: 'hello', maxResults: 2, channels: ['bing', 'exa'] })
-	assert.equal(value.sources.length, 2)
-	assert.equal(value.truncated, true)
+	const tool = createWebSearchTool({ search })
+	await tool.execute({ query: 'first', queries: ['second', 'third', 'fourth'] })
+	assert.deepEqual(search.calls.map((call) => call.query), ['first', 'second', 'third'])
 })
 
-test('free_search_test reports each channel and honours the engine filter', async () => {
-	const search = fakeSearch()
-	const tool = createFreeSearchTestTool({ search })
-	const value = await tool.execute({ engines: ['exa', 'bing'], query: 'hello' })
-	assert.deepEqual(value.results, [
-		{ id: 'bing', label: 'Bing', ok: true, count: 2 },
-		{ id: 'exa', label: 'Exa', ok: false, count: 0, error: 'bad key' },
-	])
-	const rendered = tool.output.render({}, value)
-	assert.match(rendered[0].text, /Bing: OK/)
-	assert.match(rendered[0].text, /Exa: FAIL/)
+test('search_source asks the platform or the vertical API the target names', async () => {
+	const calls = []
+	const tool = createSourceSearchTool({
+		platformSearch: async (args) => {
+			calls.push(['platform', args])
+			return { platform: args.platform, label: 'Bilibili', sources: [{ url: 'https://b23.tv/1' }], truncated: false }
+		},
+		domainSearch: async (args) => {
+			calls.push(['domain', args])
+			return { engine: args.engine, query: args.query, sources: [{ url: 'https://pypi.org/project/requests' }] }
+		},
+	})
+	assert.equal(tool.name, 'search_source')
+
+	const platform = await tool.execute({ target: 'bilibili', query: 'dsh' })
+	assert.deepEqual(calls.at(-1), ['platform', { platform: 'bilibili', query: 'dsh' }])
+	assert.equal(platform.label, 'Bilibili')
+	assert.equal(platform.error, '')
+
+	const domain = await tool.execute({ target: 'pypi', query: 'requests' })
+	assert.deepEqual(calls.at(-1), ['domain', { engine: 'pypi', query: 'requests' }])
+	assert.equal(domain.sources[0].url, 'https://pypi.org/project/requests')
+
+	await assert.rejects(() => tool.execute({ target: 'nope', query: 'x' }), /unknown target/)
 })
 
 test('registerAgentSearch registers the provider, tools and provider takeover', async () => {
@@ -188,7 +196,7 @@ test('registerAgentSearch registers the provider, tools and provider takeover', 
 	assert.equal(registered.providers[0].id, WEB_SEARCH_PROVIDER_ID)
 	assert.equal(registered.fetchProviders.length, 1)
 	assert.equal(registered.fetchProviders[0].id, 'dsh-manager-fetch')
-	assert.deepEqual(registered.tools.map((tool) => tool.name), ['web_search', 'advanced_search', 'multi_search', 'platform_search', 'domain_search', 'weather', 'video_search', 'research', 'cache_search', 'free_search_test'])
+	assert.deepEqual(registered.tools.map((tool) => tool.name), ['web_search', 'search_source', 'research', 'video_search', 'weather'])
 	assert.deepEqual(registered.mutations, [{
 		namespace: 'web',
 		ops: [
@@ -197,12 +205,11 @@ test('registerAgentSearch registers the provider, tools and provider takeover', 
 		],
 	}])
 
-	// Tool factories must not all receive the manager search object: platform and
-	// domain have their own search functions. Unknown ids prove the wiring.
+	// Tool factories must not all receive the manager search object: the source
+	// tool owns its two searches. Unknown ids prove the wiring.
 	const byName = new Map(registered.tools.map((tool) => [tool.name, tool]))
-	await assert.rejects(byName.get('platform_search').execute({ platform: 'nope', query: 'x' }), /unknown platform/)
-	const domain = await byName.get('domain_search').execute({ engine: 'nope', query: 'x' })
-	assert.match(domain.error, /unknown engine/)
+	await assert.rejects(byName.get('search_source').execute({ target: 'nope', query: 'x' }), /unknown target/)
+	assert.equal(byName.size, 5, 'the agent sees five tools, not ten')
 })
 
 test('a tool value never carries a lone surrogate', async () => {

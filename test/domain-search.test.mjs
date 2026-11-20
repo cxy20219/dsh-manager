@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { createDomainSearchTool } from '../src/agent-search.js'
+import { createSourceSearchTool } from '../src/agent-search.js'
 import { ENGINES, searchDomain } from '../src/domain-search.js'
 
 test('the domain registry exposes the vertical sources', () => {
@@ -35,14 +35,14 @@ test('PyPI search parses the package version and summary', async () => {
 })
 
 test('domain_search renders errors and sources inside the untrusted boundary', () => {
-	const tool = createDomainSearchTool({
-		search: async ({ engine }) => engine === 'fail'
+	const tool = createSourceSearchTool({
+		domainSearch: async ({ engine }) => engine === 'fail'
 			? { engine, query: 'x', sources: [], error: 'boom' }
 			: { engine, query: 'x', sources: [{ url: 'https://example.com/1', title: 'Result', snippet: 'text' }] },
 	})
-	const failed = tool.output.render({}, { engine: 'fail', query: 'x', sources: [], error: 'boom' })
+	const failed = tool.output.render({}, { target: 'fail', query: 'x', sources: [], error: 'boom' })
 	assert.match(failed[0].text, /boom/)
-	const ok = tool.output.render({}, { engine: 'pypi', query: 'x', sources: [{ url: 'https://example.com/1', title: 'Result', snippet: 'text' }] })
+	const ok = tool.output.render({}, { target: 'pypi', query: 'x', sources: [{ url: 'https://example.com/1', title: 'Result', snippet: 'text' }] })
 	assert.match(ok[0].text, /<untrusted-web-content>/)
 	assert.match(ok[0].text, /Result/)
 })

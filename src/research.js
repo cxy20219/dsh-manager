@@ -5,7 +5,7 @@
  * the manager's search results, rank the candidates (lexically, or with a
  * model reranker when a key is configured), fetch the top pages through the
  * quality fetch chain, extract readable text, grade the evidence, and expose
- * the fetched bodies through `cache_search`.
+ * the fetched bodies through the cache search behind `research.fromCache`.
  *
  * The whole run shares one time budget. When the first pass leaves thin
  * evidence and time remains, it fetches a couple more pages instead of asking
@@ -533,7 +533,7 @@ export function createResearchService({ search, fetchImpl, resolveHost = default
 	function cacheSearch(input) {
 		const query = typeof input?.query === 'string' ? input.query.trim() : ''
 		const limit = Math.min(Math.max(Number.isInteger(input?.limit) ? input.limit : 8, 1), 20)
-		if (query === '') throw new Error('cache_search needs a query.')
+		if (query === '') throw new Error('a cache search needs a query.')
 		const terms = new Set()
 		for (const run of query.match(/[\u3400-\u9fff]+/g) ?? []) {
 			if (run.length === 2) terms.add(run)

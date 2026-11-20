@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import { PLATFORM_IDS, PLATFORMS, searchPlatform } from '../src/platform-search.js'
-import { createPlatformSearchTool } from '../src/agent-search.js'
+import { createSourceSearchTool } from '../src/agent-search.js'
 
 /**
  * JSON response.
@@ -50,23 +50,24 @@ test('an unknown platform is rejected before any request', async () => {
 	await assert.rejects(searchPlatform({ platform: 'nope', query: 'x', fetchImpl: async () => { throw new Error('should not run') } }), /unknown platform/)
 })
 
-test('platform_search tool renders sources inside the untrusted boundary', async () => {
-	const tool = createPlatformSearchTool({
-		search: async ({ platform, query, maxResults }) => ({
+test('search_source renders platform sources inside the untrusted boundary', async () => {
+	const tool = createSourceSearchTool({
+		platformSearch: async ({ platform }) => ({
 			platform,
 			label: PLATFORMS[platform],
 			sources: [{ url: 'https://news.ycombinator.com/item?id=1', title: 'Hello' }],
-			truncated: maxResults === 1,
+			truncated: false,
 		}),
 	})
-	const value = await tool.execute({ platform: 'hn', query: 'dsh', maxResults: 2 })
+	const value = await tool.execute({ target: 'hn', query: 'dsh' })
 	const rendered = tool.output.render({}, {
-		platform: 'hn',
+		target: 'hn',
 		label: 'Hacker News',
+		query: 'dsh',
 		sources: [{ url: 'https://news.ycombinator.com/item?id=1', title: 'Hello' }],
-		truncated: false,
+		error: '',
 	})
-	assert.equal(value.platform, 'hn')
+	assert.equal(value.target, 'hn')
 	assert.ok(Array.isArray(value.sources))
 	assert.match(rendered[0].text, /<untrusted-web-content>/)
 	assert.match(rendered[0].text, /Hacker News/)
