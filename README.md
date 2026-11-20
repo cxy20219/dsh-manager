@@ -1,7 +1,7 @@
 # dsh-manager
 
-DeepSeek Harness Web UI 左侧的一个入口，管理 Agent 运行所需的东西，以及你怎么访问它：
-**技能**、**MCP 服务**、**联网搜索**、**模式**、**局域网访问**。
+管理中枢（dsh-manager）：DeepSeek Harness Web UI 左侧的一个入口，管理 Agent 运行所需的东西，以及你怎么访问它：
+**技能**、**MCP 服务**、**联网搜索**、**UI 增强**、**偏好**、**局域网访问**、**工具**。
 
 - **技能** — 自带一套完整的技能管理内核（`skills/`，派生自 `@michengai/dsh-skills-manager`，Apache-2.0）。
   **不依赖任何其他技能插件**，装这一个就够。内核发现本机 20+ 个 Agent 技能来源（`~/.dsh/skills`、
@@ -9,8 +9,19 @@ DeepSeek Harness Web UI 左侧的一个入口，管理 Agent 运行所需的东�
   **默认只启用 `~/.dsh/skills` 与 `~/.agents/skills`**，其它来源在面板里按需打开——新装或升级都不会
   悄悄把别的 Agent 目录里的技能喂给本 Agent。每个来源可整体启停，单个技能也可启停；同名技能按来源
   rank 决胜，其余记为副本而不是重复列出。
-- **技能界面** — 三栏工作台：左栏来源、中栏技能列表（同名副本自动折叠成 `+N`）、右栏详情
-  （简介、token 估算、自定义备注、SKILL.md 正文、源文件路径）。备注只存在本插件，绝不写回 `SKILL.md`。
+- **技能界面** — 分四个子标签，各占一页：**已安装**（一张横铺的技能表）、**项目技能**（按工作区只读浏览）、
+  **发现技能**（ClawHub 榜单与搜索安装）、**回收站**（恢复或永久删除）。
+  同名技能在别的来源里也存在时只列生效的那一份，后面跟一个 `+N`（N = 另外几个来源有同名）；
+  「仅手动」表示它的 frontmatter 写了 `disable-model-invocation`，模型不会自动调用，只有你点名时才用。
+  点一行用弹窗看它的简介、token 估算、自定义备注、SKILL.md 正文和源文件路径。
+  备注只存在本插件，绝不写回 `SKILL.md`。
+- **一处搜全部** — 已安装页没有来源导航栏、也没有右侧详情栏：所有已安装来源的技能在一张通栏表里，
+  每行自带来源标签，顶部搜索框铺满整行并一次匹配**全部来源**的名字 / 简介 / 备注，开关就地切换。
+  整个来源的开关收进右上角「来源」按钮的弹窗（关掉一个来源＝它下面的技能不再提供给 Agent），
+  来源被关掉时行上的来源标签会标黄。
+- **异常单独成面板** — 宿主加载不了的 `SKILL.md`（缺 frontmatter / 缺 name / name 转不成 kebab-case /
+  description 为空）不进主列表，只计入右上角「异常 N」按钮；点开是它们的清单：名字、来源、**具体原因**、
+  文件路径。改好文件点工具栏的「重新扫描」即可（页脚那栏已去掉，重扫按钮就在搜索框右边）。
 - **目录核对** — 技能页还会报告 Agent 的注册表实际提供了什么，把所有 provider 合并后统计
   （`ctx.skills.list`）。顶层技能和内置 provider 因此也会计入总数；管理器认为生效、但注册表里没有的
   技能，会被明确标成「被遮蔽」或「缺失」，而不是悄悄算成已加载。
@@ -22,16 +33,42 @@ DeepSeek Harness Web UI 左侧的一个入口，管理 Agent 运行所需的东�
   Key 与服务地址，一个渠道可放多个 Key 轮换。支持「并发合并」「顺序回退」「智能路由（语言 + 意图）」三种模式，
   可关安全搜索、可维护域名黑名单；失败渠道会冷却且冷却跨重启保留，结果有 5 分钟内存缓存，面板可一键测试全部渠道。
   Key 存在宿主凭证库，面板不回显；结果只按文本和 HTTP(S) 链接渲染。
-  同一套渠道也注册为 agent 的 `ctx.web` provider `dsh-manager` 以及 `web_search` / `advanced_search` /
-  `platform_search` / `domain_search` / `weather` / `video_search` / `research` / `cache_search` /
-  `free_search_test` 工具，替代停用的 dsh-free-search 的核心搜索链路。
-- **模式** — DSH 的「模式」就是 Agent 预设：一份插件行清单，决定新会话拿到哪些工具和提示词。这个标签
-  管理本插件自己注册的模式，开关就是注册 / 注销，不写 profile 补丁、不需要重启。内置的「简单」模式是
-  标准模式去掉定时任务、工作流与插件管理之后的样子。
+  同一套渠道也注册为 agent 的 `ctx.web` provider `dsh-manager`，以及 5 个 agent 工具：`web_search` /
+  `search_source` / `research` / `video_search` / `weather`，替代停用的 dsh-free-search 的核心搜索链路。
+- **偏好** — 直接编辑 DSH 每个会话开始时注入的全局 `AGENTS.md`。权威文件存在管理器数据目录
+  （`<dataDir>/system/AGENTS.md`），DSH 读的 `~/.dsh/AGENTS.md` 软链到它；不能建软链时退化为两边同步写。
+  移植自自衍中枢的同名功能，语义一致（64 KiB 上限、读失败禁用保存、原子写、旧受管段标记清理）。
+  **同一个 DSH home 只能有一个偏好编辑器**：本模块会采纳并改写入口文件，自衍中枢的偏好要先关掉。
 - **局域网访问** — 一个开关，在本机的局域网地址上开一个入口。面板给出二维码；手机或平板扫码后用浏览器
   打开的就是同一个 GUI，操作权限与本机浏览器完全一致。默认明文 HTTP，链接里的令牌就是口令，扫码即用；
   也可以打开 HTTPS，但那样要在手机上装一次根证书。监听器只在开关打开时存在，并且只绑定一个具体地址，
   绝不绑定所有网卡。
+- **对话回退的按钮位置** — 照原插件的方式：接管 `conversation.chat.node` 的那一行，把 ↶ 追加到
+  该行的动作栏（复制 / 分支图标那一排）。本版本的聊天行 props 里没有 `sessionId`，原插件的接管会静默
+  放弃，所以管理器通过 `globalThis.__dshManagerRewind` 把「当前会话」和自身开关交给它，机制仍是原插件的。
+- **输入框历史**（UI 增强里的开关，默认开）— 在对话输入框按 **↑** 依次翻出本会话最近发送过的消息，**↓**
+  往回走并最终还原你原来打的草稿；翻出来的内容是可编辑的草稿，改完直接回车就发出。↑ 只在输入框为空时
+  接管，↓ 只在翻历史的过程中接管，其余时候方向键照常移动光标；每个会话单独存 50 条，存在浏览器本地。
+  对话输入框是 Lexical 的 contenteditable 编辑器（不是 textarea），写回走 `execCommand('insertText')`，
+  否则编辑器内部状态不会更新、下一次渲染就把文字抹掉。
+- **UI 增强** — 一组界面增强功能的开关，功能由本插件自己提供。当前是**对话回退**：把对话回退到更早的
+  用户消息，可选一并还原工作区文件（每条用户消息旁的 ↶ 按钮，`/rewind` 与 `/undo` 命令）。
+  这套行为来自 `dsh-rewind-plugin`（MIT），代码**已随本插件内置**在 `rewind/`，因此不依赖那个插件是否安装，
+  也不会出现第二套实现；管理器只决定它开不开。开关存在管理器自己的设置里（`ui.features.rewind`），
+  切换立即生效：关闭时命令会直接回答「已关闭」，也不再记录文件检查点。
+  「UI 增强」页上有两行诊断：「对话里的界面：已挂载 / 未挂载（原因）」和「消息旁的按钮：…」。
+  这两处都在对话 UI 里、不在面板里，所以由浏览器把结果报回来，卡在哪一步会直接写出来。
+- **按钮的位置是本插件自己写的**：上游把 ↶ 放在每条用户消息旁，做法是接管 `conversation.chat.node`
+  这条插槽里的行组件。当前 DSH（0.2.2-rc.3）的这条插槽存在，但它渲染行组件时**不传 sessionId**，
+  上游的 `targetOf(props)` 因此拿不到回退目标，**静默不画按钮**（上游面向的是更新版本）。
+  所以按钮改放在这个版本为用户消息预留的扩展位 `conversation.chat.user.before`（会话级作用域）上：
+  点开列出这个会话可回退的消息，选一条，再选「仅回退对话」或「对话和文件」。
+  回退本身仍是上游的引擎（`/rewind-plugin @<seq> <mode>`），候选列表也是上游的接口
+  `/api/dsh-rewind/candidates`，只有位置和菜单是我们写的。
+  `/rewind`、`/undo` 两个命令同样可用（上游把命令装饰成了选择器）。
+- **工具** — 管理器交给 Agent 的工具总目录，按板块分成子标签：技能内核注册的 `create_skill`、每个已连接的
+  MCP 服务贡献的工具、联网搜索桥注册的检索工具。每个工具都列出名称、描述和
+  参数（JSON Schema 展开成逐项的名称、类型、是否必填、说明），不用翻源码就知道模型能调用什么。
 
 ## 安装
 
@@ -69,10 +106,11 @@ dsh plugin --profile desktop add .
 每个来源下 `<名字>/SKILL.md` 是一个技能，`<名字>.md` 是扁平技能。项目级来源（工作区里的
 `.dsh/skills`、`.agents/skills` 等）由内核单独发现。
 
-- **目录不存在就不显示**：面板左栏把未安装的来源单独归到「未安装」，不占主列表。
+- **目录不存在就完全不出现**：内核会列出 22 个候选来源（Claude Code、Cursor、Codex、Trae、Qoder…），
+  目录没建的那些直接不进面板——左栏只列真正有内容的来源，页脚也只数它们。本机通常只有 3–5 个。
 - **同名技能只显示生效的那一个**：多个来源有同名副本时，按来源 rank 决胜，其余折叠成 `+N` 标记，
   不重复占行。内核以 overlay provider 注册（rank 399–500），确保停用动作真的生效。
-- **解析失败的技能默认不显示**：想看到它们就勾选「显示异常项」。
+- **解析失败的技能不进主列表**：它们只在「异常 N」面板里出现，并附上具体原因和文件路径。
 - **状态目录**：`~/.dsh/manager/skills/`（`state.json` 与 `trash/`），与任何其他技能插件的状态分开。
 
 ## MCP 服务
@@ -159,34 +197,41 @@ dsh plugin --profile desktop add .
 - 抓取质量链：直连（校验每跳重定向、拒绝内网地址）→ Exa contents（复用 Exa 渠道 Key）→ Firecrawl scrape
   （复用 Firecrawl 渠道 Key）→ Crawl4AI（`CRAWL4AI_API_KEY`，宿主凭据或环境变量）。无头浏览器层没有搬：
   它要 spawn 本机 Chrome/Edge，属于单独的安全决定，也需要本地 CLI 二进制。
-- 注册十个 agent 工具：`web_search`（`queries` 数组，合并去重，最多 3 个查询）、`advanced_search`
-  （单个查询 + 固定时间过滤）、`multi_search`（指定渠道并发合并）、`platform_search`（13 个平台站内搜索）、
-  `domain_search`（41 个垂直源直查）、
-  `weather`（Open-Meteo 当前天气 + 1-7 天预报）、`video_search`（Bing Videos + DuckDuckGo Videos）和
-  `research`（多查询 + 直接抓正文 + 质量分级）、`cache_search`（全文检索 research 抓过的正文）和
-  `free_search_test`（按渠道测试）。新会话或重新加载后可见；已经打开的会话不会自动刷新工具表。
+- 注册 **5 个** agent 工具，一个工具对应一个问题，变体走参数而不是新工具名：
+  - `web_search` — 搜网页。`query` 必填，另可用 `queries`（多角度合并）、`timeRange`（day/week/month/year）、
+    `sites`（只搜某些渠道）、`maxResults`。
+  - `search_source` — 直接问某个平台或垂类 API，`target` 是平台与垂类的并集枚举，它决定 `query` 怎么写。
+  - `research` — 多查询 + 抓正文 + 质量分级；`fromCache: true` 只翻已抓过的正文（原来的 `cache_search`）。
+  - `video_search`（Bing Videos + DuckDuckGo Videos）、`weather`（Open-Meteo，当前 + 1-7 天）。
+  - 原来的 `advanced_search` / `multi_search` / `platform_search` / `domain_search` / `cache_search` /
+    `free_search_test` 已合并或移出模型目录（按渠道自测在面板「联网搜索 → 渠道」里）。
+  - 成本：工具定义 **6113 B → 3698 B**，系统提示词段 749 B → 658 B，合计 **6862 B → 4356 B（−36.5%）**，
+    每轮请求少约 626 tokens。改这些定义时请重新量一次，别让工具表又长回去。
+  - 新会话或重新加载后可见；已经打开的会话不会自动刷新工具表。
 - 注入一段系统提示词段「联网搜索（dsh-manager）」：说明当前搜索模式、已启用的渠道，以及「搜索只返回候选、
   要正文用 web_fetch 或 research」的分工。渠道开关变化时重新注册；文本里没有每次搜索都会变的计数，
   长会话的提示词前缀缓存不会因此反复失效。
-- `platform_search` 支持 GitHub / V2EX / Bilibili / Reddit / Hacker News / Stack Overflow / Wikipedia / npm /
-  YouTube / Vimeo / 掘金 / 豆瓣 / Qiita。X (Twitter) 需要本地 Grok Build CLI，暂未搬。
+- `search_source` 的平台档支持 GitHub / V2EX / Bilibili / Reddit / Hacker News / Stack Overflow / Wikipedia /
+  npm / YouTube / Vimeo / 掘金 / 豆瓣 / Qiita；垂类档是 41 个免 Key 公共 API。X (Twitter) 需要本地 Grok
+  Build CLI，暂未搬。
 - agent 侧和面板共用同一份开关、优先级、Key、冷却和缓存。停用 dsh-free-search 后，至少要在面板启用一个渠道，
   否则 `web_search` 会报“没有启用的搜索渠道”。首次启动且没有任何免费渠道启用时，插件会一次性启用 Bing + Exa
   作为零 Key 兜底；之后手动关闭不会被重新打开。
-- `advanced_search` 和面板的时间下拉支持 `day` / `week` / `month` / `year` 四档；会把过滤参数映射到
+- `web_search` 的 `timeRange` 和面板的时间下拉支持 `day` / `week` / `month` / `year` 四档；会把过滤参数映射到
   Bing、DuckDuckGo、Tavily、Firecrawl、Parallel、Keenable、SearXNG、Brave，以及有 Key 的 Exa。Exa 的
   免 Key MCP 档、You/AnySearch/Jina/DeepSeek/MiniMax 暂不支持；Bing 没有“一年”档。不支持的渠道仍会返回
   结果，只是不加这个参数；暂不支持自定义日期区间。
-- `domain_search` 支持包/版本（PyPI、crates、GitHub releases、endoflife、Maven/NuGet 等）、学术
+- `search_source` 的垂类档支持包/版本（PyPI、crates、GitHub releases、endoflife、Maven/NuGet 等）、学术
   （Crossref、OpenAlex、Semantic Scholar、arXiv、PubMed、dblp 等）、安全（NVD、OSV、CISA KEV）、
   金融（SEC、IMF、World Bank、CFETS 等）、新闻（Google News、GDELT）、法律和中文站等 41 个源。
-- `video_search` 跨站搜视频；要按站点搜 YouTube / Vimeo / B 站，用 `platform_search`。
+- `video_search` 跨站搜视频；要按站点搜 YouTube / Vimeo / B 站，用 `search_source` 并把 `target` 设成
+  `youtube` / `vimeo` / `bilibili`。
 - `research`：按中英文生成 1/3/5 个查询变体、合并搜索结果（同一站点最多 3 个来源，质量域按 eTLD+1 计数），
   先做词法重排；配置了 `SILICONFLOW_API_KEY`（宿主凭据或环境变量）时再用 `BAAI/bge-reranker-v2-m3` 重排，
   失败静默回退。整个运行共享 90 秒预算；第一轮证据偏薄且还有时间时，会再抓 2 个页面（升级检索）。
   正文通过 `dsh-manager-fetch` 质量链抓取，最后给出 `high/medium/low` 证据分级，预算耗尽或抓取全失败会降级为
   `low` 并标注 `degraded`。带 SSRF 防护（只抓公网 http/https）。
-  `cache_search` 检索 research 抓过的正文，7 天过期，持久化到 manager 数据目录的 `research-cache.json`
+  `research.fromCache` 检索 research 抓过的正文，7 天过期，持久化到 manager 数据目录的 `research-cache.json`
   （最多 200 篇，重启保留）。
 - 没有搬过来的能力：free-search 的无头浏览器抓取层（需要本机 Chrome/Edge CLI）、独立 MCP server，
   以及依赖 Grok Build CLI 的 X 搜索。除此之外，free-search 的搜索、路由、冷却、缓存、research 与抓取链都已接上。
@@ -194,31 +239,21 @@ dsh plugin --profile desktop add .
   停用后残留的 `ddg` / `fs-quality-fetch` 指针。抓取 provider 会切到 `dsh-manager-fetch`（直连 → Exa →
   Firecrawl → Crawl4AI）；注册失败时回退 `http`。如果你明确指定了别的 provider，本插件不会覆盖。
 
-## 模式
+## 工具目录
 
-「模式」就是 DSH 的 Agent 预设：一份插件行清单，决定新会话拿到哪些工具、哪些提示词段。这个标签管理的是
-**本插件自己注册的模式**；DSH 自带的标准 / 极简 / 创造 / PTC 由应用提供，这里不开关它们。
+「工具」这个标签回答一个问题：**模型现在到底能调用什么**。它不另建一份清单，而是把各板块自己知道的事情
+汇总起来——每一条都来自真正注册到 `ctx.tools` 的定义，所以名字、描述和参数不会和实际发出去的 schema 走偏。
 
-- **开关 = 注册 / 注销**。打开时调用 Host 的 `agentPresets.register()`，关闭时调用它返回的注销函数。
-  不写 profile 补丁，不需要重启，也不给插件增加任何 `@deepseek-ai/*` 依赖。
-- **只影响之后新建的会话**。已经开着的会话保持它创建时的组合——注册表会为旧代际保留挂载树，直到最后一个
-  会话释放它。
-- **失败不吞掉**。挂载失败会在行上显示「挂载失败」和注册表给出的具体诊断；开关仍保持你选的状态，因为那是
-  你的意图，注册是否成功是另一回事。开关状态存在管理器设置的 `modes.enabled` 里，重启后按它恢复。
+| 子标签 | 工具从哪来 | 描述与参数 |
+|---|---|---|
+| 技能 | 技能内核注册的 `create_skill` | 内核自己的定义 |
+| MCP | 每个已连接的 stdio 服务的 `tools/list` | 服务自己的 `description` 与 `inputSchema` |
+| 联网搜索 | 搜索桥注册的 5 个检索工具 | 桥自己的定义 |
+| 局域网访问 | 没有工具 | — |
 
-内置的「简单」模式 = 标准模式去掉三块：
-
-| 去掉 | 为什么 |
-|---|---|
-| `tool-schedule` | 定时任务用得少；演化器自己的定时器不走这条链路 |
-| `workflow-ptc` + `tool-workflow` | 工作流编排是标准模式里最大的一块工具描述 |
-| `tool-plugin-manager` | 插件管理走左侧管理器 |
-
-保留下来的有：读 / 写 / 搜索、持久 shell、后台任务、长目标、计划模式、技能目录、子 agent（含 fork 与控制
-三件套）、待办、联网、交付物。计划模式的引导文本换成了更短的一版，契约不变：先探索、不改文件、只通过
-`exit_plan_mode` 提交计划。
-
-「查看组成」按挂载顺序列出每一行及其插件名，并标出相对标准模式去掉了哪些——不用翻源码就能核对差异。
+- 目录是活的：MCP 服务后来连上，它的工具下一次刷新就出现；服务断掉，工具也一起消失。
+- 读目录的接口是 `POST /api/manager/tools-list`，返回 `{ groups: [{ id, tools }] }`；标签页上的计数来自
+  `overview` 里的 `tools.total`。
 
 ## 局域网访问
 
@@ -267,8 +302,8 @@ Harness 的 web 服务只拥有一个监听器，并且绑定回环地址；内�
   不会悄悄共用服务命名空间。
 - 删除技能会先进回收站（`~/.dsh/manager/skills/trash/`），可以恢复到原位；只有回收站里的 **永久删除**
   才会真正移除目录。删除入口只对可写来源显示，符号链接的技能不可删。
-- 新建技能写在当前来源下（默认 `~/.dsh/skills`）；`SKILL.md` 的正文和 frontmatter 由内核按与上游一致的
-  规则校验，非法名会被拒绝而不是清洗。
+- 面板不提供「新建技能」入口：写新技能走 Agent 的 `create_skill` 工具，装现成的走「发现技能」。
+  `SKILL.md` 的正文和 frontmatter 由内核按与上游一致的规则校验，非法名会被拒绝而不是清洗。
 - 标签页打开时，MCP 列表面板每四秒轮询一次状态。
 - 搜索渠道本身只负责搜索；正文抓取、多轮 research 和检索缓存由 `agent-fetch` / `research` 负责。X / 小红书站内检索没有接。
 - 免 Key 的 HTML 渠道（Bing/DDG）没有浏览器渲染和代理池，反爬、验证码或出口 IP 被限流时会失败；这是免费抓取的固有限制，
@@ -288,10 +323,6 @@ Harness 的 web 服务只拥有一个监听器，并且绑定回环地址；内�
   显式填了服务地址时只请求该地址。需要 Token Plan；安全/配额错误从 `base_resp.status_code` 映射，
   `2049`/`1004` 视为鉴权失败并触发区域回退。
 - Brave 先走 LLM Context，403/404 时回退 classic Web Search；其他渠道没有多端点回退。
-- 「模式」只管本插件注册的那些；DSH 自带预设在应用侧，这个标签不提供它们的开关。
-- 模式挂在 Host 的 `agentPresets` 注册表上。没有这个服务的组合（例如 TUI）里，整页只显示原因，不做降级。
-- 关闭一个模式不会结束正在运行的会话，也不会收回别的会话正在用的组合。
-- 挂载失败的模式仍会出现在 DSH 自己的模式设置页，状态是「不可用」——两处看到的是同一份注册表。
 - 局域网监听需要机器上有 `openssl` 才能签发证书。没有时开关会直接报出原因，不会开出端口。
 - 监听器只绑一个地址，绝不绑 `0.0.0.0`。macOS 不会把「本机 → 自己的局域网地址」的连接路由回来，所以
   这个链接必须用网络里的另一台设备打开——手机就是预期的打开方式。
@@ -304,15 +335,27 @@ Harness 的 web 服务只拥有一个监听器，并且绑定回环地址；内�
 ## 开发
 
 ```bash
-npm test                 # frontmatter、技能内核接线与投影、MCP 客户端、二维码编码器、局域网代理、联网搜索、模式、宿主接线、面板渲染
-npm run check:vendored   # 校验 skills/ 与钉住的哈希一致（手改或升级上游后跑 --update 重钉）
+npm test                 # frontmatter、技能内核接线与投影、MCP 客户端、二维码编码器、局域网代理、联网搜索、宿主接线、面板渲染
+npm run check:vendored   # 校验 skills/、rewind/ 与 client.js 内联片段与钉住的哈希一致（手改或升级上游后跑 --update 重钉）
 ```
+
+桌面版 GUI 只认应用自己打印的那条带令牌的 URL，别的浏览器打不开面板。想看界面但不开 GUI，用离线预览：
+它用真实的 `client.js`、真实的 Host 主题样式和假的 `/api/manager` 回答渲染同一个面板。
+
+```bash
+npm install --prefix /tmp/dsh-preview-cache react@18 react-dom@18   # 只需要 React 18 的 UMD 包
+DSH_NODE_EXECUTABLE="/Applications/DeepSeek Harness.app/Contents/MacOS/DeepSeek Harness" \
+  node harness/tool/panel-preview.mjs --react-dir /tmp/dsh-preview-cache/node_modules
+# [preview] http://127.0.0.1:8123/ (tab: tools)
+```
+
+预览页带 `?lang=en` 切英文；主题跟着 `body[data-ds-dark-theme]` 走，加这个属性就是暗色。
 
 源码地图：
 
 | 文件 | 职责 |
 |---|---|
-| `index.js` | 宿主入口：技能内核挂载、MCP、模式、搜索、局域网监听与 `/api/manager` 路由 |
+| `index.js` | 宿主入口：技能内核挂载、MCP、搜索、局域网监听与 `/api/manager` 路由 |
 | `src/frontmatter.js` | `SKILL.md` frontmatter 子集解析器 |
 | `skills/` | **自带的技能内核**（派生自 `@michengai/dsh-skills-manager`，见 `skills/NOTICE`）：来源发现、扫描、虚拟分类、回收站、导入导出、仓库订阅、项目作用域。48 条内核路由与下面的面板端点共用 `/api/manager` |
 | `src/skills-kernel.js` | 把内核挂到这个插件的上下文上：收窄可见服务、补齐 Host 要求的 `requestBody`、`create_skill` 撞名时降级而不是中断挂载 |
@@ -328,16 +371,19 @@ npm run check:vendored   # 校验 skills/ 与钉住的哈希一致（手改或�
 | `src/serp-engines.js` | 5 个中文 HTML 渠道的抓取、解析与反爬分类 |
 | `src/search-route.js` | 智能路由：语言、意图、按次计费渠道排除 |
 | `src/rerank.js` | 可选的 SiliconFlow 重排（无 Key 自动关闭） |
-| `src/agent-search.js` | `ctx.web` provider 与 10 个 agent 工具（`web_search` / `advanced_search` / `multi_search` / `platform_search` / `domain_search` / `weather` / `video_search` / `research` / `cache_search` / `free_search_test`） |
-| `src/platform-search.js` | 13 个平台的 keyless 站内搜索适配器 |
-| `src/domain-search.js` | 41 个垂直源的 keyless 直查适配器 |
+| `src/agent-search.js` | `ctx.web` provider 与 5 个 agent 工具（`web_search` / `search_source` / `research` / `video_search` / `weather`） |
+| `src/platform-search.js` | 13 个平台的 keyless 站内搜索适配器（`search_source` 的 `target` 档） |
+| `src/domain-search.js` | 41 个垂直源的 keyless 直查适配器（`search_source` 的垂类档） |
 | `src/weather.js` | Open-Meteo 地理编码、当前天气与预报 |
 | `src/video-search.js` | Bing Videos / DuckDuckGo Videos 免 Key 视频搜索 |
-| `src/research.js` | 多查询 research、正文抓取、90 秒预算、证据分级与持久化 cache_search |
+| `src/research.js` | 多查询 research、正文抓取、90 秒预算、证据分级与持久化正文缓存（`research.fromCache`） |
 | `src/agent-fetch.js` | web_fetch 质量链：直连 → Exa → Firecrawl → Crawl4AI |
-| `src/modes.js` | 内置模式的行清单，以及注册 / 注销的生命周期与失败上抛 |
 | `src/remote.js` | 面板端点与合并后的 Agent 目录视图 |
+| `src/tool-catalog.js` | 把各板块的工具汇总成面板「工具」页的目录：技能内核、MCP、搜索桥 |
+| `src/ui-enhancements.js` | 「UI 增强」页的功能清单：每个功能是本插件自己提供的一项增强，开关状态存在管理器自己的设置里 |
+| `src/rewind.js` | 对话回退这个功能的开关与挂载：状态存在 `ui.features.rewind`，开关实时生效 |
+| `rewind/` | **内置的对话回退功能**（取自 `dsh-rewind-plugin` 0.22.2，MIT，见 `rewind/NOTICE`）：宿主半边在 `index.js`，浏览器半边内联在 `client.js` 的 `rewind-client` 标记之间 |
 | `src/agent-prompt.js` | 联网搜索的系统提示词段与工具分工 |
 | `src/safe-text.js` | 工具输出/抓取正文的安全截断（按码点、清理半个 surrogate） |
 | `src/search-error.js` | 搜索渠道错误分类与用户可读消息 |
-| `client.js` | 侧边栏入口与管理页面（技能、MCP、联网搜索、模式、局域网） |
+| `client.js` | 侧边栏入口与管理页面（技能、MCP、联网搜索、UI 增强、偏好、局域网、工具） |

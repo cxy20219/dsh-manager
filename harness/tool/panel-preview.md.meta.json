@@ -1,0 +1,5 @@
+{
+	"schema": 1,
+	"title": "",
+	"description": "dsh-manager 面板的离线预览工具说明：为什么桌面版 GUI 打不开、预览怎么拼出来、asar 读取与主题样式的坑、预览不能替代 npm test 的边界。"
+}

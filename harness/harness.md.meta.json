@@ -1,0 +1,5 @@
+{
+	"schema": 1,
+	"title": "Harness 开发指南",
+	"description": "dsh-manager 项目总览：资源分层（workflow/experience/tool/resources）、面板的浏览器半边结构、视觉核对走离线预览而行为核对走 npm test 的分工，以及常用入口指向。"
+}

@@ -1,0 +1,5 @@
+{
+	"schema": 1,
+	"title": "面板 UI 约定与验证方式",
+	"description": "dsh-manager 面板的结构与验证约定：顶层页签与子页挂载规则、工具目录的单一来源、DSH 语义变量与主题属性、locale 死键判断、client-render 测试入口，以及桌面版 GUI 打不开时怎么用离线预览做视觉核对。"
+}

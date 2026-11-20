@@ -1,0 +1,5 @@
+{
+	"schema": 1,
+	"title": "",
+	"description": "面板离线预览脚本：用真实 client.js、真实 Host 主题样式和假的 /api/manager 回答在浏览器里渲染管理面板。桌面版 GUI 只认带令牌的 URL 时，改完面板想在浏览器里看一眼、或要截图核对明暗两套主题时用它。"
+}

@@ -1,3 +1,5 @@
 node_modules/
 *.tgz
 package-lock.json
+# 本机的 skill 软链库入口：指向 ~/.agents 下的绝对路径，进库会在别的机器上断链
+.agents/

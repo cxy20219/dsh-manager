@@ -1,0 +1,5 @@
+{
+	"schema": 1,
+	"title": "插槽契约查询脚本",
+	"description": "命令行脚本：node harness/tool/slot-contract.mjs <插槽名> 打印该插槽的契约，--list 按名字列出插槽；目录在 app.asar 里，用运行中的 Electron 运行时读取。"
+}

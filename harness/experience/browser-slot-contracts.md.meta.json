@@ -1,0 +1,5 @@
+{
+	"schema": 1,
+	"title": "浏览器插槽契约",
+	"description": "往别的包的浏览器插槽里注册东西时的判断：注册形状随插槽种类而变（chain 必带 select、keyed 要 key、list 要 id），漏一个选项就静默不生效；子插槽随父条目注册才出现，用 slots.inject 等它；注册成功与组件渲染成功要分开诊断。"
+}
