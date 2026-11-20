@@ -1,6 +1,6 @@
 {
   "meta": {
-    "title": "管理器",
-    "description": "统一管理分层的技能分类、本地 MCP 服务、支持免 Key 渠道与并发/回退模式的多渠道联网搜索（同时作为 agent 的 web_search provider）、Agent 模式与局域网访问。"
+    "title": "管理中枢",
+    "description": "统一管理分层的技能分类、本地 MCP 服务、多渠道联网搜索（同时作为 agent 的 web_search provider）、UI 增强、全局偏好与局域网访问。"
   }
 }

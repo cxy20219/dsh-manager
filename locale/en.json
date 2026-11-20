@@ -1,6 +1,6 @@
 {
   "meta": {
-    "title": "Manager",
-    "description": "Manage hierarchical skill categories, local MCP servers, multi-channel web search with keyless engines and merge/fallback modes (also the agent web_search provider), agent modes, and LAN access."
+    "title": "Control Hub",
+    "description": "One workspace for layered skill categories, local MCP servers, multi-channel web search (also the agent web_search provider), UI enhancements, global preferences and LAN access."
   }
 }

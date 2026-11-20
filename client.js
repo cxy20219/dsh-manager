@@ -1,9 +1,11 @@
 /*
  * dsh-manager — browser half.
  *
- * One sidebar entry opens one management page with four tabs:
+ * One sidebar entry opens one management page with five tabs:
  * 技能 (hierarchical categories under ~/.agents/skills), MCP (stdio servers),
- * 联网搜索 (the Host web seam) and 局域网访问 (the LAN listener).
+ * 联网搜索 (the Host web seam), 模式 (agent presets), 局域网访问 (the LAN
+ * listener) and 工具 (the catalog of every tool the manager hands the agent,
+ * grouped by the module that owns it).
  *
  * The panel only talks to `/api/manager`, served by the Host half. Skill
  * bodies are read on demand; the catalog stays a list of summaries until a
@@ -25,7 +27,7 @@ window.__ModuleLoader__.load({
 		var PANEL_ORDER = 20;
 		var API_PREFIX = '/api/manager';
 
-/* rewind-client:start — vendored from dsh-rewind-plugin 0.22.2 (MIT, see rewind/NOTICE) */
+		/* rewind-client:start — vendored from dsh-rewind-plugin 0.22.2 (MIT, see rewind/NOTICE) */
 		function createRewindClient(require) {
 
     var module = { exports: {} };
@@ -2489,38 +2491,52 @@ function apply(ctx) {
 			return module.exports;
 		}
 		/* rewind-client:end */
+
 		//#region locale
 
 		var zh = {
-			'panel': '管理器',
-			'subtitle': '技能分类、MCP 服务、联网搜索、模式与局域网访问',
+			'panel': '管理中枢',
+			'subtitle': '技能分类、MCP 服务、联网搜索、偏好与局域网访问',
 			'tab.skills': '技能',
 			'tab.mcp': 'MCP',
 			'tab.search': '联网搜索',
+			'skx.subtabs': '技能分区',
+			'skx.countsLabel': '启用',
+			'skx.countsOf': '/ 共 {total}',
+			'skx.countsHint': '已启用的技能数 / 技能总数（异常技能不计在内）',
 			'skx.tab.installed': '已安装',
 			'skx.tab.project': '项目技能',
 			'skx.tab.discover': '发现技能',
 			'skx.tab.trash': '回收站',
-			'skx.sources': '来源',
-			'skx.missingSources': '未安装的来源',
 			'skx.noSources': '没有检测到任何技能目录。',
 			'skx.noWorkspaces': '还没有登记的工作区。先在侧栏添加一个工作区。',
 			'skx.workspaceNoSkills': '这个工作区里还没有技能。',
 			'skx.workspaceUnavailable': '目录不可用',
 			'skx.projectHint': '按工作区查看项目级技能，只读。',
-			'skx.projectReadOnly': '项目技能在项目目录里维护，这里只做浏览。',
-			'skx.search': '搜索名称、简介或备注',
+			'skx.search': '搜索全部来源的技能名、简介或备注',
 			'skx.searchAction': '搜索',
-			'skx.showBroken': '显示异常项',
+			'skx.brokenButton': '异常',
+			'skx.brokenTitle': '无法加载的技能',
+			'skx.brokenHint': '这些 SKILL.md 不满足宿主要求，宿主不会加载、也不能启用；改好对应文件后点右上角的「重新扫描」。',
+			'skx.brokenNone': '没有无法加载的技能。',
+			'skx.diag.frontmatter': '文件开头没有 frontmatter（--- 段）',
+			'skx.diag.nameMissing': 'frontmatter 里没有 name',
+			'skx.diag.nameInvalid': 'name 不合法（要能转成 kebab-case，如 my-skill）',
+			'skx.diag.description': 'frontmatter 里 description 为空',
+			'skx.diag.invocation': 'disable-model-invocation / user-invocable 的取值不合法',
+			'skx.diag.other': '内核没有给出具体原因',
 			'skx.toggleSource': '开启或关闭整个来源',
 			'skx.toggleSkill': '开启或关闭这个技能',
-			'skx.enabled': '已启用',
-			'skx.disabled': '已停用',
 			'skx.noSkills': '这个来源里还没有技能。',
 			'skx.noMatch': '没有匹配的技能。',
-			'skx.pickSkill': '从左侧选择一个技能，这里显示它的简介、备注和正文。',
-			'skx.copiesTip': '另有 {n} 处同名副本（来自其他来源，未重复列出）',
+			'skx.sourcesButton': '来源',
+			'skx.sourcesTitle': '技能来源',
+			'skx.sourcesHint': '关掉一个来源，它下面的技能就不再提供给 Agent；单个技能仍可在这里单独开关。',
+			'skx.sourceSkillCount': '{n} 个技能',
+			'skx.sourceOffTip': '这个来源已停用，下面的技能不会提供给 Agent',
+			'skx.copiesTip': '同名技能在另外 {n} 个来源里也存在，这里只列出生效的那一份',
 			'skx.manualOnly': '仅手动',
+			'skx.manualOnlyTip': '模型不会自动调用它，只有你点名时才用',
 			'skx.broken': '解析失败',
 			'skx.noDescription': '未提供简介',
 			'skx.description': '简介',
@@ -2556,13 +2572,6 @@ function apply(ctx) {
 			'skx.installed': '已安装：{name}',
 			'skx.preview': '预览',
 			'skx.downloads': '{n} 次下载',
-			'skx.create': '新建技能',
-			'skx.createTitle': '在来源里新建技能',
-			'skx.createName': '名称（kebab-case）',
-			'skx.createDescription': '简介（何时使用）',
-			'skx.createBody': 'SKILL.md 正文（Markdown）',
-			'skx.createSubmit': '创建',
-			'skx.createNameRequired': '技能名不能为空',
 			'skx.purgeConfirmTitle': '永久删除「{name}」？',
 			'skx.purgeConfirmDesc': '这一步不可恢复，技能目录会被直接删除。',
 			'skx.kernelError': '技能内核未就绪：{detail}',
@@ -2574,7 +2583,6 @@ function apply(ctx) {
 			'skx.trashFrom': '来自 {root}',
 			'skx.restore': '恢复',
 			'skx.purge': '永久删除',
-			'skx.footer': '{n} 个来源已安装 · {m} 个未安装',
 			'action.refresh': '重新扫描',
 			'action.close': '关闭',
 			'action.cancel': '取消',
@@ -2666,11 +2674,18 @@ function apply(ctx) {
 			'search.open': '在新窗口打开',
 			'search.channels': '搜索渠道',
 			'search.channelsCount': '已启用 {enabled}/{total}',
+			'search.statFree': '免费 {n}',
+			'search.statKeyed': '已配置 {n}',
+			'search.statKeyMissing': '缺 Key {n}',
+			'search.bulkUsable': '全部可用渠道',
+			'search.bulkUsableHint': '打开：开启所有可用渠道（免费或已配 Key）；关闭：关闭全部渠道。',
+			'search.enabling': '正在切换…',
+			'search.bulkPartial': '有 {n} 个渠道没能切换，其余已切换。',
 			'search.statusError': '读取搜索渠道失败：{error}',
 			'search.subtabs': '联网搜索分区',
 			'search.sub.results': '结果',
 			'search.sub.channels': '渠道',
-			'search.sub.filter': '过滤',
+			'search.sub.settings': '设置',
 			'search.submit': '搜索',
 			'search.submitBusy': '搜索中…',
 			'search.modeCurrent': '当前模式：{mode}',
@@ -2730,6 +2745,19 @@ function apply(ctx) {
 			'search.channel.ddg.desc': 'DuckDuckGo HTML/Lite，无需 Key；反爬时自动切换 Lite。',
 			'search.channel.anysearch.desc': 'AnySearch 匿名搜索，无需 Key；可选 Key 提高额度。',
 			'error.banner': '操作失败',
+			'tab.preferences': '偏好',
+			'preferences.hint': '这里编辑的是 DSH 全局 AGENTS.md 全文：数据存在管理器的数据目录，DSH 读的 AGENTS.md 链接到它；改这里就是改每个会话开始时注入的规则。',
+			'preferences.file': '数据文件',
+			'preferences.link': 'DSH 读取：{agents}',
+			'preferences.mode.link': '已软链到数据文件，改这里等于改 DSH 读到的内容。',
+			'preferences.mode.copy': '不能建软链，已退化为两边同步写：数据文件与 DSH 的 AGENTS.md 保持同一份内容。',
+			'preferences.unreadable': '偏好文件读取失败，为避免覆盖原文件，保存已禁用；请检查文件权限后刷新。',
+			'preferences.dirty': '未保存',
+			'preferences.size': '约 {tokens} tok · 字节 {bytes} / {cap}',
+			'preferences.reset': '撤销修改',
+			'preferences.save': '保存',
+			'preferences.saved': '偏好已保存',
+			'preferences.loading': '正在读取偏好…',
 			'tab.lan': '局域网访问',
 			'lan.title': '局域网访问',
 			'lan.hint': '打开后，本机会在局域网地址上开一个加密入口。手机或平板扫码即可在浏览器里打开这个 DSH，操作与本机一致。',
@@ -2761,52 +2789,88 @@ function apply(ctx) {
 			'lan.android': 'Android：先下载根证书，再到「设置 → 安全 → 加密与凭据 → 安装证书 → CA 证书」里选中它。',
 			'lan.error': '开启失败',
 			'lan.addresses': '检测到的地址',
-			'tab.modes': '模式',
-			'modes.hint': '模式就是 Agent 预设：一份插件行清单，决定新会话拿到哪些工具和提示词。开关只影响之后新建的会话，已经开着的会话保持原样。DSH 自带的标准、极简、创造和 PTC 由应用提供，不在这里管理。',
-			'modes.owned': '本插件提供',
-			'modes.on': '已启用',
-			'modes.off': '已关闭',
-			'modes.pending': '正在挂载',
-			'modes.registered': '已挂载',
-			'modes.unregistered': '未挂载',
-			'modes.rows': '行',
-			'modes.composition': '查看组成',
-			'modes.removed': '相对标准模式去掉',
-			'modes.failed': '挂载失败',
-			'modes.unavailable': '当前 Host 没有模式服务（agentPresets），这个标签只在带 Agent 预设的组合里可用。',
-			'modes.empty': '没有可以管理的模式。',
+			'tab.tools': '工具',
+			'tab.ui': 'UI 增强',
+			'ui.hint': '这些开关决定管理器自带的功能开不开：有的会把功能挂进对话界面，有的只在浏览器里生效。',
+			'ui.defaultOn': '默认开启',
+			'ui.defaultOff': '默认关闭',
+			'ui.missing': '这个插件没有装在当前 profile 里，装好之后这里可以开关。到「插件」页安装或启用。',
+			'ui.unavailable': '当前 Host 没有插件管理服务，这个标签不可用。',
+			'ui.applying': '正在应用，面板会随 profile 重新加载…',
+			'ui.failed': '切换失败：{reason}',
+			'ui.clientState': '对话里的界面：{state}（{reason}）',
+			'ui.clientMounted': '已挂载',
+			'ui.clientNotMounted': '未挂载',
+			'ui.featureClient': '客户端：{state}（{reason}）',
+			'ui.rowState': '消息动作栏的按钮：{state}（{reason}）',
+			'tools.subtabs': '工具分区',
+			'tools.note': '管理器每个板块交给 Agent 的工具都在这里，按板块分组，附上工具描述与参数。',
+			'tools.group.skills': '技能',
+			'tools.group.mcp': 'MCP',
+			'tools.group.search': '联网搜索',
+			'tools.group.lan': '局域网访问',
+			'tools.source.skills': '技能内核',
+			'tools.source.search': '联网搜索',
+			'tools.params': '参数',
+			'tools.required': '必填',
+			'tools.noParams': '没有参数',
+			'tools.modeOff': '未启用',
+			'tools.hint.skills': '技能内核注册的工具。',
+			'tools.hint.mcp': '每个已连接的 MCP 服务贡献的工具，名称形如 mcp__<服务>__<工具>。',
+			'tools.hint.search': '联网搜索桥注册给 Agent 的检索类工具。',
+			'tools.hint.lan': '局域网访问不提供工具，它只把面板开放给同一局域网的其他设备。',
+			'tools.empty.skills': '技能内核没有注册工具。',
+			'tools.empty.mcp': '还没有 MCP 服务提供工具。',
+			'tools.empty.search': '联网搜索没有注册工具。',
+			'tools.empty.lan': '局域网访问不提供工具。',
+			'tools.empty': '没有可列出的工具。',
+			'tools.loading': '正在读取工具目录…',
+			'tools.failed': '读取工具目录失败',
 		};
 
 		var en = {
-			'panel': 'Manager',
-			'subtitle': 'Skill categories, MCP servers, web search, modes and LAN access',
+			'panel': 'Control Hub',
+			'subtitle': 'Skill categories, MCP servers, web search, preferences and LAN access',
 			'tab.skills': 'Skills',
 			'tab.mcp': 'MCP',
 			'tab.search': 'Web search',
+			'skx.subtabs': 'Skill sections',
+			'skx.countsLabel': 'Started',
+			'skx.countsOf': '/ {total}',
+			'skx.countsHint': 'Skills the agent starts with / skills found (broken ones excluded)',
 			'skx.tab.installed': 'Installed',
 			'skx.tab.project': 'Project skills',
 			'skx.tab.discover': 'Discover',
 			'skx.tab.trash': 'Trash',
-			'skx.sources': 'Sources',
-			'skx.missingSources': 'Not installed',
 			'skx.noSources': 'No skill directory was found.',
 			'skx.noWorkspaces': 'No workspace is registered yet. Add one in the sidebar first.',
 			'skx.workspaceNoSkills': 'This workspace has no skills yet.',
 			'skx.workspaceUnavailable': 'Directory unavailable',
 			'skx.projectHint': 'Browse project-scoped skills per workspace. Read-only.',
-			'skx.projectReadOnly': 'Project skills are maintained in the project directory; this view only browses them.',
-			'skx.search': 'Search name, description or note',
+			'skx.search': 'Search every source by name, description or note',
 			'skx.searchAction': 'Search',
-			'skx.showBroken': 'Show broken',
+			'skx.brokenButton': 'Broken',
+			'skx.brokenTitle': 'Skills the host will not load',
+			'skx.brokenHint': 'These SKILL.md files fail the host requirements, so they are never loaded and cannot be enabled. Fix the file, then use Rescan above.',
+			'skx.brokenNone': 'No skill is broken.',
+			'skx.diag.frontmatter': 'no frontmatter at the top of the file',
+			'skx.diag.nameMissing': 'frontmatter has no name',
+			'skx.diag.nameInvalid': 'name is not usable kebab-case (for example my-skill)',
+			'skx.diag.description': 'frontmatter has an empty description',
+			'skx.diag.invocation': 'disable-model-invocation / user-invocable holds an invalid value',
+			'skx.diag.other': 'the kernel gave no reason',
 			'skx.toggleSource': 'Turn the whole source on or off',
 			'skx.toggleSkill': 'Turn this skill on or off',
-			'skx.enabled': 'On',
-			'skx.disabled': 'Off',
 			'skx.noSkills': 'This source has no skills yet.',
 			'skx.noMatch': 'No matching skills.',
-			'skx.pickSkill': 'Pick a skill on the left to see its description, note and body.',
-			'skx.copiesTip': '{n} more copies exist in other sources and are not repeated here',
+			'skx.sourcesButton': 'Sources',
+			'skx.sourcesTitle': 'Skill sources',
+			'skx.sourcesHint': 'Turning a source off stops offering its skills to the agent; each skill still has its own switch below.',
+			'skx.sourceSkillCount': '{n} skills',
+			'skx.sourceOffTip': 'This source is off, so its skills are not offered to the agent',
+			'skx.copiesTip': 'The same skill exists in {n} other sources; only the effective one is listed',
 			'skx.manualOnly': 'Manual only',
+			'skx.manualOnlyTip': 'The model will not call it by itself; it runs when you name it',
 			'skx.broken': 'Unparseable',
 			'skx.noDescription': 'No description',
 			'skx.description': 'Description',
@@ -2842,13 +2906,6 @@ function apply(ctx) {
 			'skx.installed': 'Installed: {name}',
 			'skx.preview': 'Preview',
 			'skx.downloads': '{n} downloads',
-			'skx.create': 'New skill',
-			'skx.createTitle': 'Create a skill',
-			'skx.createName': 'Name (kebab-case)',
-			'skx.createDescription': 'Description (when to use it)',
-			'skx.createBody': 'SKILL.md body (Markdown)',
-			'skx.createSubmit': 'Create',
-			'skx.createNameRequired': 'A skill name is required',
 			'skx.purgeConfirmTitle': 'Delete “{name}” forever?',
 			'skx.purgeConfirmDesc': 'This cannot be undone. The skill folder is removed outright.',
 			'skx.kernelError': 'The skill kernel is not ready: {detail}',
@@ -2860,7 +2917,6 @@ function apply(ctx) {
 			'skx.trashFrom': 'From {root}',
 			'skx.restore': 'Restore',
 			'skx.purge': 'Delete forever',
-			'skx.footer': '{n} sources installed · {m} not installed',
 			'action.refresh': 'Rescan',
 			'action.close': 'Close',
 			'action.cancel': 'Cancel',
@@ -2952,11 +3008,18 @@ function apply(ctx) {
 			'search.open': 'Open in a new window',
 			'search.channels': 'Search channels',
 			'search.channelsCount': '{enabled}/{total} enabled',
+			'search.statFree': 'free {n}',
+			'search.statKeyed': 'key set {n}',
+			'search.statKeyMissing': 'key missing {n}',
+			'search.bulkUsable': 'All usable channels',
+			'search.bulkUsableHint': 'On: turn on every usable channel (free or keyed). Off: turn off every channel.',
+			'search.enabling': 'Working…',
+			'search.bulkPartial': '{n} channels could not be switched; the rest were.',
 			'search.statusError': 'Could not read the search channels: {error}',
 			'search.subtabs': 'Web search sections',
 			'search.sub.results': 'Results',
 			'search.sub.channels': 'Channels',
-			'search.sub.filter': 'Filter',
+			'search.sub.settings': 'Settings',
 			'search.submit': 'Search',
 			'search.submitBusy': 'Searching…',
 			'search.modeCurrent': 'Mode: {mode}',
@@ -3016,6 +3079,19 @@ function apply(ctx) {
 			'search.channel.ddg.desc': 'DuckDuckGo HTML/Lite, no key required; falls back to Lite when challenged.',
 			'search.channel.anysearch.desc': 'Anonymous AnySearch; no key required, an optional key raises limits.',
 			'error.banner': 'Action failed',
+			'tab.preferences': 'Preferences',
+			'preferences.hint': 'This edits the whole DSH global AGENTS.md. The data lives in the manager data directory and the AGENTS.md DSH reads links to it, so changes here are what every session is injected with.',
+			'preferences.file': 'Data file',
+			'preferences.link': 'Read by DSH: {agents}',
+			'preferences.mode.link': 'It is symlinked to the data file, so editing here edits what DSH reads.',
+			'preferences.mode.copy': 'Symlinks are unavailable, so the data file and the DSH AGENTS.md are kept in sync as two copies.',
+			'preferences.unreadable': 'The preferences file could not be read. Saving is disabled so the original is not overwritten; check the file permissions and refresh.',
+			'preferences.dirty': 'unsaved',
+			'preferences.size': '≈ {tokens} tok · {bytes} / {cap} bytes',
+			'preferences.reset': 'Discard changes',
+			'preferences.save': 'Save',
+			'preferences.saved': 'Preferences saved',
+			'preferences.loading': 'Reading preferences…',
 			'tab.lan': 'LAN access',
 			'lan.title': 'LAN access',
 			'lan.hint': 'When on, this machine opens an encrypted door on its LAN address. A phone or tablet can scan the code and open this Harness in a browser with the same powers.',
@@ -3047,20 +3123,43 @@ function apply(ctx) {
 			'lan.android': 'Android: download the root certificate, then pick it under Settings → Security → Encryption & credentials → Install a certificate → CA certificate.',
 			'lan.error': 'Could not start',
 			'lan.addresses': 'Detected addresses',
-			'tab.modes': 'Modes',
-			'modes.hint': 'A mode is an agent preset: one list of plugin rows that decides the tools and prompt sections a new session gets. A switch only affects sessions created afterwards; running sessions keep what they started with. The standard, minimal, creator and PTC presets come from the app and are not managed here.',
-			'modes.owned': 'from this plugin',
-			'modes.on': 'On',
-			'modes.off': 'Off',
-			'modes.pending': 'Mounting',
-			'modes.registered': 'Mounted',
-			'modes.unregistered': 'Not mounted',
-			'modes.rows': 'rows',
-			'modes.composition': 'View composition',
-			'modes.removed': 'Removed from the standard preset',
-			'modes.failed': 'Could not mount',
-			'modes.unavailable': 'This Host has no mode service (agentPresets); the tab only works in a composition with agent presets.',
-			'modes.empty': 'No modes to manage.',
+			'tab.tools': 'Tools',
+			'tab.ui': 'UI enhancements',
+			'ui.hint': 'These switches drive plugin bundles in the profile; what a feature does is exactly what that plugin does.',
+			'ui.defaultOn': 'On by default',
+			'ui.defaultOff': 'Off by default',
+			'ui.missing': 'This plugin is not in the current profile; install or enable it and its switch appears here.',
+			'ui.unavailable': 'This Host has no plugin manager service, so the tab is unavailable.',
+			'ui.applying': 'Applying; the panel reloads with the profile…',
+			'ui.failed': 'Could not switch it: {reason}',
+			'ui.clientState': 'In-conversation surface: {state} ({reason})',
+			'ui.clientMounted': 'mounted',
+			'ui.clientNotMounted': 'not mounted',
+			'ui.featureClient': 'Browser half: {state} ({reason})',
+			'ui.rowState': 'Button in the message action row: {state} ({reason})',
+			'tools.subtabs': 'Tool sections',
+			'tools.note': 'Every tool the manager hands to the agent is listed here, grouped by the section that owns it, with its description and parameters.',
+			'tools.group.skills': 'Skills',
+			'tools.group.mcp': 'MCP',
+			'tools.group.search': 'Web search',
+			'tools.group.lan': 'LAN access',
+			'tools.source.skills': 'Skill kernel',
+			'tools.source.search': 'Web search',
+			'tools.params': 'Parameters',
+			'tools.required': 'required',
+			'tools.noParams': 'No parameters',
+			'tools.modeOff': 'not enabled',
+			'tools.hint.skills': 'The tools the skill kernel registers.',
+			'tools.hint.mcp': 'What every connected MCP server contributes; the names look like mcp__<server>__<tool>.',
+			'tools.hint.search': 'The retrieval tools the search bridge registers for the agent.',
+			'tools.hint.lan': 'LAN access provides no tools; it only opens the panel to other devices on the same network.',
+			'tools.empty.skills': 'The skill kernel registered no tools.',
+			'tools.empty.mcp': 'No MCP server provides tools yet.',
+			'tools.empty.search': 'The search bridge registered no tools.',
+			'tools.empty.lan': 'LAN access provides no tools.',
+			'tools.empty': 'No tools to list.',
+			'tools.loading': 'Reading the tool catalog…',
+			'tools.failed': 'Could not read the tool catalog',
 		};
 
 		//#endregion
@@ -3069,55 +3168,57 @@ function apply(ctx) {
 
 		var css = [
 			'.mgrRoot{position:relative;height:100%;display:flex;flex-direction:column;box-sizing:border-box;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font-family:var(--dsw-font-family);font-size:13px;line-height:1.5;-webkit-font-smoothing:antialiased}',
-			'.mgrHead{display:flex;align-items:flex-start;gap:16px;padding:22px 28px 0;flex:none}',
+			'.mgrHead{display:flex;align-items:flex-start;gap:16px;padding:24px 28px 0;flex:none}',
 			'.mgrHeadMain{flex:1;min-width:0}',
 			'.mgrTitle{margin:0;font-size:18px;font-weight:600;line-height:26px;letter-spacing:-.01em}',
-			'.mgrVersion{margin-left:8px;font-size:12px;font-weight:500;letter-spacing:0;color:var(--dsw-alias-label-tertiary);vertical-align:2px}',
-			'.mgrSubtitle{margin-top:3px;font-size:12px;color:var(--dsw-alias-label-tertiary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+			'.mgrVersion{margin-left:8px;font-size:11.5px;font-weight:500;letter-spacing:0;color:var(--dsw-alias-label-secondary);vertical-align:2px}',
+			'.mgrSubtitle{margin-top:3px;font-size:11.5px;color:var(--dsw-alias-label-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
 			'.mgrHeadActions{display:flex;align-items:center;gap:8px;flex:none;padding-top:3px}',
-			'.mgrTabs{display:flex;gap:4px;padding:16px 28px 0;flex:none;flex-wrap:wrap}',
-			'.mgrTab{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 11px;border:1px solid transparent;border-radius:var(--dsw-radius-md);background:transparent;color:var(--dsw-alias-label-secondary);font:inherit;font-size:12.5px;cursor:pointer;transition:background .15s ease,color .15s ease,border-color .15s ease}',
+			'.mgrTabs{display:flex;gap:4px;padding:16px 28px 0;flex:none;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;-webkit-mask-image:linear-gradient(to right,#000 calc(100% - 16px),transparent);mask-image:linear-gradient(to right,#000 calc(100% - 16px),transparent)}',
+			'.mgrTabs .mgrTab:last-child{margin-right:12px}',
+			'.mgrTabs::-webkit-scrollbar{display:none}',
+			'.mgrTab{display:inline-flex;align-items:center;gap:6px;flex:none;height:30px;padding:0 12px;border:1px solid transparent;border-radius:var(--dsw-radius-md);background:transparent;color:var(--dsw-alias-label-secondary);font:inherit;font-size:13px;white-space:nowrap;cursor:pointer;transition:background .15s ease,color .15s ease,border-color .15s ease}',
 			'.mgrTab:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}',
 			'.mgrTab:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:1px}',
 			'.mgrTabActive{background:var(--dsw-alias-interactive-bg-active);color:var(--dsw-alias-label-primary);font-weight:500;border-color:var(--dsw-alias-border-l2)}',
-			'.mgrTabCount{font-size:11px;color:var(--dsw-alias-label-tertiary);font-variant-numeric:tabular-nums}',
-			'.mgrBody{flex:1;min-height:0;overflow:auto;padding:18px 28px 36px;scrollbar-width:thin;scrollbar-color:var(--dsw-alias-scrollbar-bg-l2) transparent}',
+			'.mgrTabCount{font-size:11.5px;color:var(--dsw-alias-label-secondary);font-variant-numeric:tabular-nums}',
+			'.mgrBody{flex:1;min-height:0;overflow:auto;padding:16px 28px 24px;scrollbar-width:thin;scrollbar-color:var(--dsw-alias-scrollbar-bg-l2) transparent}',
 			'.mgrBody::-webkit-scrollbar{width:10px;height:10px}',
 			'.mgrBody::-webkit-scrollbar-thumb{background:var(--dsw-alias-scrollbar-bg-l2);border:3px solid transparent;border-radius:6px;background-clip:content-box}',
 			'.mgrToolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}',
 			'.mgrToolbarSpacer{flex:1}',
-			'.mgrHint{font-size:11.5px;color:var(--dsw-alias-label-tertiary);line-height:1.55;max-width:640px}',
+			'.mgrHint{font-size:11.5px;color:var(--dsw-alias-label-secondary);line-height:1.55;max-width:640px}',
 			'.mgrBtn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:30px;padding:0 12px;border:1px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-primary);font:inherit;font-size:12.5px;cursor:pointer;transition:background .15s ease,border-color .15s ease}',
 			'.mgrBtn:hover{background:var(--dsw-alias-interactive-bg-hover);border-color:var(--dsw-alias-border-l3)}',
 			'.mgrBtn:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:1px}',
 			'.mgrBtn[disabled]{opacity:.5;cursor:default}',
 			'.mgrBtnPrimary{background:var(--dsw-alias-state-business-primary);border-color:var(--dsw-alias-state-business-primary);color:var(--dsw-alias-label-primary-foreground)}',
 			'.mgrBtnPrimary:hover{background:var(--dsw-alias-state-business-primary);filter:brightness(1.05)}',
-			'.mgrBtnDanger{color:var(--dsw-alias-state-error-primary)}',
+			'.mgrBtnDanger{color:var(--dsw-alias-label-primary);border-color:var(--dsw-alias-state-error-primary)}',
 			'.mgrBtnDanger:hover{border-color:var(--dsw-alias-state-error-primary);background:transparent}',
-			'.mgrIconBtn{flex:none;width:28px;height:28px;padding:0;border:1px solid transparent;border-radius:var(--dsw-radius-md);background:transparent;color:var(--dsw-alias-label-secondary);font:inherit;font-size:16px;line-height:1;cursor:pointer}',
+			'.mgrIconBtn{flex:none;width:30px;height:30px;padding:0;border:1px solid transparent;border-radius:var(--dsw-radius-md);background:transparent;color:var(--dsw-alias-label-secondary);font:inherit;font-size:16px;line-height:1;cursor:pointer}',
 			'.mgrIconBtn:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}',
 			'.mgrInput,.mgrTextarea,.mgrSelect{width:100%;box-sizing:border-box;padding:7px 10px;border:1px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-primary);font:inherit;font-size:12.5px;line-height:1.5}',
-			'.mgrInput{height:32px}',
+			'.mgrInput{height:30px}',
 			'.mgrInput:focus,.mgrTextarea:focus,.mgrSelect:focus{outline:none;border-color:var(--dsw-alias-state-business-primary)}',
 			'.mgrTextarea{min-height:76px;resize:vertical}',
 			'.mgrToolbar .mgrInput{width:240px;flex:none}',
-			'.mgrField{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}',
-			'.mgrLabel{font-size:12px;font-weight:500;color:var(--dsw-alias-label-secondary)}',
-			'.mgrFieldHint{font-size:11.5px;color:var(--dsw-alias-label-tertiary);line-height:1.55}',
-			'.mgrStats{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:12px;font-size:12px;color:var(--dsw-alias-label-tertiary)}',
+			'.mgrField{display:flex;flex-direction:column;gap:4px;margin-bottom:12px}',
+			'.mgrLabel{font-size:12.5px;font-weight:500;color:var(--dsw-alias-label-secondary)}',
+			'.mgrFieldHint{font-size:11.5px;color:var(--dsw-alias-label-secondary);line-height:1.55}',
+			'.mgrStats{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:12px;font-size:11.5px;color:var(--dsw-alias-label-secondary)}',
 			'.mgrStats b{font-weight:600;color:var(--dsw-alias-label-secondary)}',
 			'.mgrCatalog{margin:-4px 0 12px}',
-			'.mgrRootPath{font-family:var(--dsw-font-mono,ui-monospace,SFMono-Regular,Menlo,monospace);font-size:11.5px;color:var(--dsw-alias-label-tertiary)}',
-			'.mgrWarn{display:flex;align-items:flex-start;gap:8px;padding:9px 12px;margin-bottom:12px;border:1px solid var(--dsw-alias-border-l2);border-left:3px solid var(--dsw-alias-state-warn-primary);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-1);font-size:12px;color:var(--dsw-alias-label-secondary);line-height:1.6}',
-			'.mgrErrorBox{display:flex;align-items:flex-start;gap:8px;padding:9px 12px;margin-bottom:12px;border:1px solid var(--dsw-alias-border-l2);border-left:3px solid var(--dsw-alias-state-error-primary);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-1);font-size:12px;color:var(--dsw-alias-state-error-primary);line-height:1.6;word-break:break-word}',
+			'.mgrRootPath{font-family:var(--dsw-font-mono,ui-monospace,SFMono-Regular,Menlo,monospace);font-size:11.5px;color:var(--dsw-alias-label-secondary)}',
+			'.mgrWarn{display:flex;align-items:flex-start;gap:8px;padding:9px 12px;margin-bottom:12px;border:1px solid var(--dsw-alias-border-l2);border-left:3px solid var(--dsw-alias-state-warn-primary);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-1);font-size:13px;color:var(--dsw-alias-label-secondary);line-height:1.6}',
+			'.mgrErrorBox{display:flex;align-items:flex-start;gap:8px;padding:9px 12px;margin-bottom:12px;border:1px solid var(--dsw-alias-border-l2);border-left:3px solid var(--dsw-alias-state-error-primary);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-1);font-size:13px;color:var(--dsw-alias-state-error-primary);line-height:1.6;word-break:break-word}',
 			'.mgrCat{border:1px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-lg);background:var(--dsw-alias-bg-layer-1);margin-bottom:10px;overflow:hidden}',
 			'.mgrCatHead{display:flex;align-items:center;gap:8px;padding:9px 12px;min-height:40px;box-sizing:border-box}',
 			'.mgrCatHead:hover{background:var(--dsw-alias-bg-layer-2)}',
 			'.mgrChevron{flex:none;width:20px;height:20px;padding:0;border:none;background:transparent;color:var(--dsw-alias-label-tertiary);font-size:11px;line-height:1;cursor:pointer}',
 			'.mgrChevron:hover{color:var(--dsw-alias-label-primary)}',
 			'.mgrCatName{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
-			'.mgrCount{flex:none;font-size:11.5px;color:var(--dsw-alias-label-tertiary);font-variant-numeric:tabular-nums}',
+			'.mgrCount{flex:none;font-size:11.5px;color:var(--dsw-alias-label-secondary);font-variant-numeric:tabular-nums}',
 			'.mgrSpacer{flex:1}',
 			'.mgrCatBody{border-top:1px solid var(--dsw-alias-border-l2)}',
 			'.mgrSkill{display:flex;align-items:center;gap:10px;padding:9px 12px;border-top:1px solid var(--dsw-alias-border-l1);cursor:pointer;transition:background .15s ease}',
@@ -3125,16 +3226,20 @@ function apply(ctx) {
 			'.mgrSkill:hover{background:var(--dsw-alias-bg-layer-2)}',
 			'.mgrSkill:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:-2px}',
 			'.mgrSkillMain{flex:1;min-width:0}',
-			'.mgrSkillName{display:flex;align-items:center;gap:6px;font-family:var(--dsw-font-mono,ui-monospace,SFMono-Regular,Menlo,monospace);font-size:12px;color:var(--dsw-alias-label-primary)}',
-			'.mgrSkillDesc{margin-top:2px;font-size:11.5px;color:var(--dsw-alias-label-tertiary);line-height:1.5;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word}',
+			'.mgrSkillName{display:flex;align-items:center;gap:6px;font-family:var(--dsw-font-mono,ui-monospace,SFMono-Regular,Menlo,monospace);font-size:13px;color:var(--dsw-alias-label-primary)}',
+			'.mgrSkillDesc{margin-top:2px;font-size:11.5px;color:var(--dsw-alias-label-secondary);line-height:1.5;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word}',
 			'.mgrBadge{display:inline-flex;align-items:center;flex:none;padding:0 6px;border-radius:99px;background:var(--dsw-alias-bg-layer-3);color:var(--dsw-alias-label-secondary);font-size:10.5px;font-weight:500;line-height:1.7;letter-spacing:0;white-space:nowrap}',
-			'.mgrBadgeOk{color:var(--dsw-alias-state-success-primary)}',
-			'.mgrBadgeWarn{color:var(--dsw-alias-state-warn-primary)}',
+			'.mgrBadgeOk{background:var(--dsw-alias-state-success-tertiary);color:var(--dsw-alias-label-primary)}',
+			'.mgrBadgeWarn{background:var(--dsw-alias-state-warn-tertiary);color:var(--dsw-alias-label-primary)}',
 			'.mgrBadgeError{color:var(--dsw-alias-state-error-primary)}',
 			'.mgrSwitch{position:relative;flex:none;width:34px;height:20px;padding:0;border:1px solid var(--dsw-alias-border-l2);border-radius:99px;background:var(--dsw-alias-bg-layer-3);cursor:pointer;transition:background .15s ease,border-color .15s ease}',
 			'.mgrSwitch:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}',
 			'.mgrSwitchOn{background:var(--dsw-alias-state-business-primary);border-color:var(--dsw-alias-state-business-primary)}',
-			'.mgrSwitch:disabled{opacity:.5;cursor:default}',
+			/* Off state only: the idling track plus a hairline ring, so the off switch
+			   reads on both themes. `.mgrSwitchOn` keeps its own paint untouched. */
+			'.mgrSwitch:not(.mgrSwitchOn){background:var(--dsw-alias-state-idle-primary);box-shadow:var(--dsw-elevation-soft,0 1px 2px rgba(0,0,0,.18)),0 0 0 1px var(--dsw-alias-border-l2)}',
+			'.mgrSwitch:not(.mgrSwitchOn) .mgrSwitchKnob{background:var(--dsw-alias-bg-base)}',
+			'.mgrSwitch:disabled{opacity:.65;cursor:default}',
 			'.mgrSwitchKnob{position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:var(--dsw-alias-label-primary-foreground);box-shadow:var(--dsw-elevation-soft);transition:transform .15s ease}',
 			'.mgrSwitchOn .mgrSwitchKnob{transform:translateX(14px)}',
 			'.mgrServer{border:1px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-lg);background:var(--dsw-alias-bg-layer-1);padding:12px 14px;margin-bottom:10px}',
@@ -3146,17 +3251,36 @@ function apply(ctx) {
 			'.mgrDot-connecting{background:var(--dsw-alias-state-warn-primary)}',
 			'.mgrDot-error{background:var(--dsw-alias-state-error-primary)}',
 			'.mgrCommand{margin-top:6px;font-family:var(--dsw-font-mono,ui-monospace,SFMono-Regular,Menlo,monospace);font-size:11.5px;color:var(--dsw-alias-label-secondary);word-break:break-all}',
-			'.mgrMeta{margin-top:4px;font-size:11.5px;color:var(--dsw-alias-label-tertiary);word-break:break-word}',
+			'.mgrMeta{margin-top:4px;font-size:11.5px;color:var(--dsw-alias-label-secondary);word-break:break-word}',
 			'.mgrServerError{margin-top:6px;font-size:11.5px;color:var(--dsw-alias-state-error-primary);line-height:1.5;word-break:break-word}',
 			'.mgrServerActions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px solid var(--dsw-alias-border-l1)}',
 			'.mgrToolList{margin-top:8px;border:1px solid var(--dsw-alias-border-l1);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-2);padding:6px 10px}',
 			'.mgrToolRow{padding:5px 0;border-top:1px solid var(--dsw-alias-border-l1)}',
 			'.mgrToolRow:first-child{border-top:none}',
 			'.mgrToolName{font-family:var(--dsw-font-mono,ui-monospace,SFMono-Regular,Menlo,monospace);font-size:11.5px;color:var(--dsw-alias-label-primary);word-break:break-all}',
-			'.mgrToolDesc{margin-top:1px;font-size:11px;color:var(--dsw-alias-label-tertiary);line-height:1.5;word-break:break-word}',
+			'.mgrToolDesc{margin-top:1px;font-size:11.5px;color:var(--dsw-alias-label-secondary);line-height:1.5;word-break:break-word}',
+			'.mgrUiFeature{display:flex;align-items:flex-start;gap:14px;padding:12px 0;border-top:1px solid var(--dsw-alias-border-l1)}',
+			'.mgrUiFeature:first-child{border-top:none;padding-top:2px}',
+			'.mgrUiFeatureMain{flex:1;min-width:0}',
+			'.mgrUiFeatureTitle{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;font-weight:600;color:var(--dsw-alias-label-primary)}',
+			'.mgrUiFeatureDesc{margin-top:4px;font-size:11.5px;color:var(--dsw-alias-label-secondary);line-height:1.6}',
+			'.mgrToolCard{border:1px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-lg);background:var(--dsw-alias-bg-layer-1);padding:12px 14px;margin-bottom:10px}',
+			'.mgrToolCardHead{display:flex;align-items:center;gap:8px;flex-wrap:wrap}',
+			'.mgrToolCardName{font-family:var(--dsw-font-mono,ui-monospace,SFMono-Regular,Menlo,monospace);font-size:13px;font-weight:600;color:var(--dsw-alias-label-primary);word-break:break-all}',
+			'.mgrToolCardDesc{margin-top:6px;font-size:11.5px;color:var(--dsw-alias-label-secondary);line-height:1.6;word-break:break-word}',
+			'.mgrToolParams{margin-top:10px;padding-top:8px;border-top:1px solid var(--dsw-alias-border-l1)}',
+			'.mgrToolParamsHead{font-size:11.5px;font-weight:600;color:var(--dsw-alias-label-secondary);margin-bottom:6px}',
+			'.mgrToolParam{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;padding:3px 0}',
+			'.mgrToolParamName{font-family:var(--dsw-font-mono,ui-monospace,SFMono-Regular,Menlo,monospace);font-size:11.5px;color:var(--dsw-alias-label-primary)}',
+			'.mgrToolParamType{flex:none;padding:0 6px;border-radius:99px;background:var(--dsw-alias-bg-layer-3);color:var(--dsw-alias-label-secondary);font-size:10.5px;line-height:1.7}',
+			'.mgrToolParamReq{flex:none;font-size:10.5px;font-weight:500;color:var(--dsw-alias-label-secondary)}',
+			'.mgrToolParamDesc{flex:1;min-width:0;font-size:11.5px;color:var(--dsw-alias-label-secondary);line-height:1.5;word-break:break-word}',
+			'.mgrCode{font-family:var(--dsw-font-mono,ui-monospace,SFMono-Regular,Menlo,monospace);font-size:11.5px;color:var(--dsw-alias-label-secondary);word-break:break-all}',
+			'.mgrPrefsText{min-height:320px;resize:vertical;font-family:var(--dsw-font-mono,ui-monospace,SFMono-Regular,Menlo,monospace);font-size:12px;line-height:18px}',
+			'.mgrPrefsPath{display:flex;align-items:center;gap:8px;margin-bottom:10px}',
 			'.mgrPre{white-space:pre-wrap;word-break:break-word;font-family:var(--dsw-font-mono,ui-monospace,SFMono-Regular,Menlo,monospace);font-size:11.5px;line-height:1.65;color:var(--dsw-alias-label-secondary);background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-md);padding:10px 12px;margin:0;max-height:320px;overflow:auto}',
-			'.mgrEmpty{display:flex;flex-direction:column;align-items:center;gap:8px;padding:44px 16px;text-align:center;color:var(--dsw-alias-label-tertiary);line-height:1.7}',
-			'.mgrLoading{display:flex;align-items:center;justify-content:center;gap:10px;padding:36px 0;color:var(--dsw-alias-label-tertiary)}',
+			'.mgrEmpty{display:flex;flex-direction:column;align-items:center;gap:8px;padding:44px 16px;text-align:center;color:var(--dsw-alias-label-secondary);line-height:1.7}',
+			'.mgrLoading{display:flex;align-items:center;justify-content:center;gap:10px;padding:36px 0;color:var(--dsw-alias-label-secondary)}',
 			'.mgrSpinner{width:13px;height:13px;border:2px solid var(--dsw-alias-border-l2);border-top-color:var(--dsw-alias-state-business-primary);border-radius:50%;animation:mgrSpin .8s linear infinite}',
 			'@keyframes mgrSpin{to{transform:rotate(360deg)}}',
 			'@media (prefers-reduced-motion:reduce){.mgrSpinner{animation:none}}',
@@ -3166,9 +3290,9 @@ function apply(ctx) {
 			'.mgrModalTitle{margin:0;font-size:14px;font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
 			'.mgrModalBody{flex:1;min-height:0;overflow:auto;padding:16px}',
 			'.mgrModalFoot{display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:12px 16px;border-top:1px solid var(--dsw-alias-border-l2);flex:none}',
-			'.mgrFormError{margin:0 0 10px;color:var(--dsw-alias-state-error-primary);font-size:12px;line-height:1.5}',
-			'.mgrDetailRow{display:flex;gap:12px;padding:5px 0;font-size:12px;line-height:1.6}',
-			'.mgrDetailKey{flex:none;width:76px;color:var(--dsw-alias-label-tertiary)}',
+			'.mgrFormError{margin:0 0 10px;color:var(--dsw-alias-state-error-primary);font-size:13px;line-height:1.5}',
+			'.mgrDetailRow{display:flex;gap:12px;padding:5px 0;font-size:13px;line-height:1.6}',
+			'.mgrDetailKey{flex:none;width:76px;color:var(--dsw-alias-label-secondary)}',
 			'.mgrDetailValue{flex:1;min-width:0;color:var(--dsw-alias-label-secondary);word-break:break-word}',
 			'.mgrToast{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);z-index:60;display:flex;align-items:center;gap:10px;max-width:min(620px,84%);padding:9px 11px 9px 14px;border:1px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-2);box-shadow:var(--dsw-elevation-soft);font-size:12.5px;line-height:1.5;color:var(--dsw-alias-label-primary)}',
 			'.mgrToastError{color:var(--dsw-alias-state-error-primary);border-color:var(--dsw-alias-state-error-primary)}',
@@ -3178,16 +3302,16 @@ function apply(ctx) {
 			'.mgrLanRow{display:flex;align-items:center;gap:14px}',
 			'.mgrLanRowMain{flex:1;min-width:0}',
 			'.mgrLanTitle{font-size:13px;font-weight:600;color:var(--dsw-alias-label-primary)}',
-			'.mgrLanHint{margin-top:3px;font-size:11.5px;color:var(--dsw-alias-label-tertiary);line-height:1.6}',
+			'.mgrLanHint{margin-top:3px;font-size:11.5px;color:var(--dsw-alias-label-secondary);line-height:1.6}',
 			'.mgrLanGrid{display:flex;gap:20px;flex-wrap:wrap;margin-top:14px}',
 			'.mgrQrBox{flex:none;display:flex;flex-direction:column;align-items:center;gap:8px}',
 			'.mgrQr{width:184px;height:184px;padding:10px;background:#fff;border:1px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-md)}',
-			'.mgrQrCaption{font-size:11.5px;color:var(--dsw-alias-label-tertiary)}',
+			'.mgrQrCaption{font-size:11.5px;color:var(--dsw-alias-label-secondary)}',
 			'.mgrLanMain{flex:1;min-width:260px}',
-			'.mgrLanUrl{font-family:var(--dsw-font-mono,ui-monospace,SFMono-Regular,Menlo,monospace);font-size:12px;color:var(--dsw-alias-label-secondary);background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l1);border-radius:var(--dsw-radius-md);padding:8px 10px;word-break:break-all;line-height:1.6}',
+			'.mgrLanUrl{font-family:var(--dsw-font-mono,ui-monospace,SFMono-Regular,Menlo,monospace);font-size:11.5px;color:var(--dsw-alias-label-secondary);background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l1);border-radius:var(--dsw-radius-md);padding:8px 10px;word-break:break-all;line-height:1.6}',
 			'.mgrLanMeta{margin-top:12px;display:flex;flex-direction:column;gap:6px}',
-			'.mgrLanMetaRow{display:flex;gap:12px;font-size:12px;line-height:1.6}',
-			'.mgrLanMetaKey{flex:none;width:96px;color:var(--dsw-alias-label-tertiary)}',
+			'.mgrLanMetaRow{display:flex;gap:12px;font-size:11.5px;line-height:1.6}',
+			'.mgrLanMetaKey{flex:none;width:96px;color:var(--dsw-alias-label-secondary)}',
 			'.mgrLanMetaValue{flex:1;min-width:0;color:var(--dsw-alias-label-secondary);word-break:break-all}',
 			'.mgrLanActions{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap}',
 			'.mgrLanRowSub{margin-top:12px;padding-top:12px;border-top:1px solid var(--dsw-alias-border-l1)}',
@@ -3206,103 +3330,110 @@ function apply(ctx) {
 			'.mgrModeRows{display:flex;flex-direction:column;gap:3px;margin-top:8px}',
 			'.mgrModeRow{display:flex;align-items:baseline;gap:10px;font-size:11.5px;line-height:1.7}',
 			'.mgrModeRowId{flex:none;width:128px;color:var(--dsw-alias-label-secondary)}',
-			'.mgrModeRowPlugin{flex:1;min-width:0;font-family:var(--dsw-font-mono,ui-monospace,SFMono-Regular,Menlo,monospace);font-size:11px;color:var(--dsw-alias-label-tertiary);word-break:break-all}',
+			'.mgrModeRowPlugin{flex:1;min-width:0;font-family:var(--dsw-font-mono,ui-monospace,SFMono-Regular,Menlo,monospace);font-size:11.5px;color:var(--dsw-alias-label-tertiary);word-break:break-all}',
 			'.mgrModeRowChild{flex:none;color:var(--dsw-alias-label-tertiary)}',
 			'.mgrModeRemoved{margin-top:10px}',
-			'.mgrSearchControls{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:8px 0 12px}',
+			'.mgrSearchControls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:8px 0 12px}',
 			'.mgrSearchControls .mgrHint{flex:1;min-width:180px}',
 			'.mgrSearchTimeWrap{display:flex;align-items:center;gap:5px}',
 			'.mgrSearchTime{width:auto;min-width:96px;height:30px;padding:2px 6px;font-size:11.5px}',
 			'.mgrSearchSafeWrap{display:flex;align-items:center;gap:5px}',
 			'.mgrSearchBlocked{margin:0 0 14px;padding:10px 12px;border:1px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-1)}',
 			'.mgrSearchBlockedHead{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:6px}',
-			'.mgrSearchBlockedInput{width:100%;min-height:54px;resize:vertical;font-family:inherit;font-size:12px;line-height:1.55}',
+			'.mgrSearchBlockedInput{width:100%;min-height:54px;resize:vertical;font-family:inherit;font-size:12.5px;line-height:1.55}',
 			'.mgrSearchBlockedFoot{display:flex;justify-content:flex-end;margin-top:8px}',
-			'.mgrSearchOrder{display:flex;align-items:center;gap:3px}',
+			'.mgrSearchOrder{display:flex;align-items:center;gap:4px}',
 			'.mgrSearchOrder .mgrBtn{padding:2px 6px;min-width:0;line-height:1.5}',
-			'.mgrSearchBar{display:flex;align-items:center;gap:8px;margin-bottom:10px}',
-			'.mgrSearchBar .mgrInput{flex:1;width:auto;min-width:0;height:36px;font-size:13.5px}',
-			'.mgrSearchGo{flex:none;height:36px;padding:0 18px}',
+			'.mgrSearchBar{display:flex;align-items:center;gap:8px;margin-bottom:12px}',
+			'.mgrSearchBar .mgrInput{flex:1;width:auto;min-width:0;height:30px;font-size:12.5px}',
+			'.mgrSearchGo{flex:none;height:30px;padding:0 16px}',
 			'.mgrSearchMeta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px}',
 			'.mgrSearchMeta .mgrHint{max-width:none}',
 			'.mgrLinkBtn{flex:none;padding:0;border:0;background:transparent;color:var(--dsw-alias-state-business-primary);font:inherit;font-size:11.5px;text-decoration:underline;cursor:pointer}',
 			'.mgrLinkBtn:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}',
-			'.mgrSubTabs{display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin:0 0 14px}',
-			'.mgrSearchCard{border:1px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-lg);background:var(--dsw-alias-bg-layer-1);padding:11px 13px;margin-bottom:10px}',
-			'.mgrSearchCardHead{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}',
-			'.mgrSearchCardTitle{font-size:12.5px;font-weight:600;color:var(--dsw-alias-label-primary)}',
+			'.mgrSubTabs{display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin:0 0 12px}',
+			'.mgrSubTabs .mgrTab{height:26px;padding:0 10px;border:0;border-radius:0;background:transparent;box-shadow:none;font-size:12px;border-bottom:2px solid transparent}',
+			'.mgrSubTabs .mgrTab:hover:not(.mgrTabActive){background:transparent;color:var(--dsw-alias-label-primary);border-bottom-color:transparent}',
+			'.mgrSubTabs .mgrTabActive{background:transparent;border:0;border-bottom:2px solid var(--dsw-alias-state-business-primary);border-radius:0;color:var(--dsw-alias-state-business-primary);font-weight:500}',
+			'.mgrSubTabs .mgrTabCount{font-size:10.5px}',
+			'.mgrSearchCard{border:1px solid var(--dsw-alias-border-l2);border-radius:12px;background:var(--dsw-alias-bg-layer-1);padding:12px 14px;margin-bottom:12px}',
+			'.mgrSearchCardHead{display:flex;align-items:center;gap:8px;flex-wrap:wrap}',
+			'.mgrSearchCardHint{margin-top:4px;color:var(--dsw-alias-label-secondary)}',
+			'.mgrSearchCardTitle{font-size:14px;font-weight:600;color:var(--dsw-alias-label-primary)}',
+			'.mgrSearchCardHeadActions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}',
 			'.mgrSearchCard .mgrSearchControls{margin:9px 0 0}',
 			'.mgrSearchCard .mgrSearchChips{margin:9px 0 0}',
-			'.mgrSearchChannelFilter{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:2px 0 8px}',
-			'.mgrSearchChannelFilter .mgrInput{flex:1;min-width:180px;max-width:320px;height:30px;font-size:12px}',
+			'.mgrSearchChannelFilter{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 8px}',
+			'.mgrSearchChannelFilter .mgrInput{flex:1;min-width:180px;max-width:320px;height:30px;font-size:12.5px}',
+			/* The bulk switch keeps its own line when the filter bar runs out of
+			   room: the label stays on one line instead of being clipped, and the
+			   switch keeps the size the channel rows use. */
+			'.mgrSearchBulk{display:flex;align-items:center;gap:6px;flex-wrap:nowrap;min-width:0}',
+			'.mgrSearchBulk .mgrHint{max-width:none;white-space:nowrap}',
+			'.mgrSearchBulk .mgrSwitch{flex:0 0 auto}',
 			'.mgrSearchFilterCount{margin-bottom:8px}',
 			'.mgrSearchResults{margin-bottom:18px}',
 			'.mgrSearchList{display:flex;flex-direction:column;gap:10px}',
-			'.mgrSearchChannels{margin-top:16px;padding-top:14px;border-top:1px solid var(--dsw-alias-border-l1)}',
-			'.mgrSearchChannelsHead{display:flex;align-items:center;gap:8px;margin-bottom:10px}',
-			'.mgrSearchChannelsTitle{font-size:13px;font-weight:600;color:var(--dsw-alias-label-primary)}',
+			'.mgrSearchChannels{margin-top:24px;padding-top:16px;border-top:1px solid var(--dsw-alias-border-l1)}',
+			'.mgrSearchChannelsHead{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px}',
+			'.mgrSearchChannelsTitle{font-size:14px;font-weight:600;color:var(--dsw-alias-label-primary)}',
+			'.mgrSearchChannelStats{display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-width:0}',
+			'.mgrSearchStatWarn{color:var(--dsw-alias-label-secondary)}',
 			'.mgrSearchChannel{border:1px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-1);margin-bottom:8px;overflow:hidden}',
-			'.mgrSearchChannelHead{display:flex;align-items:flex-start;gap:12px;padding:10px 12px}',
-			'.mgrSearchChannelMain{flex:1;min-width:0}',
-			'.mgrSearchChannelName{font-size:13px;font-weight:600;color:var(--dsw-alias-label-primary)}',
-			'.mgrSearchChannelDesc{margin-top:2px;font-size:11.5px;line-height:1.55;color:var(--dsw-alias-label-tertiary)}',
-			'.mgrSearchChannelBadges{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:5px}',
-			'.mgrSearchChannelActions{display:flex;align-items:center;gap:6px;flex:none;flex-wrap:wrap;justify-content:flex-end}',
-			'.mgrSearchChannelBody{padding:12px;border-top:1px solid var(--dsw-alias-border-l1)}',
+			'.mgrSearchChannelHead{display:flex;align-items:flex-start;gap:0;flex-wrap:wrap;padding:12px 14px}',
+			'.mgrSearchChannelMain{flex:1 1 100%;min-width:0}',
+			'.mgrSearchChannelNameRow{display:flex;align-items:center;gap:8px}',
+			'.mgrSearchChannelName{flex:1 1 auto;min-width:64px;font-size:13px;font-weight:600;color:var(--dsw-alias-label-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+			'.mgrSearchChannelDesc{margin-top:4px;font-size:11.5px;line-height:1.55;color:var(--dsw-alias-label-secondary);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:35.6px}',
+			'.mgrSearchChannelBadges{display:flex;align-items:center;gap:4px;flex-wrap:wrap;flex:0 1 auto;min-width:0}',
+			'.mgrSearchChannelActions{display:flex;align-items:center;gap:8px;flex:1 1 100%;flex-wrap:wrap;justify-content:flex-end;margin-top:8px}',
+			'.mgrSearchChannelBody{padding:12px 14px;border-top:1px solid var(--dsw-alias-border-l1)}',
 			'.mgrSearchChannelGrid{display:flex;gap:12px;flex-wrap:wrap}',
 			'.mgrSearchChannelField{flex:1;min-width:220px;margin-bottom:0}',
 			'.mgrSearchChannelFoot{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px}',
-			'.mgrSearchChannelResult{padding:0 12px 12px}',
+			'.mgrSearchChannelResult{padding:0 14px 12px}',
 			'.mgrSearchTest{margin-top:10px;padding:8px 10px;border:1px solid var(--dsw-alias-border-l2);border-left:3px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-2);font-size:11.5px;line-height:1.6}',
 			'.mgrSearchTestOk{border-left-color:var(--dsw-alias-state-success-primary)}',
 			'.mgrSearchTestError{border-left-color:var(--dsw-alias-state-error-primary)}',
 			'.mgrSearchTestTitle{font-weight:600;color:var(--dsw-alias-label-secondary)}',
-			'.mgrSearchTestItem{margin-top:3px;color:var(--dsw-alias-label-tertiary);word-break:break-word}',
-			'.mgrSearchChips{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:6px 0 10px}',
+			'.mgrSearchTestItem{margin-top:3px;color:var(--dsw-alias-label-secondary);word-break:break-word}',
+			'.mgrSearchChips{display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin:8px 0 12px}',
 			'.mgrSearchChip{display:inline-flex;align-items:center;padding:1px 7px;border:1px solid var(--dsw-alias-border-l1);border-radius:999px;background:var(--dsw-alias-bg-layer-2);font-size:10.5px;color:var(--dsw-alias-label-secondary)}',
 			'.mgrSearchChipError{color:var(--dsw-alias-state-error-primary);border-color:var(--dsw-alias-state-error-primary)}',
-			'.mgrSearchChannelTag{flex:none;max-width:30%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10.5px;color:var(--dsw-alias-label-tertiary)}',
-			'.mgrSearchSummary{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12px;color:var(--dsw-alias-label-secondary);font-variant-numeric:tabular-nums}',
+			'.mgrSearchChannelTag{flex:none;max-width:30%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10.5px;color:var(--dsw-alias-label-secondary)}',
+			'.mgrSearchSummary{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:11.5px;color:var(--dsw-alias-label-secondary);font-variant-numeric:tabular-nums}',
 			'.mgrSearchResult{border:1px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-1);padding:11px 13px;transition:border-color .15s ease}',
 			'.mgrSearchResult:hover{border-color:var(--dsw-alias-border-l3)}',
 			'.mgrSearchResultHead{display:flex;align-items:baseline;gap:8px;min-width:0}',
-			'.mgrSearchRank{flex:none;font-size:11px;color:var(--dsw-alias-label-tertiary);font-variant-numeric:tabular-nums;min-width:14px}',
+			'.mgrSearchRank{flex:none;font-size:11.5px;color:var(--dsw-alias-label-secondary);font-variant-numeric:tabular-nums;min-width:14px}',
 			'.mgrSearchLink{flex:1;min-width:0;font-size:13px;font-weight:600;color:var(--dsw-alias-state-business-primary);text-decoration:none;word-break:break-word}',
 			'.mgrSearchLink:hover{text-decoration:underline}',
-			'.mgrSearchHost{flex:none;max-width:38%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--dsw-font-mono,ui-monospace,SFMono-Regular,Menlo,monospace);font-size:10.5px;color:var(--dsw-alias-label-tertiary)}',
-			'.mgrSearchSnippet{margin-top:5px;font-size:12px;line-height:1.65;color:var(--dsw-alias-label-secondary);white-space:pre-wrap;word-break:break-word}',
-			'.mgrSearchDate{margin-top:4px;font-size:11px;color:var(--dsw-alias-label-tertiary)}',
+			'.mgrSearchHost{flex:none;max-width:38%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--dsw-font-mono,ui-monospace,SFMono-Regular,Menlo,monospace);font-size:10.5px;color:var(--dsw-alias-label-secondary)}',
+			'.mgrSearchSnippet{margin-top:4px;font-size:13px;line-height:1.65;color:var(--dsw-alias-label-secondary);white-space:pre-wrap;word-break:break-word}',
+			'.mgrSearchDate{margin-top:4px;font-size:11.5px;color:var(--dsw-alias-label-secondary)}',
 			'.mgrSearchAnswer{margin-bottom:14px;padding:10px 12px;border:1px solid var(--dsw-alias-border-l2);border-left:3px solid var(--dsw-alias-state-business-primary);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-1)}',
 			'.mgrSearchAnswerTitle{margin-bottom:4px;font-size:11.5px;font-weight:600;color:var(--dsw-alias-label-secondary)}',
-			'.mgrSearchAnswerBody{max-height:220px;overflow:auto;font-size:12px;line-height:1.65;color:var(--dsw-alias-label-secondary);white-space:pre-wrap;word-break:break-word}',
+			'.mgrSearchAnswerBody{max-height:220px;overflow:auto;font-size:13px;line-height:1.65;color:var(--dsw-alias-label-secondary);white-space:pre-wrap;word-break:break-word}',
 
 			/* ---- skill workspace: GitHub-flavoured, larger type ---------- */
-			'.skxRoot{--skx-line:var(--dsw-alias-border-l2);--skx-line-soft:var(--dsw-alias-border-l1);--skx-canvas:var(--dsw-alias-bg-base);--skx-surface:var(--dsw-alias-bg-layer-1);--skx-raised:var(--dsw-alias-bg-layer-2);--skx-fg:var(--dsw-alias-label-primary);--skx-fg-muted:var(--dsw-alias-label-secondary);--skx-fg-subtle:var(--dsw-alias-label-tertiary);--skx-accent:var(--dsw-alias-state-business-primary);--skx-accent-soft:color-mix(in srgb,var(--dsw-alias-state-business-primary) 14%,transparent);--skx-green:var(--dsw-alias-state-success-primary);--skx-red:var(--dsw-alias-state-error-primary);--skx-amber:var(--dsw-alias-state-warn-primary);--skx-shadow:var(--dsw-shadow-lv2);--skx-shadow-sm:var(--dsw-shadow-lv1);display:flex;flex-direction:column;gap:14px;height:100%;min-height:0;color:var(--skx-fg);font-size:13px;line-height:1.6;font-family:var(--dsw-font-family);-webkit-font-smoothing:antialiased}',
-			'.skxShell{display:grid;grid-template-columns:240px minmax(0,1fr);gap:14px;flex:1;min-height:0}',
-			'.skxRail{display:flex;flex-direction:column;gap:2px;min-height:0;overflow-y:auto;padding:10px;border:1px solid var(--skx-line);border-radius:var(--dsw-radius-lg);background:var(--skx-surface);box-shadow:var(--skx-shadow)}',
-			'.skxRailLabel{padding:10px 10px 6px;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--skx-fg-subtle)}',
-			'.skxRailDivider{height:1px;margin:8px 4px;background:var(--skx-line-soft)}',
-			'.skxNav{display:flex;align-items:center;gap:8px;width:100%;padding:9px 11px;border:0;border-radius:var(--dsw-radius-md);background:transparent;color:var(--skx-fg);font:inherit;font-size:13px;text-align:left;cursor:pointer}',
-			'.skxNav:hover{background:var(--skx-raised)}',
-			'.skxNavOn{background:var(--skx-accent-soft);color:var(--dsw-alias-state-business-primary);font-weight:600;box-shadow:inset 3px 0 0 var(--skx-accent)}',
-			'.skxNavCount{margin-left:auto;font-size:12px;color:var(--skx-fg-subtle)}',
-			'.skxSourceRow{display:flex;align-items:center;gap:8px;width:100%;padding:8px 11px;border:0;border-radius:var(--dsw-radius-md);background:transparent;color:var(--skx-fg);font:inherit;font-size:13px;text-align:left;cursor:pointer}',
-			'.skxSourceRow:hover{background:var(--skx-raised)}',
-			'.skxSourceRowOn{background:var(--skx-accent-soft);color:var(--dsw-alias-state-business-primary);font-weight:600;box-shadow:inset 3px 0 0 var(--skx-accent)}',
-			'.skxSourceRowOff{opacity:.55}',
-			'.skxSourceDot{width:7px;height:7px;border-radius:50%;background:var(--skx-green);flex:none}',
-			'.skxSourceRowOff .skxSourceDot{background:var(--skx-fg-subtle)}',
-			'.skxSourceName{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+			'.skxRoot{--skx-line:var(--dsw-alias-border-l2);--skx-line-soft:var(--dsw-alias-border-l1);--skx-canvas:var(--dsw-alias-bg-base);--skx-surface:var(--dsw-alias-bg-layer-1);--skx-raised:var(--dsw-alias-bg-layer-2);--skx-fg:var(--dsw-alias-label-primary);--skx-fg-muted:var(--dsw-alias-label-secondary);--skx-fg-subtle:var(--dsw-alias-label-secondary);--skx-accent:var(--dsw-alias-state-business-primary);--skx-accent-soft:color-mix(in srgb,var(--dsw-alias-state-business-primary) 14%,transparent);--skx-green:var(--dsw-alias-state-success-primary);--skx-red:var(--dsw-alias-state-error-primary);--skx-amber:var(--dsw-alias-state-warn-primary);--skx-shadow:var(--dsw-shadow-lv2);--skx-shadow-sm:var(--dsw-shadow-lv1);display:flex;flex-direction:column;gap:14px;height:100%;min-height:0;color:var(--skx-fg);font-size:13px;line-height:1.6;font-family:var(--dsw-font-family);-webkit-font-smoothing:antialiased}',
+			'.skxSubTabs{margin:0}',
 			'.skxSourceCount{font-size:12px;color:var(--skx-fg-subtle);flex:none}',
-			'.skxMissingToggle{display:flex;align-items:center;gap:6px;width:100%;padding:8px 11px;border:0;border-radius:var(--dsw-radius-md);background:transparent;color:var(--skx-fg-muted);font:inherit;font-size:13px;text-align:left;cursor:pointer}',
-			'.skxMissingToggle:hover{background:var(--skx-raised);color:var(--skx-fg)}',
-			'.skxChevron{width:12px;font-size:11px;color:var(--skx-fg-subtle)}',
-			'.skxMissingList{display:flex;flex-direction:column;gap:1px;padding:0 0 4px 12px}',
-			'.skxMissingRow{padding:4px 10px;font-size:12px;color:var(--skx-fg-subtle);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
-			'.skxMain{display:flex;flex-direction:column;min-height:0;border:1px solid var(--skx-line);border-radius:var(--dsw-radius-lg);background:var(--skx-surface);box-shadow:var(--skx-shadow);overflow:hidden}',
+			'.skxMain{display:flex;flex-direction:column;flex:1;min-height:0;border:1px solid var(--skx-line);border-radius:var(--dsw-radius-lg);background:var(--skx-surface);box-shadow:var(--skx-shadow);overflow:hidden}',
 			'.skxSubViews{display:flex;flex-direction:column;flex:1;min-height:0}',
 			'.skxSubView{display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden}',
-			'.skxSplit{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);height:100%;min-height:0}',
+			'.skxPage{display:flex;flex-direction:column;height:100%;min-height:0}',
+			'.skxToolbarTop{border-bottom:1px solid var(--skx-line-soft);padding:12px 16px}',
+			'.skxToolbarTop .skxInput{flex:1;min-width:220px}',
+			'.skxTabCount{font-size:11px;color:var(--skx-fg-subtle);font-variant-numeric:tabular-nums}',
+			'.skxStatBadge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border:1px solid color-mix(in srgb,var(--skx-accent) 38%,transparent);border-radius:999px;background:var(--skx-accent-soft);font-size:12px;font-variant-numeric:tabular-nums;white-space:nowrap}',
+			'.skxStatLabel{font-size:11.5px;color:var(--skx-accent)}',
+			'.skxStatOn{font-size:13px;font-weight:600;color:var(--skx-accent);line-height:1}',
+			'.skxStatOf{font-size:11.5px;color:var(--skx-fg-subtle)}',
+			'.skxSourcesHint{margin:0 0 10px}',
+			'.skxSplit{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);flex:1;height:auto;min-height:0}',
+			'.skxSingle{display:flex;flex-direction:column;height:100%;min-height:0}',
+			'.skxSingle .skxListCol{border-right:none}',
 			'.skxListCol{display:flex;flex-direction:column;min-height:0;overflow-y:auto;border-right:1px solid var(--skx-line)}',
 			'.skxDetailCol{display:flex;flex-direction:column;min-height:0;overflow-y:auto;background:var(--skx-canvas);scrollbar-gutter:stable}',
 			'.skxHead{display:flex;align-items:flex-start;gap:12px;padding:16px 18px;border-bottom:1px solid var(--skx-line-soft)}',
@@ -3328,6 +3459,8 @@ function apply(ctx) {
 			'.skxBtn:disabled{opacity:.55;cursor:not-allowed}',
 			'.skxBtnPrimary{background:var(--dsw-alias-state-business-primary);border-color:var(--dsw-alias-state-business-primary);color:var(--dsw-alias-label-primary-foreground)}',
 			'.skxBtnPrimary:hover:not(:disabled){filter:brightness(1.05)}',
+			'.skxBtnWarn{color:var(--dsw-alias-label-primary);border-color:var(--dsw-alias-state-warn-primary)}',
+			'.skxBtnWarn:hover{border-color:var(--dsw-alias-state-warn-primary);background:transparent}',
 			'.skxBtnDanger{color:var(--skx-red)}',
 			'.skxBtnDanger:hover:not(:disabled){background:var(--dsw-alias-state-error-primary);border-color:var(--dsw-alias-state-error-primary);color:var(--dsw-alias-label-primary-foreground)}',
 			'.skxBtnSmall{padding:5px 11px;font-size:12.5px}',
@@ -3356,6 +3489,10 @@ function apply(ctx) {
 			'.skxSwitchSm.skxSwitchOn .skxSwitchKnob{transform:translateX(17px)}',
 			'.skxSwitchLabel{font-size:12.5px;color:var(--skx-fg-muted)}',
 			'.skxDoc{display:flex;flex-direction:column;gap:18px;padding:20px 22px}',
+			'.skxDocInline .skxDoc{padding:0;gap:16px}',
+			'.skxDocInline .skxDocHead{position:static;margin:0;padding:0 0 14px;background:none}',
+			'.skxDocInline .skxDocTitle{display:none}',
+			'.mgrModalWide{width:min(880px,100%)}',
 			'.skxDocHead{position:sticky;top:0;z-index:2;display:flex;align-items:flex-start;gap:14px;padding:18px 22px 14px;margin:-20px -22px 0;background:linear-gradient(var(--skx-canvas) 78%,transparent);border-bottom:1px solid var(--skx-line-soft)}',
 			'.skxDocHeadMain{display:flex;flex-direction:column;gap:8px;min-width:0;flex:1}',
 			'.skxDocAction{flex:none;margin-top:2px}',
@@ -3381,8 +3518,6 @@ function apply(ctx) {
 			'.skxBanner{display:flex;align-items:center;gap:12px;padding:11px 14px;border:1px solid var(--dsw-alias-state-error-primary);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-interactive-bg-hover-danger);font-size:13px;color:var(--dsw-alias-state-error-primary)}',
 			'.skxBannerText{flex:1;word-break:break-word}',
 			'.skxEmptyTall{flex:1;display:flex;align-items:center;justify-content:center;min-height:220px}',
-			'.skxFoot{display:flex;align-items:center;gap:10px;flex:none}',
-			'.skxFootText{font-size:12px;color:var(--skx-fg-muted)}',
 			'.skxSearchField{display:flex;align-items:center;gap:8px;flex:1;min-width:180px;padding:0 12px;border:1px solid var(--skx-line);border-radius:var(--dsw-radius-md);background:var(--skx-canvas);transition:border-color .15s ease,box-shadow .15s ease}',
 			'.skxSearchField:focus-within{border-color:var(--skx-accent);box-shadow:0 0 0 3px var(--skx-accent-soft)}',
 			'.skxSearchIcon{font-size:16px;color:var(--skx-fg-subtle);flex:none;line-height:1}',
@@ -3399,7 +3534,7 @@ function apply(ctx) {
 			'.skxModalCard .skxProse{font-size:13px;line-height:1.7;color:var(--skx-fg-muted)}',
 			'.skxConfirmTitle{font-size:13.5px;font-weight:600;color:var(--skx-fg)}',
 			'.skxEmpty{padding:32px 20px;text-align:center;font-size:13px;line-height:1.7;color:var(--skx-fg-muted)}',
-			'@media (max-width:1100px){.skxShell{grid-template-columns:220px minmax(0,1fr)}.skxSplit{grid-template-columns:minmax(0,1fr)}}',
+			'@media (max-width:1100px){.skxSplit{grid-template-columns:minmax(0,1fr)}}',
 		].join('\n');
 
 		//#endregion
@@ -3591,7 +3726,7 @@ function apply(ctx) {
 					if (event.target === event.currentTarget) props.onClose();
 				},
 			}, h('div', {
-				className: 'mgrModal',
+				className: classes('mgrModal', props.className),
 				role: 'dialog',
 				'aria-modal': 'true',
 				'aria-label': props.title,
@@ -3712,6 +3847,43 @@ function apply(ctx) {
 		}
 
 		/**
+		 * UTF-8 byte length of one draft.
+		 *
+		 * The host caps the preference file by bytes, so the counter has to
+		 * match what the file will weigh, not the string length.
+		 *
+		 * @param {string} text - Draft.
+		 * @returns {number} Bytes.
+		 */
+		function byteLength(text) {
+			if (typeof TextEncoder === 'function') return new TextEncoder().encode(text).length;
+			var encoded = encodeURIComponent(text);
+			var bytes = 0;
+			for (var index = 0; index < encoded.length; index += 1) {
+				if (encoded[index] === '%') { bytes += 1; index += 2; } else bytes += 1;
+			}
+			return bytes;
+		}
+
+		/**
+		 * Rough token estimate for the counter.
+		 *
+		 * Same shape as the host's estimator: a CJK character is about one
+		 * token, everything else about four characters per token.
+		 *
+		 * @param {string} text - Draft.
+		 * @returns {number} Estimated tokens.
+		 */
+		function estimateTokens(text) {
+			if (text === '') return 0;
+			var wide = 0;
+			for (var index = 0; index < text.length; index += 1) {
+				if (text.charCodeAt(index) > 0x2e7f) wide += 1;
+			}
+			return Math.ceil(wide + (text.length - wide) / 4);
+		}
+
+		/**
 		 * A GitHub-style pill switch.
 		 *
 		 * Sits inline in a row and toggles on click; it stops propagation so a
@@ -3738,7 +3910,10 @@ function apply(ctx) {
 		}
 
 		/**
-		 * The skills workspace: a rail of sources plus one of four sub-views.
+		 * The skills workspace: four sub-tabs, each a page of its own.
+		 *
+		 * The sources live inside 已安装 as a scope rail, not next to the tab
+		 * row: they filter one page's list, they are not a fifth section.
 		 *
 		 * @param {object} props - Panel data and actions.
 		 * @returns {object} React node.
@@ -3747,23 +3922,20 @@ function apply(ctx) {
 			var t = props.t;
 			var call = props.callKernel;
 			var [roots, setRoots] = useState(null);
-			var [activeRoot, setActiveRoot] = useState('');
 			var [tab, setTab] = useState('installed');
-			var [showMissing, setShowMissing] = useState(false);
+			var [trashCount, setTrashCount] = useState(0);
 			var [error, setError] = useState('');
 			var [busy, setBusy] = useState(false);
 
 			var load = useCallback(function () {
 				setBusy(true);
 				return call('state').then(function (data) {
-					var list = Array.isArray(data?.roots) ? data.roots : [];
+					// A root whose directory is absent has nothing to show and nothing
+					// to write to; the kernel still reports it, so it is dropped here.
+					var list = (Array.isArray(data?.roots) ? data.roots : []).filter(function (entry) { return entry.exists !== false; });
 					setRoots(list);
+					setTrashCount(Array.isArray(data?.trash) ? data.trash.length : 0);
 					setError('');
-					setActiveRoot(function (current) {
-						if (current !== '' && list.some(function (root) { return root.key === current; })) return current;
-						var withSkills = list.find(function (root) { return root.exists !== false && (root.skills ?? []).length > 0; });
-						return withSkills !== undefined ? withSkills.key : (list.find(function (root) { return root.exists !== false; })?.key ?? '');
-					});
 				}).catch(function (reason) {
 					setError(messageOf(reason));
 				}).finally(function () {
@@ -3771,7 +3943,7 @@ function apply(ctx) {
 				});
 			}, [call]);
 
-			useEffect(function () { void load(); }, [load]);
+			useEffect(function () { void load(); }, [load, props.rescan]);
 
 			if (roots === null) {
 				return h('div', { className: 'skxRoot' },
@@ -3783,9 +3955,6 @@ function apply(ctx) {
 							h('button', { type: 'button', className: 'mgrBtn', onClick: function () { void load(); } }, t('action.retry'))));
 			}
 
-			var liveRoots = roots.filter(function (entry) { return entry.exists !== false; });
-			var missingRoots = roots.filter(function (entry) { return entry.exists === false; });
-			var active = roots.find(function (entry) { return entry.key === activeRoot; });
 
 			var toggleSource = function (entry, enabled) {
 				setBusy(true);
@@ -3794,240 +3963,281 @@ function apply(ctx) {
 				}).finally(function () { setBusy(false); });
 			};
 
+			var tabs = [
+				// The page badge carries the counts; the tab stays a plain label.
+				{ id: 'installed', label: t('skx.tab.installed'), count: '' },
+				{ id: 'project', label: t('skx.tab.project'), count: '' },
+				{ id: 'discover', label: t('skx.tab.discover'), count: '' },
+				{ id: 'trash', label: t('skx.tab.trash'), count: trashCount > 0 ? String(trashCount) : '' },
+			];
+			var tabView = h('div', { className: 'mgrSubTabs skxSubTabs', role: 'tablist', 'aria-label': t('skx.subtabs') },
+				tabs.map(function (entry) {
+					return h('button', {
+						type: 'button',
+						role: 'tab',
+						key: entry.id,
+						'aria-selected': tab === entry.id,
+						className: classes('mgrTab', tab === entry.id && 'mgrTabActive'),
+						onClick: function () { setTab(entry.id); },
+					},
+						entry.label,
+						entry.count === '' ? null : h('span', { className: 'mgrTabCount' }, entry.count));
+				}));
+
+			var listPanel = h(SkillListPanel, {
+				t: t, call: call, roots: roots, busy: busy,
+				onToggleSource: toggleSource, onChanged: load, onReload: function () { void load(); }, setError: setError,
+			});
+
 			// Every sub-view stays mounted (the inactive ones are hidden) so a tab
 			// switch never drops a filter, a preview, or a half-written note. The
 			// panels that fetch on their own only do so once they first become
 			// active, so opening the skill page costs one request, not four.
 			var subViews = h('div', { className: 'skxSubViews' },
 				h('div', { className: 'skxSubView', style: { display: tab === 'installed' ? undefined : 'none' } },
-					h(SkillListPanel, {
-						t: t, call: call, root: active, busy: busy, onToggleSource: toggleSource, onChanged: load, setError: setError,
-					})),
+					h('section', { className: 'skxMain' }, listPanel)),
 				h('div', { className: 'skxSubView', style: { display: tab === 'project' ? undefined : 'none' } },
-					h(ProjectSkillsPanel, { t: t, call: call, active: tab === 'project', setError: setError })),
+					h('section', { className: 'skxMain' },
+						h(ProjectSkillsPanel, { t: t, call: call, active: tab === 'project', setError: setError }))),
 				h('div', { className: 'skxSubView', style: { display: tab === 'discover' ? undefined : 'none' } },
-					h(DiscoverPanel, { t: t, call: call, roots: liveRoots, active: tab === 'discover', onInstalled: load, setError: setError })),
+					h('section', { className: 'skxMain' },
+						h(DiscoverPanel, { t: t, call: call, roots: roots, active: tab === 'discover', onInstalled: load, setError: setError }))),
 				h('div', { className: 'skxSubView', style: { display: tab === 'trash' ? undefined : 'none' } },
-					h(TrashPanel, { t: t, call: call, active: tab === 'trash', onRestored: load, setError: setError })));
+					h('section', { className: 'skxMain' },
+						h(TrashPanel, { t: t, call: call, active: tab === 'trash', onRestored: load, setError: setError }))));
 
 			return h('div', { className: 'skxRoot' },
 				error === '' ? null : h('div', { className: 'skxBanner' },
 					h('span', { className: 'skxBannerText' }, error),
 					h('button', { type: 'button', className: 'skxBtn', onClick: function () { setError(''); void load(); } }, t('action.retry'))),
-
-				h('div', { className: 'skxShell' },
-					h('aside', { className: 'skxRail' },
-						navButton('installed', t('skx.tab.installed'), liveRoots.length),
-						navButton('project', t('skx.tab.project'), null),
-						navButton('discover', t('skx.tab.discover'), null),
-						navButton('trash', t('skx.tab.trash'), null),
-						h('div', { className: 'skxRailDivider' }),
-						h('div', { className: 'skxRailLabel' }, t('skx.sources')),
-						liveRoots.map(function (entry) {
-							var count = (entry.skills ?? []).length;
-							return h('button', {
-								type: 'button',
-								key: entry.key,
-								className: classes('skxSourceRow', tab === 'installed' && entry.key === activeRoot && 'skxSourceRowOn', entry.enabled === false && 'skxSourceRowOff'),
-								onClick: function () { setTab('installed'); setActiveRoot(entry.key); },
-							},
-							h('span', { className: 'skxSourceDot', 'aria-hidden': 'true' }),
-							h('span', { className: 'skxSourceName' }, entry.label ?? entry.key),
-							h('span', { className: 'skxSourceCount' }, String(count)));
-						}),
-						missingRoots.length === 0 ? null : h('div', null,
-							h('button', {
-								type: 'button',
-								className: 'skxMissingToggle',
-								'aria-expanded': showMissing,
-								onClick: function () { setShowMissing(!showMissing); },
-							}, h('span', { className: 'skxChevron' }, showMissing ? '▾' : '▸'), t('skx.missingSources'), h('span', { className: 'skxSourceCount' }, String(missingRoots.length))),
-							showMissing
-								? h('div', { className: 'skxMissingList' }, missingRoots.map(function (entry) {
-									return h('div', { className: 'skxMissingRow', key: entry.key, title: entry.path }, entry.label ?? entry.key);
-								}))
-								: null)),
-					h('section', { className: 'skxMain' }, subViews)),
-				h('div', { className: 'skxFoot' },
-					h('span', { className: 'skxFootText' }, t('skx.footer', { n: liveRoots.length, m: missingRoots.length })),
-					h('span', { className: 'mgrSpacer' }),
-					h('button', { type: 'button', className: 'skxBtn', onClick: function () { void load(); }, disabled: busy }, busy ? t('state.loading') : t('action.refresh'))));
-
-			function navButton(id, label, count) {
-				return h('button', {
-					type: 'button',
-					key: id,
-					className: classes('skxNav', tab === id && 'skxNavOn'),
-					onClick: function () { setTab(id); },
-				}, label, count === null || count === undefined ? null : h('span', { className: 'skxNavCount' }, String(count)));
-			}
+				tabView,
+				subViews);
 		}
 
 		/**
-		 * One source's skills: search, per-skill switches, detail pane.
+		 * The locale key of every kernel diagnostic the panel knows.
 		 *
-		 * @param {object} props - The active root and callbacks.
+		 * A static map, not `'skx.diag.' + code`: a code the panel has no text
+		 * for falls back to a readable sentence instead of a missing key.
+		 */
+		var DIAGNOSTIC_HINT = {
+			'diagnostic.frontmatter.missing': 'skx.diag.frontmatter',
+			'diagnostic.name.missing': 'skx.diag.nameMissing',
+			'diagnostic.name.invalid': 'skx.diag.nameInvalid',
+			'diagnostic.description.missing': 'skx.diag.description',
+			'diagnostic.invocation.invalid': 'skx.diag.invocation',
+		};
+
+		/**
+		 * Why the host refuses one skill.
+		 *
+		 * @param {object} t - Translator.
+		 * @param {object[]} diagnostics - The kernel's diagnostics.
+		 * @returns {string} The readable reason.
+		 */
+		function diagnosticText(t, diagnostics) {
+			var codes = (Array.isArray(diagnostics) ? diagnostics : [])
+				.filter(function (entry) { return entry !== null && typeof entry === 'object' && entry.level === 'error' })
+				.map(function (entry) { return entry.code; });
+			if (codes.length === 0) return t('skx.diag.other');
+			var seen = [];
+			for (var index = 0; index < codes.length; index += 1) {
+				var text = t(DIAGNOSTIC_HINT[codes[index]] ?? 'skx.diag.other');
+				if (seen.indexOf(text) < 0) seen.push(text);
+			}
+			return seen.join('；');
+		}
+
+		/**
+		 * Every installed skill in one list: search on top, sources as labels.
+		 *
+		 * The list is the page: there is no sibling detail column and no create
+		 * button, so a row spans the full width and one skill's document opens
+		 * over the list instead of shrinking it to half a page.
+		 *
+		 * @param {object} props - All roots, busy flag and callbacks.
 		 * @returns {object} React node.
 		 */
 		function SkillListPanel(props) {
 			var t = props.t;
-			var root = props.root;
+			var sources = Array.isArray(props.roots) ? props.roots : [];
 			var [query, setQuery] = useState('');
-			var [showBroken, setShowBroken] = useState(false);
-			var [selected, setSelected] = useState(null);
-			var [creating, setCreating] = useState(false);
-			var [draft, setDraft] = useState({ name: '', description: '', body: '' });
-			var [createBusy, setCreateBusy] = useState(false);
-			var [createError, setCreateError] = useState('');
+			var [brokenOpen, setBrokenOpen] = useState(false);
+			var [opened, setOpened] = useState(null);
+			var [sourcesOpen, setSourcesOpen] = useState(false);
 
-			useEffect(function () { setSelected(null); }, [root === undefined ? '' : root.key]);
+			if (sources.length === 0) return h('div', { className: 'skxEmpty' }, t('skx.noSources'));
 
-			if (root === undefined) return h('div', { className: 'skxEmpty' }, t('skx.noSources'));
+			var sourceOf = function (key) {
+				return sources.find(function (item) { return item.key === key; }) ?? sources[0];
+			};
 
-			var all = root.skills ?? [];
 			var needle = query.trim().toLowerCase();
-			var rows = collapseSkills(all).filter(function (skill) {
-				if (!showBroken && skill.loadable === false) return false;
+			var collected = [];
+			for (var index = 0; index < sources.length; index += 1) {
+				var source = sources[index];
+				var skills = source.skills ?? [];
+				for (var position = 0; position < skills.length; position += 1) {
+					collected.push({
+						...skills[position],
+						sourceKey: source.key,
+						sourceLabel: source.label ?? source.key,
+						sourceOff: source.enabled === false,
+					});
+				}
+			}
+			// Collapsing keeps one row per skill name; the badge then means "the
+			// same name also exists in another source", which is what it says.
+			var collapsed = collapseSkills(collected);
+			// The host refuses these, so they are not part of the list at all;
+			// they are reported on their own so the reason stays visible.
+			var broken = collapsed.filter(function (skill) { return skill.loadable === false; });
+			var rows = collapsed.filter(function (skill) {
+				if (skill.loadable === false) return false;
 				if (needle === '') return true;
 				var haystack = (skill.name + ' ' + (skill.description ?? '') + ' ' + (skill.customNote ?? '')).toLowerCase();
 				return haystack.indexOf(needle) >= 0;
 			});
 
+			// The page owns these two numbers now: how many skills the agent
+			// actually starts with, and how many exist in total. The list itself is
+			// filtered by the search box, so the counts come from the full set.
+			var listed = collapsed.filter(function (skill) { return skill.loadable !== false; });
+			var startedCount = listed.filter(function (skill) { return skill.enabled !== false; }).length;
+
 			var flip = function (skill, enabled) {
-				return props.call(enabled ? 'enable' : 'disable', { root: root.key, name: skill.name }).then(props.onChanged).catch(function (reason) {
+				return props.call(enabled ? 'enable' : 'disable', { root: skill.sourceKey, name: skill.name }).then(props.onChanged).catch(function (reason) {
 					props.setError(messageOf(reason));
 				});
 			};
 
-			/** Only a writable source accepts a new skill. */
-			var writable = root.mutable === true || root.key === 'dsh' || root.key === 'agents';
-			var openCreate = function () {
-				setDraft({ name: '', description: '', body: '' });
-				setCreateError('');
-				setCreating(true);
-			};
-			var submitCreate = function () {
-				var name = draft.name.trim();
-				if (name === '') {
-					setCreateError(t('skx.createNameRequired'));
-					return;
-				}
-				setCreateBusy(true);
-				setCreateError('');
-				props.call('create', {
-					root: root.key,
-					name: name,
-					description: draft.description.trim(),
-					body: draft.body,
-				}).then(function () {
-					setCreating(false);
-					return props.onChanged();
-				}).catch(function (reason) {
-					setCreateError(messageOf(reason));
-				}).finally(function () { setCreateBusy(false); });
-			};
-
-			return h('div', { style: { height: '100%' } },
-				h('div', { className: 'skxSplit' },
-				h('div', { className: 'skxListCol' },
-					h('div', { className: 'skxHead' },
-						h('div', { className: 'skxHeadMain' },
-							h('h2', { className: 'skxTitle' }, root.label ?? root.key),
-							h('span', { className: 'skxTitleMeta' }, h('code', { className: 'skxCode' }, root.path))),
-						h('div', { className: 'skxHeadSide' },
-							h('span', { className: 'skxSwitchLabel' }, root.enabled === false ? t('skx.disabled') : t('skx.enabled')),
-							h(PillSwitch, {
-								checked: root.enabled !== false,
-								label: t('skx.toggleSource') + '：' + (root.label ?? root.key),
-								disabled: props.busy,
-								onChange: function (next) { props.onToggleSource(root, next); },
-							}))),
-					h('div', { className: 'skxToolbar' },
-						h('input', {
-							className: 'skxInput',
-							type: 'search',
-							value: query,
-							placeholder: t('skx.search'),
-							'aria-label': t('skx.search'),
-							onChange: function (event) { setQuery(event.target.value); },
-						}),
-						h('label', { className: 'skxCheck' },
-							h('input', { type: 'checkbox', checked: showBroken, onChange: function (event) { setShowBroken(event.target.checked); } }),
-							h('span', null, t('skx.showBroken'))),
-						writable ? h('span', { className: 'mgrSpacer' }) : null,
-						writable ? h('button', { type: 'button', className: 'skxBtn skxBtnSmall', onClick: openCreate }, t('skx.create')) : null),
-					rows.length === 0
-						? h('div', { className: 'skxEmpty' }, needle === '' ? t('skx.noSkills') : t('skx.noMatch'))
-						: h('ul', { className: 'skxRows' }, rows.map(function (skill) {
-							var on = skill.enabled !== false;
-							return h('li', {
-								key: skill.name,
-								className: classes('skxRow', selected !== null && selected.name === skill.name && 'skxRowOn', !on && 'skxRowOff'),
-								role: 'button',
-								tabIndex: 0,
-								'aria-pressed': selected !== null && selected.name === skill.name,
-								onClick: function () { setSelected(skill); },
-								onKeyDown: function (event) {
-									if (event.key !== 'Enter' && event.key !== ' ') return;
-									event.preventDefault();
-									setSelected(skill);
+			return h('div', { className: 'skxPage' },
+				// The input is the only thing that grows, so it spans the page.
+				h('div', { className: 'skxToolbar skxToolbarTop' },
+					h('input', {
+						className: 'skxInput',
+						type: 'search',
+						value: query,
+						placeholder: t('skx.search'),
+						'aria-label': t('skx.search'),
+						onChange: function (event) { setQuery(event.target.value); },
+					}),
+					h('span', { className: 'skxStatBadge', title: t('skx.countsHint') },
+						h('span', { className: 'skxStatLabel' }, t('skx.countsLabel')),
+						h('span', { className: 'skxStatOn' }, String(startedCount)),
+						h('span', { className: 'skxStatOf' }, t('skx.countsOf', { total: listed.length }))),
+					h('button', {
+						type: 'button',
+						className: classes('skxBtn', 'skxBtnSmall', broken.length > 0 && 'skxBtnWarn'),
+						onClick: function () { setBrokenOpen(true); },
+					}, t('skx.brokenButton'), h('span', { className: 'skxTabCount' }, String(broken.length))),
+					h('button', {
+						type: 'button',
+						className: 'skxBtn skxBtnSmall',
+						onClick: function () { setSourcesOpen(true); },
+					}, t('skx.sourcesButton'), h('span', { className: 'skxTabCount' }, String(sources.length))),
+					h('button', {
+						type: 'button',
+						className: 'skxBtn skxBtnSmall',
+						disabled: props.busy,
+						onClick: function () { props.onReload(); },
+					}, props.busy ? t('state.loading') : t('action.refresh'))),
+				h('div', { className: 'skxSingle' },
+					h('div', { className: 'skxListCol' },
+						rows.length === 0
+							? h('div', { className: 'skxEmpty' }, needle === '' ? t('skx.noSkills') : t('skx.noMatch'))
+							: h('ul', { className: 'skxRows' }, rows.map(function (skill) {
+								var on = skill.enabled !== false;
+								return h('li', {
+									key: skill.sourceKey + '/' + skill.name,
+									className: classes('skxRow', opened !== null && opened.sourceKey === skill.sourceKey && opened.name === skill.name && 'skxRowOn', !on && 'skxRowOff'),
+									role: 'button',
+									tabIndex: 0,
+									'aria-pressed': opened !== null && opened.sourceKey === skill.sourceKey && opened.name === skill.name,
+									onClick: function () { setOpened(skill); },
+									onKeyDown: function (event) {
+										if (event.key !== 'Enter' && event.key !== ' ') return;
+										event.preventDefault();
+										setOpened(skill);
+									},
 								},
-							},
-							h('div', { className: 'skxRowMain' },
-								h('div', { className: 'skxRowTitle' },
-									h('span', { className: 'skxRowName' }, skill.name),
-									skill.copies > 0 ? h('span', { className: 'skxBadge', title: t('skx.copiesTip', { n: skill.copies }) }, '+' + skill.copies) : null,
-									skill.effectiveModelInvocable === false ? h('span', { className: 'skxBadge' }, t('skx.manualOnly')) : null,
-									skill.loadable === false ? h('span', { className: 'skxBadge skxBadgeWarn' }, t('skx.broken')) : null),
-								h('p', { className: 'skxRowDesc' }, (skill.description ?? '') === '' ? t('skx.noDescription') : skill.description)),
-							h(PillSwitch, {
-								checked: on,
-								label: t('skx.toggleSkill') + '：' + skill.name,
-								size: 'sm',
-								onChange: function (next) { void flip(skill, next); },
-							}));
-						}))),
-				h('div', { className: 'skxDetailCol' },
-					selected === null
-						? h('div', { className: 'skxEmpty skxEmptyTall' }, t('skx.pickSkill'))
-						: h(SkillPane, {
-							t: t, call: props.call, root: root, skill: selected,
-							onSaved: props.onChanged,
-							onDeleted: function () { setSelected(null); },
-							setError: props.setError,
-						}))),
-			creating
-				? h(Modal, {
-					title: t('skx.createTitle'),
-					onClose: function () { if (!createBusy) setCreating(false); },
-					footer: h('div', { className: 'skxRowActions' },
-						h('button', { type: 'button', className: 'skxBtn skxBtnPrimary', disabled: createBusy, onClick: submitCreate }, createBusy ? t('state.loading') : t('skx.createSubmit')),
-						h('button', { type: 'button', className: 'skxBtn', disabled: createBusy, onClick: function () { setCreating(false); } }, t('action.cancel'))),
-				},
-					h('div', null,
-						h(Field, { label: t('skx.createName') },
-							h('input', {
-								className: 'mgrInput',
-								value: draft.name,
-								placeholder: 'my-skill',
-								onChange: function (event) { setDraft({ ...draft, name: event.target.value }); },
-							})),
-						h(Field, { label: t('skx.createDescription') },
-							h('input', {
-								className: 'mgrInput',
-								value: draft.description,
-								onChange: function (event) { setDraft({ ...draft, description: event.target.value }); },
-							})),
-						h(Field, { label: t('skx.createBody') },
-							h('textarea', {
-								className: 'mgrInput',
-								rows: 8,
-								value: draft.body,
-								onChange: function (event) { setDraft({ ...draft, body: event.target.value }); },
-							})),
-						createError === '' ? null : h('div', { className: 'skxBanner' },
-							h('span', { className: 'skxBannerText' }, createError))))
-				: null);
+								h('div', { className: 'skxRowMain' },
+									h('div', { className: 'skxRowTitle' },
+										h('span', { className: 'skxRowName' }, skill.name),
+										h('span', {
+											className: classes('skxBadge', skill.sourceOff && 'skxBadgeWarn'),
+											title: skill.sourceOff ? t('skx.sourceOffTip') : skill.sourceLabel,
+										}, skill.sourceLabel),
+										skill.copies > 0 ? h('span', { className: 'skxBadge', title: t('skx.copiesTip', { n: skill.copies }) }, '+' + skill.copies) : null,
+										skill.enabled !== false && skill.modelInvocable === false
+											? h('span', { className: 'skxBadge', title: t('skx.manualOnlyTip') }, t('skx.manualOnly'))
+											: null,
+										skill.loadable === false ? h('span', { className: 'skxBadge skxBadgeWarn' }, t('skx.broken')) : null),
+									h('p', { className: 'skxRowDesc' }, (skill.description ?? '') === '' ? t('skx.noDescription') : skill.description)),
+								h(PillSwitch, {
+									checked: on,
+									label: t('skx.toggleSkill') + '：' + skill.name,
+									size: 'sm',
+									onChange: function (next) { void flip(skill, next); },
+								}));
+							})))),
+				brokenOpen
+					? h(Modal, {
+						title: t('skx.brokenTitle'),
+						className: 'mgrModalWide',
+						onClose: function () { setBrokenOpen(false); },
+					},
+						h('div', null,
+							h('p', { className: 'skxProse skxSourcesHint' }, t('skx.brokenHint')),
+							broken.length === 0
+								? h('div', { className: 'skxEmpty' }, t('skx.brokenNone'))
+								: h('ul', { className: 'skxRows' }, broken.map(function (skill) {
+									return h('li', { key: skill.sourceKey + '/' + skill.name, className: 'skxRow skxRowStatic' },
+										h('div', { className: 'skxRowMain' },
+											h('div', { className: 'skxRowTitle' },
+												h('span', { className: 'skxRowName' }, skill.name),
+												h('span', { className: 'skxBadge' }, skill.sourceLabel)),
+											h('p', { className: 'skxRowDesc' }, diagnosticText(t, skill.diagnostics)),
+											h('code', { className: 'skxCode skxCodeBlock' }, skill.path ?? '')));
+								}))))
+					: null,
+				sourcesOpen
+					? h(Modal, {
+						title: t('skx.sourcesTitle'),
+						onClose: function () { setSourcesOpen(false); },
+					},
+						h('div', null,
+							h('p', { className: 'skxProse skxSourcesHint' }, t('skx.sourcesHint')),
+							h('ul', { className: 'skxRows' }, sources.map(function (entry) {
+								var count = (entry.skills ?? []).length;
+								return h('li', { key: entry.key, className: 'skxRow skxRowStatic' },
+									h('div', { className: 'skxRowMain' },
+										h('div', { className: 'skxRowTitle' },
+											h('span', { className: 'skxRowName' }, entry.label ?? entry.key),
+											h('span', { className: 'skxBadge' }, t('skx.sourceSkillCount', { n: count }))),
+										h('p', { className: 'skxRowDesc' }, entry.path)),
+									h(PillSwitch, {
+										checked: entry.enabled !== false,
+										label: t('skx.toggleSource') + '：' + (entry.label ?? entry.key),
+										disabled: props.busy,
+										onChange: function (next) { props.onToggleSource(entry, next); },
+									}));
+							}))))
+					: null,
+				opened === null
+					? null
+					: h(Modal, {
+						title: opened.name,
+						className: 'mgrModalWide',
+						onClose: function () { setOpened(null); },
+					},
+						h('div', { className: 'skxDocInline' },
+							h(SkillPane, {
+								t: t, call: props.call, root: sourceOf(opened.sourceKey), skill: opened,
+								onSaved: props.onChanged,
+								onDeleted: function () { setOpened(null); },
+								setError: props.setError,
+							}))));
 		}
 
 		/**
@@ -4226,11 +4436,10 @@ function apply(ctx) {
 			var roots = Array.isArray(detail?.roots) ? detail.roots : [];
 			var visible = roots.filter(function (root) { return (root.skills ?? []).length > 0; });
 
-			return h('div', { className: 'skxSplit' },
+			return h('div', { className: 'skxSingle' },
 				h('div', { className: 'skxListCol' },
 					h('div', { className: 'skxHead' },
 						h('div', { className: 'skxHeadMain' },
-							h('h2', { className: 'skxTitle' }, t('skx.tab.project')),
 							h('span', { className: 'skxTitleMeta' }, t('skx.projectHint')))),
 					h('div', { className: 'skxChips' }, workspaces.map(function (item) {
 						return h('button', {
@@ -4239,7 +4448,7 @@ function apply(ctx) {
 							className: classes('skxChip', item.path === activePath && 'skxChipOn', item.available === false && 'skxChipOff'),
 							title: item.available === false ? t('skx.workspaceUnavailable') : item.path,
 							onClick: function () { setActivePath(item.path); },
-						}, item.name, h('span', { className: 'skxNavCount' }, String(item.skillCount ?? 0)));
+						}, item.name, h('span', { className: 'skxSourceCount' }, String(item.skillCount ?? 0)));
 					})),
 					detail === null
 						? h('div', { className: 'skxEmpty' }, t('state.loading'))
@@ -4258,9 +4467,7 @@ function apply(ctx) {
 													h('div', { className: 'skxRowTitle' }, h('span', { className: 'skxRowName' }, skill.name)),
 													h('p', { className: 'skxRowDesc' }, (skill.description ?? '') === '' ? t('skx.noDescription') : skill.description)));
 										})));
-								}))),
-				h('div', { className: 'skxDetailCol' },
-					h('div', { className: 'skxEmpty skxEmptyTall' }, t('skx.projectReadOnly'))));
+								}))));
 		}
 
 		/**
@@ -4393,7 +4600,6 @@ function apply(ctx) {
 				h('div', { className: 'skxListCol' },
 					h('div', { className: 'skxHead' },
 						h('div', { className: 'skxHeadMain' },
-							h('h2', { className: 'skxTitle' }, t('skx.tab.discover')),
 							h('span', { className: 'skxTitleMeta' }, t('skx.discoverHint')))),
 					h('div', { className: 'skxToolbar' },
 						h('div', { className: 'skxSearchField' },
@@ -4551,11 +4757,10 @@ function apply(ctx) {
 			if (items === null) return h('div', { className: 'skxEmpty skxEmptyTall' }, t('state.loading'));
 
 			return h('div', { style: { height: '100%' } },
-				h('div', { className: 'skxSplit' },
+				h('div', { className: 'skxSingle' },
 				h('div', { className: 'skxListCol' },
 					h('div', { className: 'skxHead' },
 						h('div', { className: 'skxHeadMain' },
-							h('h2', { className: 'skxTitle' }, t('skx.tab.trash')),
 							h('span', { className: 'skxTitleMeta' }, t('skx.trashHint')))),
 					items.length === 0
 						? h('div', { className: 'skxEmpty' }, t('skx.trashEmpty'))
@@ -4569,9 +4774,7 @@ function apply(ctx) {
 								h('div', { className: 'skxRowEnd' },
 									h('button', { type: 'button', className: 'skxBtn skxBtnSmall', disabled: busy, onClick: function () { restore(item); } }, t('skx.restore')),
 									h('button', { type: 'button', className: 'skxBtn skxBtnDanger skxBtnSmall', disabled: busy, onClick: function () { setPurging(item); } }, t('skx.purge'))));
-						}))),
-				h('div', { className: 'skxDetailCol' },
-					h('div', { className: 'skxEmpty skxEmptyTall' }, t('skx.trashHint')))),
+						})))),
 			purging === null ? null : h(Modal, {
 				title: t('skx.purgeConfirmTitle', { name: purging.name ?? purging.id }),
 				onClose: function () { setPurging(null); },
@@ -4940,7 +5143,7 @@ function apply(ctx) {
 			function move(direction) {
 				setSaving(true);
 				setFormError('');
-				return props.onMove(channel.id, direction).catch(fail).then(function () {
+				return props.onMove(channel.id, direction, props.moveOrder).catch(fail).then(function () {
 					setSaving(false);
 				});
 			}
@@ -5028,9 +5231,18 @@ function apply(ctx) {
 			return h('div', { className: 'mgrSearchChannel' },
 				h('div', { className: 'mgrSearchChannelHead' },
 					h('div', { className: 'mgrSearchChannelMain' },
-						h('div', { className: 'mgrSearchChannelName' }, channel.label),
-						h('div', { className: 'mgrSearchChannelDesc' }, description),
-						h('div', { className: 'mgrSearchChannelBadges' }, freeBadge, keyBadge, cooldownBadge)),
+						// The switch rides the name row so the text column can take the
+						// whole card width; the actions become one line at the card foot.
+						h('div', { className: 'mgrSearchChannelNameRow' },
+							h('div', { className: 'mgrSearchChannelName' }, channel.label),
+							h('div', { className: 'mgrSearchChannelBadges' }, freeBadge, keyBadge, cooldownBadge),
+							h(Switch, {
+								checked: channel.enabled,
+								disabled: saving || props.bulkBusy === true,
+								label: t('search.channel.enable'),
+								onChange: function (next) { void toggle(next); },
+							})),
+						h('div', { className: 'mgrSearchChannelDesc' }, description)),
 					h('div', { className: 'mgrSearchChannelActions' },
 						h('div', { className: 'mgrSearchOrder' },
 							h('button', {
@@ -5049,12 +5261,6 @@ function apply(ctx) {
 								disabled: saving || props.canMoveDown !== true,
 								onClick: function () { void move('down'); },
 							}, '↓')),
-						h(Switch, {
-							checked: channel.enabled,
-							disabled: saving,
-							label: t('search.channel.enable'),
-							onChange: function (next) { void toggle(next); },
-						}),
 						h('button', {
 							type: 'button',
 							className: 'mgrBtn',
@@ -5177,15 +5383,93 @@ function apply(ctx) {
 		 * @param {object} props - Status fields and callbacks.
 		 * @returns {object} React node.
 		 */
+		/**
+		 * The search-mode switches.
+		 *
+		 * A mode decides how the enabled channels are combined; the numbers above
+		 * the buttons are the result cap and the per-channel cap. It sits in the
+		 * settings pane, next to the other things that shape a search.
+		 *
+		 * @param {object} props - `t`, `mode`, `maxResults`, `perChannel`, `onMode`.
+		 * @returns {object} React node.
+		 */
+		function SearchModeCard(props) {
+			var t = props.t;
+			var mode = props.mode;
+
+			function modeButton(id, label) {
+				return h('button', {
+					type: 'button',
+					key: id,
+					className: classes('mgrBtn', mode === id && 'mgrBtnPrimary'),
+					onClick: function () { if (mode !== id) void props.onMode(id); },
+				}, label);
+			}
+
+			return h('div', { className: 'mgrSearchCard' },
+					h('div', { className: 'mgrSearchCardHead' },
+						h('span', { className: 'mgrSearchCardTitle' }, t('search.mode')),
+						h('span', { className: 'mgrHint' }, t('search.maxResults', { n: props.maxResults, per: props.perChannel }))),
+					h('div', { className: 'mgrSearchControls' },
+						modeButton('merge', t('search.modeMerge')),
+						modeButton('fallback', t('search.modeFallback')),
+						modeButton('auto', t('search.modeAuto')),
+						h('span', { className: 'mgrHint' }, mode === 'fallback'
+							? t('search.modeFallbackHint')
+							: mode === 'auto' ? t('search.modeAutoHint') : t('search.modeMergeHint'))));
+		}
+
+		/**
+		 * The channel list: one row per channel, with its switch, test and form.
+		 *
+		 * @param {object} props - Channel rows and the callbacks they need.
+		 * @returns {object} React node.
+		 */
 		function SearchChannels(props) {
 			var t = props.t;
 			var channels = props.channels;
 			var [filter, setFilter] = useState('');
 			var [onlyEnabled, setOnlyEnabled] = useState(false);
 			var needle = filter.trim().toLowerCase();
-			var visible = [];
-			for (var index = 0; index < channels.length; index += 1) {
+			// Enabled rows first, each group in the stored order, so the result of
+			// a bulk switch is visible without scrolling through thirty-seven rows.
+			// Besides the list this pass decides what the bulk switch says and what
+			// one click would change.
+			var ordered = [];
+			var usableIds = [];
+			var enabledIds = [];
+			var usableCount = 0;
+			var usableOn = 0;
+			var freeCount = 0;
+			var keyedCount = 0;
+			var missingCount = 0;
+			var index;
+			for (index = 0; index < channels.length; index += 1) {
 				var channel = channels[index];
+				var usable = channel.free === true || channel.keyConfigured === true;
+				if (channel.free === true) freeCount += 1;
+				if (channel.keyConfigured === true) keyedCount += 1;
+				else if (channel.requiresKey === true) missingCount += 1;
+				if (usable) {
+					usableCount += 1;
+					if (channel.enabled === true) usableOn += 1;
+					else usableIds.push(channel.id);
+				}
+				if (channel.enabled === true) {
+					enabledIds.push(channel.id);
+					ordered.push(channel);
+				}
+			}
+			// Two states only: "on" means every usable channel is on. A paid
+			// channel without a key stays off and never spoils the reading.
+			var allUsableOn = usableCount > 0 && usableOn === usableCount;
+			for (index = 0; index < channels.length; index += 1) {
+				if (channels[index].enabled !== true) ordered.push(channels[index]);
+			}
+			var orderedIds = ordered.map(function (entry) { return entry.id; });
+			var visible = [];
+			for (index = 0; index < ordered.length; index += 1) {
+				channel = ordered[index];
 				if (onlyEnabled === true && channel.enabled !== true) continue;
 				if (needle !== '') {
 					var haystack = (channel.label + ' ' + channel.description + ' ' + channel.id).toLowerCase();
@@ -5208,34 +5492,26 @@ function apply(ctx) {
 
 			return h('div', null,
 				h('div', { className: 'mgrSearchCard' },
-					h('div', { className: 'mgrSearchCardHead' },
-						h('span', { className: 'mgrSearchCardTitle' }, t('search.mode')),
-						h('span', { className: 'mgrHint' }, t('search.maxResults', { n: props.maxResults, per: props.perChannel }))),
-					h('div', { className: 'mgrSearchControls' },
-						modeButton('merge', t('search.modeMerge')),
-						modeButton('fallback', t('search.modeFallback')),
-						modeButton('auto', t('search.modeAuto')),
-						h('span', { className: 'mgrHint' }, mode === 'fallback'
-							? t('search.modeFallbackHint')
-							: mode === 'auto' ? t('search.modeAutoHint') : t('search.modeMergeHint')))),
-				h('div', { className: 'mgrSearchCard' },
+					// The action sits on the title line, so the card is one row of
+					// controls plus one line of hint instead of three stacked rows.
 					h('div', { className: 'mgrSearchCardHead' },
 						h('span', { className: 'mgrSearchCardTitle' }, t('search.testTitle')),
-						h('span', { className: 'mgrHint' }, t('search.testHint'))),
-					h('div', { className: 'mgrSearchControls' },
-						h('button', {
-							type: 'button',
-							className: 'mgrBtn',
-							disabled: props.available !== true || props.testAllBusy === true,
-							onClick: function () { void props.onTestAll(); },
-						}, props.testAllBusy === true ? t('search.testAllRunning') : t('search.testAll')),
-						props.hasCooldown === true
-							? h('button', {
+						h('span', { className: 'mgrSpacer' }),
+						h('div', { className: 'mgrSearchCardHeadActions' },
+							h('button', {
 								type: 'button',
 								className: 'mgrBtn',
-								onClick: function () { void props.onResetCooldowns(); },
-							}, t('search.resetCooldowns'))
-							: null),
+								disabled: props.available !== true || props.testAllBusy === true,
+								onClick: function () { void props.onTestAll(); },
+							}, props.testAllBusy === true ? t('search.testAllRunning') : t('search.testAll')),
+							props.hasCooldown === true
+								? h('button', {
+									type: 'button',
+									className: 'mgrBtn',
+									onClick: function () { void props.onResetCooldowns(); },
+								}, t('search.resetCooldowns'))
+								: null)),
+					h('div', { className: 'mgrHint mgrSearchCardHint' }, t('search.testHint')),
 					testAll === null ? null : h('div', { className: 'mgrSearchChips' },
 						h('span', { className: 'mgrHint' }, t('search.testAllSummary', { ok: testAll.ok, total: testAll.total })),
 						testAll.results.map(function (entry) {
@@ -5250,7 +5526,13 @@ function apply(ctx) {
 				h('div', { className: 'mgrSearchChannels' },
 					h('div', { className: 'mgrSearchChannelsHead' },
 						h('span', { className: 'mgrSearchChannelsTitle' }, t('search.channels')),
-						h('span', { className: 'mgrCount' }, t('search.channelsCount', { enabled: props.enabled, total: channels.length }))),
+						h('div', { className: 'mgrSearchChannelStats' },
+							h('span', { className: 'mgrCount' }, t('search.channelsCount', { enabled: props.enabled, total: channels.length })),
+							h('span', { className: 'mgrCount' }, t('search.statFree', { n: freeCount })),
+							h('span', { className: 'mgrCount' }, t('search.statKeyed', { n: keyedCount })),
+							h('span', {
+								className: classes('mgrCount', missingCount > 0 && 'mgrSearchStatWarn'),
+							}, t('search.statKeyMissing', { n: missingCount })))),
 					h('div', { className: 'mgrSearchChannelFilter' },
 						h('input', {
 							className: 'mgrInput',
@@ -5266,7 +5548,23 @@ function apply(ctx) {
 								checked: onlyEnabled,
 								onChange: function (event) { setOnlyEnabled(event.target.checked); },
 							}),
-							h('span', { className: 'mgrHint' }, t('search.onlyEnabled')))),
+							h('span', { className: 'mgrHint' }, t('search.onlyEnabled'))),
+						h('div', { className: 'mgrSearchBulk' },
+							h('span', { className: 'mgrHint', title: t('search.bulkUsableHint') }, t('search.bulkUsable')),
+							h(Switch, {
+								checked: allUsableOn,
+								disabled: props.bulkBusy === true,
+								label: t('search.bulkUsable'),
+								onChange: function (next) {
+									// On turns the usable channels on and leaves a paid
+									// channel without a key alone; off turns everything
+									// off, so the list really is empty afterwards.
+									void props.onSetChannels(next === true ? usableIds : enabledIds, next);
+								},
+							}),
+							props.bulkBusy === true
+								? h('span', { className: 'mgrHint' }, t('search.enabling'))
+								: null)),
 					filtering === true
 						? h('div', { className: 'mgrHint mgrSearchFilterCount' }, t('search.filteredCount', { shown: visible.length, total: channels.length }))
 						: null,
@@ -5274,7 +5572,7 @@ function apply(ctx) {
 						? h('div', { className: 'mgrEmpty' }, t('search.filteredEmpty'))
 						: null,
 					visible.map(function (row) {
-						var full = channels.indexOf(row);
+						var full = ordered.indexOf(row);
 						return h(SearchChannelRow, {
 							key: row.id,
 							channel: row,
@@ -5283,8 +5581,13 @@ function apply(ctx) {
 							onSave: props.onSave,
 							onTest: props.onTest,
 							onMove: props.onMove,
+							// The arrows move a row inside the list as drawn, which is
+							// why the batch order is handed over as well: the stored
+							// order alone would move a row the grouping hides.
+							moveOrder: orderedIds,
+							bulkBusy: props.bulkBusy === true,
 							canMoveUp: full > 0,
-							canMoveDown: full >= 0 && full < channels.length - 1,
+							canMoveDown: full >= 0 && full < ordered.length - 1,
 						});
 					})));
 		}
@@ -5346,7 +5649,9 @@ function apply(ctx) {
 			var tabs = [
 				{ id: 'results', label: t('search.sub.results'), count: sources.length > 0 ? String(sources.length) : '' },
 				{ id: 'channels', label: t('search.sub.channels'), count: channels.length > 0 ? enabled + '/' + channels.length : '' },
-				{ id: 'filter', label: t('search.sub.filter'), count: blockedDomains.length > 0 ? String(blockedDomains.length) : '' },
+				// The mode switches and the domain filter are both settings; they share
+				// one tab instead of taking the top of the channel list.
+				{ id: 'settings', label: t('search.sub.settings'), count: blockedDomains.length === 0 ? '' : String(blockedDomains.length) },
 			];
 			var tabView = h('div', { className: 'mgrSubTabs', role: 'tablist', 'aria-label': t('search.subtabs') },
 				tabs.map(function (entry) {
@@ -5387,7 +5692,7 @@ function apply(ctx) {
 				h('button', {
 					type: 'button',
 					className: 'mgrLinkBtn',
-					onClick: function () { props.setSub('channels'); },
+					onClick: function () { props.setSub('settings'); },
 				}, t('search.modeJump')),
 				h('span', { className: 'mgrSpacer' }),
 				h('label', { className: 'mgrSearchTimeWrap', title: t('search.timeTitle') },
@@ -5420,9 +5725,6 @@ function apply(ctx) {
 						channels: channels,
 						enabled: enabled,
 						available: available,
-						mode: mode,
-						maxResults: maxResults,
-						perChannel: perChannel,
 						query: props.query,
 						hasCooldown: hasCooldown,
 						testAll: props.testAll,
@@ -5433,8 +5735,17 @@ function apply(ctx) {
 						onMove: props.onMove,
 						onTestAll: props.onTestAll,
 						onResetCooldowns: props.onResetCooldowns,
+						bulkBusy: props.bulkBusy,
+						onSetChannels: props.onSetChannels,
 					})),
-				h('div', { style: sub === 'filter' ? undefined : { display: 'none' } },
+				h('div', { style: sub === 'settings' ? undefined : { display: 'none' } },
+					h(SearchModeCard, {
+						t: t,
+						mode: mode,
+						maxResults: maxResults,
+						perChannel: perChannel,
+						onMode: props.onMode,
+					}),
 					h('div', { className: 'mgrSearchBlocked' },
 						h('div', { className: 'mgrSearchBlockedHead' },
 							h('span', { className: 'mgrLabel' }, t('search.blocked')),
@@ -5603,73 +5914,652 @@ function apply(ctx) {
 
 		//#endregion
 
-		//#region modes view
+		//#region tools view
 
 		/**
-		 * The modes panel: the agent presets this plugin ships.
+		 * The locale key of every tool section's name.
 		 *
-		 * A switch registers the preset with the Host registry or drops it
-		 * again. The composition is shown read-only, in the order the rows are
-		 * mounted, so the difference to the standard preset is inspectable
-		 * without reading the source.
+		 * The map keeps the keys static: a group id that is not in here has no
+		 * name of its own, and the panel shows the raw id instead of guessing.
+		 */
+		var TOOL_GROUP_LABEL = {
+			skills: 'tools.group.skills',
+			mcp: 'tools.group.mcp',
+			search: 'tools.group.search',
+			lan: 'tools.group.lan',
+		};
+
+		/** The locale key of every tool section's one-line explanation. */
+		var TOOL_GROUP_HINT = {
+			skills: 'tools.hint.skills',
+			mcp: 'tools.hint.mcp',
+			search: 'tools.hint.search',
+			lan: 'tools.hint.lan',
+		};
+
+		/** The locale key of every tool section's empty state. */
+		var TOOL_GROUP_EMPTY = {
+			skills: 'tools.empty.skills',
+			mcp: 'tools.empty.mcp',
+			search: 'tools.empty.search',
+			lan: 'tools.empty.lan',
+		};
+
+		/**
+		 * The name of one tool section.
 		 *
-		 * @param {object} props - `t`, `modes`, `busy`, `onToggle`.
+		 * @param {object} t - Translator.
+		 * @param {string} id - Section id.
+		 * @returns {string} The section name.
+		 */
+		function toolGroupLabel(t, id) {
+			var key = TOOL_GROUP_LABEL[id];
+			return key === undefined ? id : t(key);
+		}
+
+		/**
+		 * The parameter type of one schema property.
+		 *
+		 * @param {object} spec - One property schema.
+		 * @returns {string} The type, with `[]` for arrays.
+		 */
+		function toolParamType(spec) {
+			if (spec === null || typeof spec !== 'object') return 'any';
+			var type = typeof spec.type === 'string' ? spec.type : 'any';
+			if (type === 'array' && spec.items !== null && typeof spec.items === 'object' && typeof spec.items.type === 'string') {
+				return spec.items.type + '[]';
+			}
+			return type;
+		}
+
+		/**
+		 * One tool: its name, where it comes from, its description and its
+		 * parameters.
+		 *
+		 * @param {object} props - `t` and `tool`.
 		 * @returns {object} React node.
 		 */
-		function ModesSection(props) {
+		function ToolCard(props) {
 			var t = props.t;
-			var state = props.modes;
-			if (state === null || state === undefined || state.modes.length === 0) {
-				return h('div', { className: 'mgrLanHint' }, t('modes.empty'));
+			var tool = props.tool;
+			var schema = tool.parameters !== null && typeof tool.parameters === 'object' ? tool.parameters : null;
+			var properties = schema !== null && schema.properties !== null && typeof schema.properties === 'object'
+				? schema.properties
+				: null;
+			var required = schema !== null && Array.isArray(schema.required) ? schema.required : [];
+			var source = typeof tool.source === 'string' ? tool.source : '';
+			return h('div', { className: 'mgrToolCard' },
+				h('div', { className: 'mgrToolCardHead' },
+					h('span', { className: 'mgrToolCardName' }, tool.name),
+					source === '' ? null : h('span', { className: 'mgrBadge' }, source === 'skills' ? t('tools.source.skills') : (source === 'search' ? t('tools.source.search') : source)),
+					typeof tool.mode === 'string' ? h('span', { className: 'mgrBadge' }, tool.mode) : null,
+					tool.enabled === false ? h('span', { className: 'mgrBadge mgrBadgeWarn' }, t('tools.modeOff')) : null),
+				tool.description === '' ? null : h('div', { className: 'mgrToolCardDesc' }, tool.description),
+				schema === null ? null : h('div', { className: 'mgrToolParams' },
+					h('div', { className: 'mgrToolParamsHead' }, t('tools.params')),
+					properties === null || Object.keys(properties).length === 0
+						? h('div', { className: 'mgrToolParamDesc' }, t('tools.noParams'))
+						: null,
+					properties === null ? null : Object.keys(properties).map(function (key) {
+						var spec = properties[key];
+						var specObject = spec !== null && typeof spec === 'object' ? spec : {};
+						return h('div', { className: 'mgrToolParam', key: key },
+							h('span', { className: 'mgrToolParamName' }, key),
+							h('span', { className: 'mgrToolParamType' }, toolParamType(specObject)),
+							required.indexOf(key) >= 0 ? h('span', { className: 'mgrToolParamReq' }, t('tools.required')) : null,
+							Array.isArray(specObject.enum) && specObject.enum.length > 0
+								? h('span', { className: 'mgrToolParamType' }, specObject.enum.join(' / '))
+								: null,
+							typeof specObject.description === 'string' && specObject.description !== ''
+								? h('span', { className: 'mgrToolParamDesc' }, specObject.description)
+								: null);
+					})));
+		}
+
+		/**
+		 * One tool section: the tools of one module.
+		 *
+		 * @param {object} props - `t` and `group`.
+		 * @returns {object} React node.
+		 */
+		function ToolGroup(props) {
+			var t = props.t;
+			var group = props.group;
+			var tools = Array.isArray(group.tools) ? group.tools : [];
+			var hint = TOOL_GROUP_HINT[group.id];
+			return h('div', null,
+				hint === undefined ? null : h('div', { className: 'mgrHint', style: { marginBottom: '10px' } }, t(hint)),
+				tools.length === 0
+					? h('div', { className: 'mgrEmpty' }, TOOL_GROUP_EMPTY[group.id] === undefined ? t('tools.empty') : t(TOOL_GROUP_EMPTY[group.id]))
+					: tools.map(function (tool) {
+						return h(ToolCard, { t: t, tool: tool, key: tool.name });
+					}));
+		}
+
+		/**
+		 * The UI-enhancement page: one switch per profile bundle.
+		 *
+		 * A switch does not reimplement anything: it asks the Host's plugin
+		 * manager to select or drop that bundle, so the feature behaves exactly
+		 * as the plugin does — including everything the plugin brings with it.
+		 *
+		 * @param {object} props - `t`, `state`, `onToggle`, `busy`.
+		 * @returns {object} React node.
+		 */
+		function UiEnhancementsSection(props) {
+			var t = props.t;
+			var state = props.state;
+			if (state === null || state === undefined) {
+				return h('div', { className: 'mgrLoading' }, h('span', { className: 'mgrSpinner' }), h('span', null, t('state.loading')));
+			}
+			if (state.available !== true) {
+				return h('div', { className: 'mgrWarn' }, h('span', null, t('ui.unavailable')));
+			}
+			var features = Array.isArray(state.features) ? state.features : [];
+			var client = state.client !== null && typeof state.client === 'object' ? state.client : null;
+			return h('div', null,
+				h('div', { className: 'mgrToolbar' },
+					h('div', { className: 'mgrHint' }, t('ui.hint'))),
+				client === null || features.length > 1 ? null : h('div', { className: 'mgrMeta', style: { marginBottom: '10px' } },
+					// The host may still be the older build that reports one flat
+					// record; read both shapes so the line is never empty.
+					t('ui.clientState', {
+						state: (client.mount ?? client).mounted === true ? t('ui.clientMounted') : t('ui.clientNotMounted'),
+						reason: (client.mount ?? client).reason ?? '',
+					}),
+					client.row === undefined ? null : h('div', null,
+						t('ui.rowState', {
+							state: client.row.mounted === true ? t('ui.clientMounted') : t('ui.clientNotMounted'),
+							reason: client.row.reason ?? '',
+						}))),
+				features.length === 0
+					? h('div', { className: 'mgrEmpty' }, t('skx.noSources'))
+					: h('div', { className: 'mgrServer' },
+						features.map(function (feature) {
+							var title = localizedText(feature.title, feature.id);
+							var description = localizedText(feature.description, '');
+							var missing = feature.installed === false;
+							return h('div', { className: 'mgrUiFeature', key: feature.id },
+								h('div', { className: 'mgrUiFeatureMain' },
+									h('div', { className: 'mgrUiFeatureTitle' },
+										title === '' ? feature.bundle : title,
+										feature.defaultEnabled === true
+											? h('span', { className: 'mgrBadge' }, t('ui.defaultOn'))
+											: h('span', { className: 'mgrBadge' }, t('ui.defaultOff')),
+										feature.version === '' ? null : h('span', { className: 'mgrBadge' }, 'v' + feature.version)),
+									description === '' ? null : h('div', { className: 'mgrUiFeatureDesc' }, description),
+									missing ? h('div', { className: 'mgrMeta' }, t('ui.missing')) : null,
+								client === null || client.features === undefined || client.features[feature.id] === undefined
+									? null
+									: h('div', { className: 'mgrMeta' },
+										t('ui.featureClient', {
+											state: client.features[feature.id].mounted === true ? t('ui.clientMounted') : t('ui.clientNotMounted'),
+											reason: client.features[feature.id].reason ?? '',
+										}))),
+								h(PillSwitch, {
+									checked: feature.enabled === true,
+									label: title === '' ? feature.bundle : title,
+									disabled: props.busy === true || feature.available === false,
+									onChange: function (next) { props.onToggle(feature.id, next); },
+								}));
+						})));
+		}
+
+		/**
+		 * One localized text, whatever shape the Host hands over.
+		 *
+		 * @param {string | object} value - Literal text or a per-language map.
+		 * @param {string} fallback - What to use when there is none.
+		 * @returns {string} The text.
+		 */
+		function localizedText(value, fallback) {
+			if (typeof value === 'string') return value === '' ? fallback : value;
+			if (value === null || typeof value !== 'object') return fallback;
+			var keys = Object.keys(value);
+			for (var index = 0; index < keys.length; index += 1) {
+				var key = keys[index];
+				if (key === 'zh' || key.startsWith('zh-')) return String(value[key]);
+			}
+			for (var other = 0; other < keys.length; other += 1) {
+				if (keys[other] === 'en' || keys[other].startsWith('en-')) return String(value[keys[other]]);
+			}
+			return keys.length === 0 ? fallback : String(value[keys[0]]);
+		}
+
+		/**
+		 * The tool catalog page.
+		 *
+		 * One sub-tab per module, each listing the tools that module gives the
+		 * agent together with their descriptions and parameter schemas. Every
+		 * section stays mounted so switching back does not re-read anything.
+		 *
+		 * @param {object} props - `t`, `catalog`, `sub`, `setSub`.
+		 * @returns {object} React node.
+		 */
+		function ToolsSection(props) {
+			var t = props.t;
+			var catalog = props.catalog;
+			var sub = props.sub;
+			if (catalog === null || catalog === undefined) {
+				return h('div', { className: 'mgrLoading' }, h('span', { className: 'mgrSpinner' }), h('span', null, t('tools.loading')));
+			}
+			if (typeof catalog.error === 'string' && catalog.error !== '') {
+				return h('div', { className: 'mgrErrorBox' }, h('span', null, t('tools.failed') + '：' + catalog.error));
+			}
+			var groups = Array.isArray(catalog.groups) ? catalog.groups : [];
+			if (groups.length === 0) {
+				return h('div', { className: 'mgrEmpty' }, t('tools.empty'));
 			}
 			return h('div', null,
-				state.available !== true
-					? h('div', { className: 'mgrWarn' }, h('span', null, t('modes.unavailable')))
-					: null,
-				h('div', { className: 'mgrLanHint mgrModeIntro' }, t('modes.hint')),
-				state.modes.map(function (mode) {
-					var stateLabel = mode.error !== ''
-						? t('modes.failed')
-						: mode.pending === true
-							? t('modes.pending')
-							: mode.registered === true ? t('modes.registered') : t('modes.unregistered');
-					return h('div', { className: 'mgrLanCard', key: mode.id },
-						h('div', { className: 'mgrLanRow' },
-							h('div', { className: 'mgrLanRowMain' },
-								h('div', { className: 'mgrLanTitle' },
-									mode.name,
-									h('span', { className: 'mgrModeTag' }, t('modes.owned'))),
-								h('div', { className: 'mgrLanHint' }, mode.description)),
-							h(Switch, {
-								checked: mode.enabled === true,
-								disabled: props.busy === true || state.available !== true,
-								label: mode.name,
-								onChange: function (next) { props.onToggle(mode.id, next); },
-							})),
-						mode.error === ''
-							? null
-							: h('div', { className: 'mgrErrorBox' }, h('span', null, t('modes.failed') + '：' + mode.error)),
-						h('div', { className: 'mgrModeMeta' },
-							h('span', {
-								className: classes('mgrModeState', mode.error !== '' && 'mgrModeStateBad'),
-							}, stateLabel),
-							h('span', { className: 'mgrSpacer' }),
-							h('span', null, String(mode.plugins.length) + ' ' + t('modes.rows'))),
-						h('details', { className: 'mgrModeDetails' },
-							h('summary', null, t('modes.composition')),
-							h('div', { className: 'mgrModeRows' },
-								mode.plugins.map(function (row) {
-									return h('div', { className: 'mgrModeRow', key: row.id },
-										h('span', { className: 'mgrModeRowId' }, row.id),
-										h('span', { className: 'mgrModeRowPlugin' }, row.plugin),
-										row.children.length === 0
-											? null
-											: h('span', { className: 'mgrModeRowChild' }, '（' + row.children.join('、') + '）'));
-								})),
-							mode.removed.length === 0
-								? null
-								: h('div', { className: 'mgrLanHint mgrModeRemoved' }, t('modes.removed') + '：' + mode.removed.join('、'))));
+				h('div', { className: 'mgrToolbar' },
+					h('div', { className: 'mgrHint' }, t('tools.note'))),
+				h('div', { className: 'mgrSubTabs', role: 'tablist', 'aria-label': t('tools.subtabs') },
+					groups.map(function (group) {
+						return h('button', {
+							type: 'button',
+							role: 'tab',
+							key: group.id,
+							'aria-selected': sub === group.id,
+							className: classes('mgrTab', sub === group.id && 'mgrTabActive'),
+							onClick: function () { props.setSub(group.id); },
+						},
+							toolGroupLabel(t, group.id),
+							h('span', { className: 'mgrTabCount' }, String(Array.isArray(group.tools) ? group.tools.length : 0)));
+					})),
+				groups.map(function (group) {
+					return h('div', { key: group.id, style: { display: sub === group.id ? undefined : 'none' } },
+						h(ToolGroup, { t: t, group: group }));
 				}));
+		}
+
+		//#endregion
+
+		//#region preferences view
+
+		/**
+		 * The global preference editor.
+		 *
+		 * The manager owns `$DSH_HOME/AGENTS.md` — the file DSH reads at the start
+		 * of every session — and keeps the authoritative copy in its own data
+		 * directory (symlinked, or duplicated when symlinks are unavailable).
+		 * Ported from the 自衍中枢 preference pane, same semantics.
+		 *
+		 * @param {object} props - `t`, `call`, `notify`, `setError`.
+		 * @returns {object} React node.
+		 */
+		function PreferencesSection(props) {
+			var t = props.t;
+			var [state, setState] = useState(null);
+			var [draft, setDraft] = useState('');
+			var [baseline, setBaseline] = useState('');
+			var [busy, setBusy] = useState(false);
+			var [error, setError] = useState('');
+
+			// Re-read on every open: another window may have written the file.
+			useEffect(function () {
+				var alive = true;
+				props.call('preferences').then(function (value) {
+					if (!alive) return;
+					setState(value);
+					setDraft(String(value?.content ?? ''));
+					setBaseline(String(value?.content ?? ''));
+				}).catch(function (reason) {
+					if (alive) setError(messageOf(reason));
+				});
+				return function () { alive = false; };
+			}, [props.call]);
+
+			if (state === null) {
+				return error === ''
+					? h(Loading, { label: t('preferences.loading') })
+					: h('div', { className: 'mgrErrorBox' }, h('span', null, error));
+			}
+
+			var dirty = draft !== baseline;
+			var cap = Number(state.cap) || 0;
+			var bytes = byteLength(draft);
+			var readable = state.readable !== false;
+
+			var save = function () {
+				setBusy(true);
+				props.call('preferences-save', { content: draft }).then(function (value) {
+					setState(value);
+					setDraft(String(value?.content ?? ''));
+					setBaseline(String(value?.content ?? ''));
+					props.notify(t('preferences.saved'), false);
+				}).catch(function (reason) {
+					props.notify(messageOf(reason), true);
+				}).then(function () { setBusy(false); });
+			};
+
+			return h('div', { className: 'mgrServer' },
+				h('div', { className: 'mgrHint', style: { marginBottom: '10px' } }, t('preferences.hint')),
+				h('div', { className: 'mgrPrefsPath' },
+					h('span', { className: 'mgrLabel' }, t('preferences.file')),
+					h('code', { className: 'mgrCode' }, state.path ?? '')),
+				h('div', { className: 'mgrMeta' }, t('preferences.link', { agents: state.agentsPath ?? '' })),
+				state.mode === 'link'
+					? h('div', { className: 'mgrMeta' }, t('preferences.mode.link'))
+					: state.mode === 'copy'
+						? h('div', { className: 'mgrMeta' }, t('preferences.mode.copy'))
+						: null,
+				readable ? null : h('div', { className: 'mgrWarn' }, t('preferences.unreadable')),
+				h('textarea', {
+					className: 'mgrInput mgrPrefsText',
+					value: draft,
+					disabled: !readable,
+					'aria-label': t('tab.preferences'),
+					onChange: function (event) { setDraft(event.target.value); },
+				}),
+				h('div', { className: 'mgrToolbar', style: { marginTop: '10px', marginBottom: 0 } },
+					h('span', { className: 'mgrHint' },
+						t('preferences.size', { tokens: estimateTokens(draft), bytes: bytes, cap: cap })
+						+ (dirty ? ' · ' + t('preferences.dirty') : '')),
+					h('span', { className: 'mgrToolbarSpacer' }),
+					h('button', {
+						type: 'button',
+						className: 'mgrBtn',
+						disabled: !dirty || busy,
+						onClick: function () { setDraft(baseline); },
+					}, t('preferences.reset')),
+					h('button', {
+						type: 'button',
+						className: 'mgrBtn mgrBtnPrimary',
+						disabled: !dirty || busy || !readable || (cap > 0 && bytes > cap),
+						onClick: save,
+					}, busy ? t('state.loading') : t('preferences.save'))));
+		}
+
+		//#endregion
+
+
+		//#region composer history view
+
+		/**
+		 * The input-box history.
+		 *
+		 * ArrowUp walks back through what this session already sent; ArrowDown
+		 * walks forward again and finally restores the draft that was there
+		 * before. A recalled message is put back into the composer as an editable
+		 * draft, so it can be fixed and sent with no extra step.
+		 *
+		 * The switch lives in the manager (UI 增强 → 输入框历史). The Host has no
+		 * part in it, so this is the whole feature.
+		 *
+		 * @param {object} ctx - Host context.
+		 * @returns {Function} Cleanup.
+		 */
+		function installComposerHistory(ctx) {
+			try {
+				return installComposerHistoryInner(ctx);
+			} catch (error) {
+				// A silent failure here looks exactly like "the keys do nothing",
+				// so it is reported where the panel can show it.
+				callHost(ctx, 'ui-client-status', {
+					feature: 'composer-history',
+					scope: 'mount',
+					mounted: false,
+					reason: 'install-failed: ' + messageOf(error),
+				}).catch(function () {});
+				return function () {};
+			}
+		}
+
+		/**
+		 * The history itself, once installing is known to have worked.
+		 *
+		 * @param {object} ctx - Host context.
+		 * @returns {Function} Cleanup.
+		 */
+		function installComposerHistoryInner(ctx) {
+			var KEY = 'dsh-manager:composer-history:';
+			var LIMIT = 50;
+			var enabled = false;
+			var items = [];
+			var cursor = -1;
+			var draft = '';
+			var lastSeen = '';
+			// The text we last put into the composer from the history; while the
+			// box still holds exactly that, the arrows keep walking instead of
+			// requiring the caret to reach the edge first.
+			var recalled = null;
+			var element = null;
+
+			/** The storage key of the session on screen. */
+			var sessionKey = function () {
+				var sessions = ctx.sessions !== undefined ? ctx.sessions : ctx.get('sessions');
+				if (sessions === undefined || sessions === null || typeof sessions.list?.getSnapshot !== 'function') return KEY + 'default';
+				var byId = sessions.list.getSnapshot().byId ?? {};
+				var ids = Object.keys(byId).filter(function (id) { return (byId[id]?.retainedBy?.mainView ?? 0) > 0; });
+				return KEY + (ids.length === 1 ? ids[0] : 'default');
+			};
+
+			/** The session on screen, when exactly one is open. */
+			var sessionId = function () {
+				var sessions = ctx.sessions !== undefined ? ctx.sessions : ctx.get('sessions');
+				if (sessions === undefined || sessions === null || typeof sessions.list?.getSnapshot !== 'function') return '';
+				var byId = sessions.list.getSnapshot().byId ?? {};
+				var ids = Object.keys(byId).filter(function (id) { return (byId[id]?.retainedBy?.mainView ?? 0) > 0; });
+				return ids.length === 1 ? ids[0] : '';
+			};
+
+			/** Read the stored history for this session. */
+			var load = function () {
+				items = [];
+				cursor = -1;
+				try {
+					var raw = window.localStorage.getItem(sessionKey());
+					var parsed = raw === null ? null : JSON.parse(raw);
+					if (Array.isArray(parsed)) items = parsed.filter(function (entry) { return typeof entry === 'string' && entry.trim() !== ''; }).slice(-LIMIT);
+				} catch (error) {
+					items = [];
+				}
+			};
+
+			/** Persist the history for this session. */
+			var save = function () {
+				try {
+					window.localStorage.setItem(sessionKey(), JSON.stringify(items.slice(-LIMIT)));
+				} catch (error) {
+					// A full or blocked store only costs the next session; the current
+					// one keeps working from memory.
+				}
+			};
+
+
+			/** Remember one sent message. */
+			var remember = function (text) {
+				var value = String(text ?? '').trim();
+				if (value === '') return;
+				if (items.length > 0 && items[items.length - 1] === value) return;
+				items.push(value);
+				if (items.length > LIMIT) items = items.slice(-LIMIT);
+				save();
+			};
+
+			/** Put one message back into the composer, editable. */
+			var fill = function (text) {
+				if (element === null) return;
+				if (element.tagName !== 'TEXTAREA' && element.isContentEditable === true) {
+					// Select what is there and let the editor's own input path insert
+					// the replacement: Lexical keeps its state in the DOM events, so a
+					// direct innerText write would be thrown away on the next render.
+					element.focus();
+					var selection = window.getSelection();
+					if (selection === null) return;
+					var range = document.createRange();
+					range.selectNodeContents(element);
+					selection.removeAllRanges();
+					selection.addRange(range);
+					if (typeof document.execCommand !== 'function') return;
+					if (text === '') document.execCommand('delete', false);
+					else document.execCommand('insertText', false, text);
+					return;
+				}
+				// React tracks the value on its own node, so the native setter is what
+				// makes it notice a programmatic change; without the prototype (a bare
+				// element in tests) the plain assignment is the same thing.
+				var prototype = typeof window.HTMLTextAreaElement === 'function' ? window.HTMLTextAreaElement.prototype : undefined;
+				var descriptor = prototype === undefined ? undefined : Object.getOwnPropertyDescriptor(prototype, 'value');
+				if (descriptor !== undefined && typeof descriptor.set === 'function') descriptor.set.call(element, text);
+				else element.value = text;
+				if (typeof element.dispatchEvent === 'function' && typeof Event === 'function') element.dispatchEvent(new Event('input', { bubbles: true }));
+				try {
+					element.setSelectionRange(text.length, text.length);
+				} catch (error) {
+					// Some textareas refuse selection; the value is already in place.
+				}
+			};
+
+			/** Is this element the conversation composer? */
+			var isComposer = function (target) {
+				if (target === null || target === undefined) return false;
+				var element = target;
+				// The conversation composer is a Lexical contenteditable div; a
+				// plugin or a simpler surface may use a plain textarea.
+				if (element.isContentEditable !== true && element.tagName !== 'TEXTAREA') {
+					element = typeof target.closest === 'function' ? target.closest('[contenteditable="true"]') : null;
+					if (element === null || element === undefined) return false;
+				}
+				if (typeof element.closest === 'function' && element.closest('.mgrRoot') !== null) return false;
+				return true;
+			};
+
+			/** The text currently in the composer. */
+			var textOf = function (target) {
+				if (target === null || target === undefined) return '';
+				if (target.tagName === 'TEXTAREA') return String(target.value ?? '');
+				return String(target.innerText ?? target.textContent ?? '');
+			};
+
+			var onKeyDown = function (event) {
+				if (enabled !== true) return;
+				if (!isComposer(event.target)) return;
+				if (event.isComposing === true || event.keyCode === 229) return;
+				element = event.target;
+
+				var text = textOf(element);
+				if (event.key === 'Enter' && event.shiftKey !== true) {
+					remember(text);
+					return;
+				}
+				var observable = element.tagName === 'TEXTAREA';
+				var atStart = observable
+					? element.selectionStart === 0 && element.selectionEnd === 0
+					: text.trim() === '';
+				// In the rich composer the caret position is the editor's business, so
+				// ArrowDown only takes over while walking the history; anywhere else it
+				// stays a caret key.
+				var atEnd = observable
+					? element.selectionStart === element.value.length && element.selectionEnd === element.value.length
+					: false;
+				var navigating = recalled !== null && text === recalled;
+
+				if (event.key === 'ArrowUp' && (atStart || navigating)) {
+					if (items.length === 0) return;
+					if (cursor < 0) draft = text;
+					cursor = cursor < 0 ? items.length - 1 : Math.max(cursor - 1, 0);
+					recalled = items[cursor];
+					fill(items[cursor]);
+					event.preventDefault();
+					return;
+				}
+				if (event.key === 'ArrowDown' && (atEnd || navigating) && cursor >= 0) {
+					if (cursor === items.length - 1) {
+						cursor = -1;
+						recalled = draft;
+						fill(draft);
+					} else {
+						cursor += 1;
+						recalled = items[cursor];
+						fill(items[cursor]);
+					}
+					event.preventDefault();
+				}
+			};
+
+			// A send that clears the box (Enter, or the send button) is the moment
+			// the text stopped being a draft.
+			var onInput = function (event) {
+				if (enabled !== true) return;
+				var target = event.target;
+				if (!isComposer(target)) return;
+				var value = textOf(target);
+				if (value.trim() === '' && lastSeen.trim() !== '') remember(lastSeen);
+				if (recalled !== null && value !== recalled) recalled = null;
+				lastSeen = value;
+				if (value.trim() === '') {
+					cursor = -1;
+					draft = '';
+				}
+			};
+
+			// The session already knows which messages were sent. Reading them means
+			// the history works right after a reload, instead of starting empty
+			// until the next send.
+			var seeding = false;
+			var seed = function () {
+				if (items.length > 0 || seeding === true) return;
+				var id = sessionId();
+				if (id === '') return;
+				seeding = true;
+				fetch('./api/dsh-rewind/candidates', {
+					method: 'POST',
+					headers: { 'content-type': 'application/json' },
+					body: JSON.stringify({ sessionId: id }),
+				}).then(function (response) { return response.json(); }).then(function (result) {
+					seeding = false;
+					if (result === null || typeof result !== 'object' || result.ok !== true) return;
+					var candidates = Array.isArray(result.value?.candidates) ? result.value.candidates : [];
+					var texts = candidates
+						.map(function (candidate) { return String(candidate.preview ?? '').trim(); })
+						.filter(function (text) { return text !== ''; });
+					if (texts.length === 0) return;
+					items = texts.slice(-LIMIT);
+					cursor = -1;
+					report('seeded');
+				}).catch(function () { seeding = false; });
+			};
+
+			var report = function (reason) {
+				callHost(ctx, 'ui-client-status', {
+					feature: 'composer-history',
+					scope: 'mount',
+					mounted: enabled,
+					// The panel shows the count, so an empty history and a broken
+					// listener do not look the same from the outside.
+					reason: reason + ' · ' + items.length + ' 条',
+				}).catch(function () {});
+			};
+
+			var readSwitch = function () {
+				callHost(ctx, 'ui-status', {}).then(function (value) {
+					var features = value !== null && typeof value === 'object' && Array.isArray(value.features) ? value.features : [];
+					var feature = features.find(function (entry) { return entry.id === 'composer-history'; });
+					enabled = feature !== undefined && feature.enabled === true;
+					report(enabled ? 'installed' : 'feature-off');
+					if (enabled) seed();
+				}).catch(function (error) {
+					enabled = false;
+					report('switch-unreadable: ' + messageOf(error));
+				});
+			};
+
+			window.__dshManagerHistory = { items: function () { return items.length; }, enabled: function () { return enabled; } };
+			document.addEventListener('keydown', onKeyDown, true);
+			document.addEventListener('input', onInput, true);
+			var refresh = function () { load(); readSwitch(); seed(); };
+			window.addEventListener('focus', refresh);
+			window.addEventListener('dsh-manager:ui-changed', readSwitch);
+			readSwitch();
+			load();
+
+			return function () {
+				document.removeEventListener('keydown', onKeyDown, true);
+				document.removeEventListener('input', onInput, true);
+				window.removeEventListener('focus', refresh);
+				window.removeEventListener('dsh-manager:ui-changed', readSwitch);
+			};
 		}
 
 		//#endregion
@@ -5690,6 +6580,9 @@ function apply(ctx) {
 			// caller; `call` above stays for this plugin's endpoints.
 			var kernelCall = useCallback(function (path, payload, options) { return callKernel(ctx, path, payload, options); }, [ctx]);
 			var [tab, setTab] = useState('skills');
+			// Bumped by the header's rescan so the skills workspace re-reads its
+			// own scan; the overview alone does not carry that list.
+			var [rescanToken, setRescanToken] = useState(0);
 			var [data, setData] = useState(null);
 			var [lan, setLan] = useState(null);
 			var [error, setError] = useState('');
@@ -5705,9 +6598,21 @@ function apply(ctx) {
 			var [searchBlocked, setSearchBlocked] = useState(null);
 			var [searchTestAll, setSearchTestAll] = useState(null);
 			var [searchTestAllBusy, setSearchTestAllBusy] = useState(false);
+			// A batch of channel switches runs one request at a time; the flag
+			// keeps the second button (and every row switch) from starting edge
+			// cases while the first batch is still landing.
+			var [searchBulkBusy, setSearchBulkBusy] = useState(false);
 			// Which sub-tab of the search page is open; it lives here so a run
 			// that lands while another tab is open can bring the results back.
 			var [searchSub, setSearchSub] = useState('results');
+			// The tool catalog and the section of it that is open. The catalog
+			// is read while the 工具 tab is on screen, because MCP servers
+			// connect and disconnect on their own.
+			var [toolsCatalog, setToolsCatalog] = useState(null);
+			var [toolsSub, setToolsSub] = useState('skills');
+			// The UI-enhancement switches and the state behind them.
+			var [uiState, setUiState] = useState(null);
+			var [uiBusy, setUiBusy] = useState(false);
 
 			var searchRequest = useCallback(function (payload) {
 				// Channel calls have their own 20s budget; the wider browser
@@ -5785,10 +6690,72 @@ function apply(ctx) {
 			}, [tab, call]);
 
 			useEffect(function () {
+				if (tab !== 'tools') return undefined;
+				var active = true;
+				var readTools = function () {
+					return call('tools-list').then(function (value) {
+						if (!active) return;
+						setToolsCatalog(value);
+					}).catch(function (reason) {
+						if (!active) return;
+						setToolsCatalog({ groups: [], error: messageOf(reason) });
+					});
+				};
+				void readTools();
+				// MCP servers connect on their own, so the catalog is read again
+				// while the page is open instead of only once.
+				var timer = setInterval(readTools, 5000);
+				return function () { active = false; clearInterval(timer); };
+			}, [tab, call]);
+
+			useEffect(function () {
+				if (tab !== 'ui') return undefined;
+				var active = true;
+				call('ui-status').then(function (value) {
+					if (!active) return;
+					setUiState(value);
+				}).catch(function (reason) {
+					if (!active) return;
+					setUiState({ available: false, features: [], error: messageOf(reason) });
+				});
+				return function () { active = false; };
+			}, [tab, call]);
+
+			useEffect(function () {
 				if (toast === null || toast.error === true) return undefined;
 				var timer = setTimeout(function () { setToast(null); }, 4000);
 				return function () { clearTimeout(timer); };
 			}, [toast]);
+			function toggleUiFeature(id, enabled) {
+				setUiBusy(true);
+				notify(t('ui.applying'), false);
+				return call('ui-toggle', { id: id, enabled: enabled }).then(function (value) {
+					setUiState(value);
+					setUiBusy(false);
+					// Features that live in the browser pick the switch up from this
+					// event; the ones that live in a conversation bundle still need
+					// the reload below.
+					if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+						window.dispatchEvent(new CustomEvent('dsh-manager:ui-changed'));
+					}
+					notify(t('ui.applying'), false);
+					// The feature's surface lives in the conversation UI, which is
+					// mounted when the page loads; reloading applies the switch
+					// everywhere at once instead of leaving half of it behind.
+					if (typeof location !== 'undefined' && typeof location.reload === 'function') location.reload();
+				}).catch(function (reason) {
+					setUiBusy(false);
+					// Switching a bundle recomposes the profile, which can take
+					// this very request down with it; re-read the state to see
+					// what actually landed.
+					return call('ui-status').then(function (value) {
+						setUiState(value);
+						notify(t('ui.failed', { reason: messageOf(reason) }), true);
+					}).catch(function () {
+						notify(t('ui.failed', { reason: messageOf(reason) }), true);
+					});
+				});
+			}
 
 			function notify(message, isError) {
 				setToast({ message: message, error: isError === true });
@@ -5812,16 +6779,10 @@ function apply(ctx) {
 			}
 
 			function refresh() {
+				setRescanToken(function (value) { return value + 1; });
 				void run(call('skills-refresh'), function (value) {
 					applyOverview(value);
 					notify(t('state.refreshed'), false);
-				}).catch(function () {});
-			}
-
-			function toggleMode(id, enabled) {
-				void run(call('mode-toggle', { id: id, enabled: enabled }), function (value) {
-					applyOverview(value);
-					notify(enabled ? t('modes.on') : t('modes.off'), false);
 				}).catch(function () {});
 			}
 
@@ -5867,6 +6828,46 @@ function apply(ctx) {
 				});
 			}
 
+			/**
+			 * Move a batch of channels to one switch state.
+			 *
+			 * One request at a time over the single-channel switch: the Host
+			 * serialises the settings writes anyway, and a channel that fails must
+			 * not take the rest of the batch down with it. Every answer is the full
+			 * status, so the list regroups as the switches land and the bulk switch
+			 * ends up showing what actually happened.
+			 *
+			 * @param {string[]} ids - Channel ids to switch.
+			 * @param {boolean} enabled - The state to move them to.
+			 * @returns {Promise<object|null>} The last status, or null.
+			 */
+			function setSearchChannels(ids, enabled) {
+				if (!Array.isArray(ids) || ids.length === 0) return Promise.resolve(null);
+				setSearchBulkBusy(true);
+				var failed = 0;
+				var chain = Promise.resolve();
+				ids.forEach(function (id) {
+					chain = chain.then(function () {
+						return call('search-save', { id: id, enabled: enabled === true }).then(function (value) {
+							setSearchStatus(value);
+						}).catch(function () {
+							// Counted, not thrown: the remaining channels still get
+							// their switch, and the summary below says what happened.
+							failed += 1;
+						});
+					});
+				});
+				return chain.then(function () {
+					setSearchBulkBusy(false);
+					if (failed === 0) {
+						notify(t('state.saved'), false);
+						return null;
+					}
+					notify(t('search.bulkPartial', { n: failed }), true);
+					return call('search-status').then(setSearchStatus).catch(function () { return null; });
+				});
+			}
+
 			function testSearchChannel(id, query) {
 				return call('search-test', { id: id, query: query }).then(function (value) {
 					// A failed test can start a cooldown; refresh the row badges.
@@ -5877,9 +6878,15 @@ function apply(ctx) {
 				});
 			}
 
-			function moveSearchChannel(id, direction) {
-				if (searchStatus === null || !Array.isArray(searchStatus.order)) return Promise.resolve();
-				var order = searchStatus.order.slice();
+			function moveSearchChannel(id, direction, orderedIds) {
+				// The list on screen is grouped (enabled rows first), so the rows
+				// hand over the order as drawn; the stored order alone would swap a
+				// row the grouping has moved somewhere else.
+				var source = Array.isArray(orderedIds) && orderedIds.length > 0
+					? orderedIds
+					: (searchStatus !== null && Array.isArray(searchStatus.order) ? searchStatus.order : null);
+				if (source === null) return Promise.resolve();
+				var order = source.slice();
 				var index = order.indexOf(id);
 				var target = direction === 'up' ? index - 1 : index + 1;
 				if (index < 0 || target < 0 || target >= order.length) return Promise.resolve();
@@ -6030,7 +7037,8 @@ function apply(ctx) {
 
 			var skillsCount = data === null ? 0 : data.skills.totals.skills;
 			var mcpCount = data === null ? 0 : data.mcp.servers.length;
-			var modesOn = data === null || data.modes === undefined ? 0 : data.modes.modes.filter(function (mode) { return mode.enabled === true; }).length;
+			var toolsCount = data === null || data.tools === undefined ? 0 : data.tools.total;
+			var uiCount = uiState === null || !Array.isArray(uiState.features) ? 0 : uiState.features.filter(function (feature) { return feature.enabled === true; }).length;
 			return h('div', { className: 'mgrRoot' },
 				h('div', { className: 'mgrHead' },
 					h('div', { className: 'mgrHeadMain' },
@@ -6048,7 +7056,7 @@ function apply(ctx) {
 						'aria-selected': tab === 'skills',
 						className: classes('mgrTab', tab === 'skills' && 'mgrTabActive'),
 						onClick: function () { setTab('skills'); },
-					}, t('tab.skills'), h('span', { className: 'mgrTabCount' }, String(skillsCount))),
+					}, t('tab.skills')),
 					h('button', {
 						type: 'button',
 						role: 'tab',
@@ -6066,10 +7074,17 @@ function apply(ctx) {
 					h('button', {
 						type: 'button',
 						role: 'tab',
-						'aria-selected': tab === 'modes',
-						className: classes('mgrTab', tab === 'modes' && 'mgrTabActive'),
-						onClick: function () { setTab('modes'); },
-					}, t('tab.modes'), h('span', { className: 'mgrTabCount' }, String(modesOn))),
+						'aria-selected': tab === 'ui',
+						className: classes('mgrTab', tab === 'ui' && 'mgrTabActive'),
+						onClick: function () { setTab('ui'); },
+					}, t('tab.ui'), uiCount > 0 ? h('span', { className: 'mgrTabCount' }, String(uiCount)) : null),
+					h('button', {
+						type: 'button',
+						role: 'tab',
+						'aria-selected': tab === 'preferences',
+						className: classes('mgrTab', tab === 'preferences' && 'mgrTabActive'),
+						onClick: function () { setTab('preferences'); },
+					}, t('tab.preferences')),
 					h('button', {
 						type: 'button',
 						role: 'tab',
@@ -6078,7 +7093,14 @@ function apply(ctx) {
 						onClick: function () { setTab('lan'); },
 					}, t('tab.lan'), lan !== null && lan.running === true
 						? h('span', { className: 'mgrDot mgrDot-ready' })
-						: null)),
+						: null),
+					h('button', {
+						type: 'button',
+						role: 'tab',
+						'aria-selected': tab === 'tools',
+						className: classes('mgrTab', tab === 'tools' && 'mgrTabActive'),
+						onClick: function () { setTab('tools'); },
+					}, t('tab.tools'), h('span', { className: 'mgrTabCount' }, String(toolsCount)))),
 				h('div', { className: 'mgrBody' },
 					error === '' ? null : h('div', { className: 'mgrErrorBox' },
 						h('span', null, t('error.banner') + '：' + error),
@@ -6088,7 +7110,7 @@ function apply(ctx) {
 						? (error === '' ? h(Loading, { label: t('state.loading') }) : null)
 						: (tab === 'skills'
 							? (data.kernel !== undefined && data.kernel.routes > 0
-								? h(SkillsWorkspace, { t: t, callKernel: kernelCall })
+								? h(SkillsWorkspace, { t: t, callKernel: kernelCall, rescan: rescanToken })
 								: h('div', { className: 'mgrErrorBox' },
 									h('span', null, t('skx.kernelError', {
 										detail: data.kernel === undefined
@@ -6134,18 +7156,34 @@ function apply(ctx) {
 										testAll: searchTestAll,
 										testAllBusy: searchTestAllBusy,
 										onTestAll: testAllSearchChannels,
+										bulkBusy: searchBulkBusy,
+										onSetChannels: setSearchChannels,
 										busy: searchBusy,
 										result: searchResult,
 										error: searchError,
 									})
-									: tab === 'modes'
-										? h(ModesSection, {
-											t: t,
-											modes: data.modes,
-											busy: busy,
-											onToggle: toggleMode,
-										})
-										: h(LanSection, {
+										: tab === 'preferences'
+											? h(PreferencesSection, {
+												t: t,
+												call: call,
+												notify: notify,
+												setError: setError,
+											})
+											: tab === 'tools'
+											? h(ToolsSection, {
+												t: t,
+												catalog: toolsCatalog,
+												sub: toolsSub,
+												setSub: setToolsSub,
+											})
+											: tab === 'ui'
+												? h(UiEnhancementsSection, {
+													t: t,
+													state: uiState,
+													busy: uiBusy,
+													onToggle: toggleUiFeature,
+												})
+											: h(LanSection, {
 									t: t,
 									state: lan,
 									busy: busy,
@@ -6168,7 +7206,7 @@ function apply(ctx) {
 
 		//#region plugin
 
-		var inject = ['slots', 'locale', 'connection'];
+		var inject = ['slots', 'sessions', 'locale', 'commandUi', 'configForms', 'connection'];
 
 		/**
 		 * Register the sidebar entry and the main panel.
@@ -6177,10 +7215,134 @@ function apply(ctx) {
 		 * @returns {void}
 		 */
 		function apply(ctx) {
+			/** Register something that may fail without taking the panel with it. */
+			var guard = function (label, register) {
+				try {
+					return register();
+				} catch (error) {
+					console.warn('[dsh-manager] ' + label + ' 没有注册成功', error);
+					return function () {};
+				}
+			};
+
 			ctx.effect(function () {
 				return ctx.locale.register(NS, { zh: zh, en: en });
 			}, 'dsh-manager: dictionaries');
 			var t = ctx.locale.bind(NS);
+
+			// The vendored conversation-rewind client: the same code the plugin
+			// ships, mounted while the manager's switch is on. The services it
+			// needs come from the Host's client packages; a missing one only
+			// means the rewind surface does not mount.
+			ctx.effect(function () {
+				try {
+					return mountRewindClient(ctx, t);
+				} catch (error) {
+					console.warn('[dsh-manager] 对话回退客户端没有挂载', error);
+					return function () {};
+				}
+			}, 'dsh-manager: rewind client');
+
+			function mountRewindClient(ctx, t) {
+				var alive = true;
+				/** One service of the client context, by name. */
+				var service = function (name) {
+					if (ctx[name] !== undefined) return ctx[name];
+					return ctx.get(name);
+				};
+				/** Tell the host what the browser managed to do. */
+				var report = function (mounted, reason) {
+					callHost(ctx, 'ui-client-status', { scope: 'mount', mounted: mounted, reason: reason }).catch(function () {});
+				};
+				/** Mount the vendored rewind client once the host says it is on. */
+				var mount = function (attempt) {
+					callHost(ctx, 'ui-status', {}).then(function (value) {
+						if (!alive) return;
+						var features = value !== null && typeof value === 'object' && Array.isArray(value.features) ? value.features : [];
+						var rewind = features.find(function (feature) { return feature.id === 'rewind'; });
+						if (rewind === undefined) return report(false, 'unknown-feature');
+						if (rewind.enabled !== true) {
+							callHost(ctx, 'ui-client-status', { scope: 'row', mounted: false, reason: 'row-action-feature-off' }).catch(function () {});
+							return report(false, 'feature-off');
+						}
+						// The upstream half takes over the `conversation.chat.node` row
+						// component and appends its button to the row's action cluster
+						// (next to copy). This DSH renders that row without a session
+						// id, which made the takeover bail; the bridge below hands its
+						// `targetOf` the session the page is showing, so upstream's own
+						// placement works unchanged.
+						var lastRowReason = '';
+						var reportRow = function (mounted, reason) {
+							if (lastRowReason === reason) return;
+							lastRowReason = reason;
+							callHost(ctx, 'ui-client-status', { scope: 'row', mounted: mounted, reason: reason }).catch(function () {});
+						};
+						var currentSession = function () {
+							var sessions = service('sessions');
+							if (sessions === undefined || sessions === null || typeof sessions.list?.getSnapshot !== 'function') return undefined;
+							var byId = sessions.list.getSnapshot().byId ?? {};
+							var ids = Object.keys(byId).filter(function (id) { return (byId[id]?.retainedBy?.mainView ?? 0) > 0; });
+							return ids.length === 1 ? ids[0] : undefined;
+						};
+						window.__dshManagerRewind = {
+							enabled: function () { return true; },
+							session: currentSession,
+							report: function () { reportRow(true, 'row-action-mounted'); },
+						};
+						var shim = {
+							effect: function (fn, label) { return ctx.effect(fn, label); },
+							locale: ctx.locale,
+							slots: {
+								entries: function (key) { return ctx.slots.entries(key); },
+								subscribe: function (key, fn) { return ctx.slots.subscribe(key, fn); },
+								register: function (options, component) { return ctx.slots.register(options, component); },
+								inject: function (name, fn) { return ctx.slots.inject(name, fn); },
+							},
+							sessions: service('sessions'),
+							commandUi: service('commandUi'),
+							configForms: service('configForms'),
+							get: function (name) { return ctx.get(name); },
+						};
+						if (shim.sessions === undefined || shim.commandUi === undefined) {
+							console.warn('[dsh-manager] 对话回退没有挂载：客户端服务不可用');
+							return report(false, 'services-missing');
+						}
+						try {
+							createRewindClient(require).apply(shim);
+						} catch (error) {
+							console.warn('[dsh-manager] 对话回退挂载失败', error);
+							return report(false, 'apply-failed: ' + (error && error.message ? error.message : 'unknown'));
+						}
+						report(true, 'mounted');
+						// The row takeover runs when the chat UI registers its row, which
+						// is later than this mount; until then the panel says so.
+						reportRow(false, 'row-action-pending');
+						// Verify the takeover really replaced the row component: a
+						// shadowed entry would look identical from the panel otherwise.
+						var verify = function (attempt) {
+							if (!alive) return;
+							var entries = typeof ctx.slots.entries === 'function' ? ctx.slots.entries('conversation.chat.node') : [];
+							var wrapped = (entries ?? []).some(function (item) {
+								return item !== null && typeof item === 'object' && item.component?.__dshManagerRewindRow === true;
+							});
+							if (wrapped) return;
+							if (attempt >= 8) return reportRow(false, 'row-action-takeover-rejected');
+							setTimeout(function () { verify(attempt + 1); }, 1000);
+						};
+						verify(0);
+					}).catch(function (error) {
+						// The host's route may not answer yet; a few tries are enough.
+						if (!alive) return;
+						if (attempt >= 4) return report(false, 'status-unavailable: ' + (error && error.message ? error.message : 'unknown'));
+						setTimeout(function () { mount(attempt + 1); }, 700);
+					});
+				};
+				mount(0);
+				return function () {
+					alive = false;
+					if (window.__dshManagerRewind !== undefined) delete window.__dshManagerRewind;
+				};
+			}
 
 			ctx.effect(function () {
 				var style = document.createElement('style');
@@ -6191,25 +7353,33 @@ function apply(ctx) {
 			}, 'dsh-manager: styles');
 
 			ctx.effect(function () {
-				return ctx.slots.inject('main', function () {
-					return ctx.slots.register({
-						name: 'main',
-						key: PANEL_ID,
-						locale: NS,
-						inject: function () { return { ctx: ctx, t: t }; },
-					}, Panel);
+				return guard('主面板', function () {
+					return ctx.slots.inject('main', function () {
+						return ctx.slots.register({
+							name: 'main',
+							key: PANEL_ID,
+							locale: NS,
+							inject: function () { return { ctx: ctx, t: t }; },
+						}, Panel);
+					});
 				});
 			}, 'dsh-manager: main panel');
 
 			ctx.effect(function () {
-				return ctx.slots.inject('sidebar.panellist', function () {
-					return ctx.slots.register({
-						name: 'sidebar.panellist',
-						id: PANEL_ID,
-						order: PANEL_ORDER,
-						locale: NS,
-						label: function () { return t('panel'); },
-					}, ManagerIcon);
+				return guard('输入框历史', function () { return installComposerHistory(ctx); });
+			}, 'dsh-manager: composer history');
+
+			ctx.effect(function () {
+				return guard('侧边栏入口', function () {
+					return ctx.slots.inject('sidebar.panellist', function () {
+						return ctx.slots.register({
+							name: 'sidebar.panellist',
+							id: PANEL_ID,
+							order: PANEL_ORDER,
+							locale: NS,
+							label: function () { return t('panel'); },
+						}, ManagerIcon);
+					});
 				});
 			}, 'dsh-manager: sidebar entry');
 		}
