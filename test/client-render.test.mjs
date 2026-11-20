@@ -752,6 +752,11 @@ async function createApp(options = {}) {
 		return findVisible((node) => node.type === 'button' && textOf(node).includes(label))
 	}
 
+	/** Every visible button carrying exactly this aria-label (icon-only controls). */
+	function labelled(label) {
+		return findVisible((node) => node.type === 'button' && node.props['aria-label'] === label)
+	}
+
 
 	/** The visible input carrying `placeholder`. */
 	function input(placeholder) {
@@ -775,6 +780,7 @@ async function createApp(options = {}) {
 		text,
 		click,
 		buttons,
+		labelled,
 		/**
 		 * Declare a slot, the way another client package would.
 		 *
@@ -914,6 +920,7 @@ test('search tab opens on the results pane and the other panes stay hidden', asy
 	assert.match(text, /search\.sub\.settings/)
 	assert.match(text, /search\.sub\.settings/)
 	assert.match(text, /search\.emptyIdle/)
+	assert.doesNotMatch(text, /search\.testAll/, 'the channel check belongs to the channel pane')
 	assert.match(text, /search\.modeCurrent/)
 	assert.doesNotMatch(text, /search\.modeMerge/, 'the channel pane must not be on screen')
 	assert.doesNotMatch(text, /search\.blockedSave/, 'the filter pane must not be on screen')
@@ -926,7 +933,8 @@ test('each sub-tab swaps the body without losing the search form', async () => {
 	await app.click('search.sub.channels')
 	let text = app.text()
 	assert.equal(app.input('search.channelFilterPlaceholder').props.type, 'search')
-	assert.match(text, /search\.testTitle/)
+	assert.match(text, /search\.testCost/)
+	assert.match(text, /search\.testAll/)
 	assert.match(text, /Exa/)
 	assert.match(text, /search\.channel\.configure/)
 	assert.doesNotMatch(text, /search\.emptyIdle/)
@@ -1257,11 +1265,11 @@ test('the enabled rows are drawn first and the arrows follow the drawn list', as
 
 	// Drawn order is [Exa, Bing]: the first arrow up is dead, the last one down
 	// is dead, and the arrows in between are live.
-	const ups = app.buttons('↑')
+	const ups = app.labelled('search.moveUp')
 	assert.equal(ups.length, 2)
 	assert.equal(ups[0].props.disabled, true, 'the first drawn row cannot move up')
 	assert.equal(ups[1].props.disabled, false)
-	const downs = app.buttons('↓')
+	const downs = app.labelled('search.moveDown')
 	assert.equal(downs[0].props.disabled, false)
 	assert.equal(downs[1].props.disabled, true, 'the last drawn row cannot move down')
 })

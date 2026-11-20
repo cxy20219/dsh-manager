@@ -108,27 +108,71 @@ summary: 面板结构、子页挂载约定、工具目录的单一来源、local
 - **纵向间距只用 4/8/12/16/24**：行内间距 4、同组 8、组间 12、区块之间 24。卡片圆角 12、内边距 12×14，
   控件高度统一 30px（搜索框也 30，别再单开 36 的hero尺寸）。
 - **两级标签**：主导航单行横滚（`nowrap` + `overflow-x:auto` + 隐藏滚动条），30 高、13px；
-  子标签降级成文字 tab（26 高、12px、无边框无底色、active 用 `state-business-primary` 2px 底线）。
+  子标签降级成文字 tab（26 高、12px、无边框无底色、active 用 `state-business-primary` 2px 底线，
+  字色 `label-primary`——蓝字当文字只有 4.23，底线已经足够标记选中）。
   子标签虽然在 `.mgrSubTabs` 下沿用 `mgrTab`/`mgrTabActive` 类，但视觉分叉全靠 `.mgrSubTabs` 前缀规则，
   hover 必须写 `:not(.mgrTabActive)`——否则鼠标停在当前子页上时，hover 会盖掉 active 的底线。
 - **渠道卡**：`.mgrSearchChannelHead` 允许换行，文字列 `flex:1 1 100%` 吃满整卡宽；名称行
-  （`.mgrSearchChannelNameRow`）一行里放「名称 + 徽章 + 开关」，名称 `flex:1 1 0` 出省略号、徽章和开关
-  `flex:none`；动作组落到卡底一行 `flex:1 1 100%;justify-content:flex-end;margin-top:8px`。
+  （`.mgrSearchChannelNameRow`）一行里放「名称 + 徽章 + 开关」，名称 `flex:1 1 auto;min-width:64px`
+  出省略号、徽章组 `flex:0 1 auto` 可换行、开关 `flex:none`；动作组落到卡底一行
+  `flex:1 1 100%;justify-content:flex-end;margin-top:8px`。
   描述 clamp 2 行且 `min-height:35.6px`（=2×1.55×11.5），前三张卡才会等高（实测 123.6px，三者一致）。
   徽章**不要**再单独占一行：多一行 21.8px，37 个渠道就是列表长 800px。动作组占固定宽度会把文字列
   挤到逐字折行（320 宽时实测只剩 21.5px，卡高 476px）。
-- **渠道测试卡**：动作按钮（全部测试 / 重置冷却）与标题同一行（`.mgrSearchCardHead` + `.mgrSpacer`），
-  说明文字另起一行（`.mgrSearchCardHint`），整卡约 96px。三行式布局会把首卡 y 顶到 507.9（上限 480）。
+- **渠道测试不装盒**：动作（全部测试 / 重置冷却）是子标签行右端的 `.mgrTextAction`（12.5px secondary、
+  下划线；hover/active 才提到 `label-primary`），测试结果 chips 直接落在渠道列表上方，不再套
+  `.mgrSearchCard`。动作下一行必须保留可见的 11.5px secondary 成本提示 `.mgrSubHint`
+  （「会实际请求，消耗配额与冷却」）——它会真发请求，说明不能只藏在 `title` 里。
+  纵向间距随之收紧：子标签行下 4、提示行下 8、`.mgrSearchChannels` 上 12 / 内上 8（全在 4/8/12 刻度里）。
+- **量版式必须先固定内容宽**：同一个 420 视口有两套内容宽，差 11px，不能混用。
+  - `353` = QA2 验收口径：preview 的 `.mgrBody` 渲染 11px 经典滚动条（`420 − 28×2 − 11`）。
+    `.mgrSearchMeta` 会折行 30 → 57，整页比无滚动条时低 27px；输入框实测 262.5。
+  - `364` = 无滚动条的本地 preview（`420 − 28×2`）：meta 单行，输入框 273.5。
+  - **以 353 那套为准**（首卡 y 的上限 400 就是在它上面定的）；两套都要报，并把 27px 说明白，
+    别当成改版差异。宽度类指标一律报比例（分母写清是卡宽还是内容宽），不报绝对像素。
+  基线：420×740、DPR=1、联网搜索→渠道、轮询取稳定帧。
 - **右缘渐隐**：主导航单行横滚时用 16px `mask-image` 渐隐 + 末项 `margin-right:12px` 提示还能滚；
   没有渐隐时 420 宽下「工具 4」整块不可见，用户不会知道右边还有东西。
-- **对比度**：说明与计数这一层（`.mgrHint`、`.mgrCount`、`.mgrSearchChannelDesc`、`.mgrSearchCardHint`、
+- **对比度**：说明与计数这一层（`.mgrHint`、`.mgrCount`、`.mgrSearchChannelDesc`、`.mgrSubHint`、
   `.mgrVersion`、`.mgrSubtitle`、`.mgrTabCount`）统一 `label-secondary`（亮 5.80 / 暗 10.42–12.11）；
   `label-tertiary` 在亮色只有 3.71:1，别再用它写正文。
+- **徽章一个色相一个含义**：FREE（价格）用 `.mgrBadgeFree` 中性描边 chip（透明底 + `border-l2` +
+  `label-secondary` 字，亮 5.80 / 暗 10.42），绿色只留给 Key 状态（已配置 / 无需 Key），琥珀只给
+  缺 Key / 冷却。三种语义共用绿底时右上角永远一团绿，状态就不可扫读了。
 - **徽章用轨道 + 字色，不用纯色字**：`.mgrBadgeOk` = `state-success-tertiary` 底、`.mgrBadgeWarn` =
   `state-warn-tertiary` 底，字都是 `label-primary`（亮 17.33 / 17.48，暗 11.46 / 14.79）。两个徽章同构，
   **不要再写按主题分叉的覆盖**——`state-warn-label` 那类做法在暗色反而更暗（实测 4.33）。
-- 亮色残留的地板是 `state-business-primary` 当文字用：主按钮字（白 on 蓝）、`.mgrLinkBtn`、激活子标签，
-  实测 4.23:1，低于 4.5。这是主题 token 的取舍，插件侧不要私自改色。
+- 亮色残留的地板是 `state-business-primary` 当文字用：主按钮字（白 on 蓝）、`.mgrLinkBtn`，
+  实测 4.23:1，低于 4.5。这是主题 token 的取舍，插件侧不要私自改色；激活子标签已经改字色，不在此列。
+- **状态先行**：关行卡片根加 `.mgrSearchChannelOff`，名称 `label-secondary`、开行 `label-primary`，
+  字重都 600（亮 5.80 vs 18.90，暗 10.42 vs 15.03）。37 行同名色时只能靠一颗开关区分，是「表单感」的
+  第一来源。
+- **次操作不描边**：`.mgrSearchChannelActions .mgrBtn` 去边框去底、30 高、`padding:0 8`、12.5px
+  `label-secondary`，hover 才出 `interactive-bg-hover`、`:active` 出 `interactive-bg-active`。
+  排序按钮改 `.mgrIconBtn`（30×30）+ 12×12 inline SVG（`stroke:1.5;currentColor`），文本箭头 `↑ ↓`
+  一律不许用；每个图标按钮必须带 `aria-label`。
+- **浏览器表面**：`.mgrRoot` 给 `caret-color` 和 `::selection`（business-primary 28% 混底）；
+  复选框统一 `input[type=checkbox]{accent-color:var(--dsw-alias-state-business-primary)}`，
+  别让浏览器默认蓝漏进来。`.mgrLinkBtn` / `.mgrTextAction` 带 `text-underline-offset:3px`，
+  `.mgrTextAction` 是 `inline-flex`、26 高（与子标签同高）、`padding:0 4`，保证 ≥24 的点击区并有
+  `:focus-visible`。`.mgrBtn` / `.mgrTab` / `.mgrIconBtn` / `.mgrSwitch` 四类控件都要有 `:active`；
+  开关按压只调 `filter:brightness(.97)`，**绝不能加 transform**——会覆盖滑块的 `translateX`。
+- **元信息行折行要成组**：`.mgrSearchMeta` 里「时间 + 安全搜索」包进 `.mgrSubMetaGroup`
+  （`display:flex;align-items:center;gap:8;flex-wrap:wrap`），spacer 留在组前。内容宽 364 时一行；
+  353 时整体折到第二行（「模式/调整」+「时间/安全搜索」两组），**不允许单个控件落单**。
+- **统计行要分主次**：`.mgrSearchStatLead`（`已启用 N/M`）600 字重、颜色仍 `label-secondary`，
+  其余计数 400 同色；四段同重同色读起来是状态转储。
+- **一个元素只用一种分界**：选中态只给底色，`.mgrTabActive` 的 `border-color:transparent`，
+  不要再叠 1px 描边；`.mgrWarn` / `.mgrErrorBox` 不要 `border-left` 侧条，警示靠 8%
+  `color-mix` 底色（`color-mix(in srgb,var(--dsw-alias-state-warn-primary) 8%,var(--dsw-alias-bg-layer-1))`，
+  错误框用 `state-error-primary`），四边仍 1px `border-l2`。
+- **错误/破坏性语义由底色或描边承载，文字回主色**：全站只有这一套写法。
+  - 自己没底色的（`.mgrErrorBox`、`.mgrFormError`、`.mgrServerError`）：8% `state-error-primary` 底色
+    （无边框，一个元素只用一种分界），文字 `label-primary`（亮 16.57 / 暗 13.67）。
+  - 本身已有底色的（`.mgrToast`、`.mgrSearchChip`）：**不要再叠 8% 底色**，红只留 1px 描边，
+    文字回 `label-primary`（亮 18.90 / 暗 13.34）。
+  - `.mgrBtnDanger` 同构。红字直接压浅底只有 4.50，加 8% 底色后掉到 3.94，低于 4.5 地板。
+  - 警示框 `.mgrWarn` 文字保持 `label-secondary`（亮 5.46 / 暗 9.05，本身达标），不要动。
 - **名称行三徽章边缘态**：名称 `min-width:64px`（短词完整可见）、徽章组 `flex:0 1 auto;min-width:0`
   允许换行。320 宽 + FREE/无需 Key/冷却中 三徽章时，名称 64px 不省略、徽章折两行、无横向溢出；
   不给 min-width 时名字被压到 17px、只剩省略号。
@@ -137,6 +181,42 @@ summary: 面板结构、子页挂载约定、工具目录的单一来源、local
   `:not(.mgrSwitchOn)` 上，不碰 `.mgrSwitchOn`，开态才保证零变化（改前改后逐字 diff 匹配规则即可自证）。
 - `skx*`（技能工作台）是另一套自带的视觉系统（13/14/16/17 档、`skxSwitch` 绿色 pill），不在 mgr 刻度内；
   要统一必须先问 Designer，别顺手改。
+
+## 审美判据（Designer 定稿）
+
+方向：这页是仪表盘，不是表单页——密度、安静、可扫读；一屏只留一个强视觉锚（右缘那列开关）。
+下列每条都要能由 Dev 照做、由 QA 量出来；量不出来的品味描述不进这份文件。
+
+- **状态先行**：列表里必须让人不看控件就能分出「在用/未用」。判据：关闭行名称 `label-secondary`、
+  开启行 `label-primary`，同一列表两种文字色都出现（亮 5.80 vs 17.45，暗 12.11 vs 17.45）。反例：
+  37 行名称全 `label-primary`，只靠一颗 34×20 开关区分——37 行长得一模一样，是「表单感」的第一来源。
+- **次操作不描边**：行内测试/配置/排序是次操作，不得用 1px 描边按钮。判据：`.mgrSearchChannelActions`
+  里按钮 `border-color:transparent` 全覆盖，hover 才出 `interactive-bg-hover`；一屏内渠道行的描边按钮
+  16 → 0（行开关是状态控件，不算次操作）。反例：每行 4 个描边按钮 × 37 行 = 148 个框，列表读起来是
+  一排按钮而不是一排渠道。
+- **图标必须是图形**：`↑ ↓ →` 这类 Unicode 字形不能当图标。判据：文本里带箭头的按钮数 = 0；改用
+  12×12 inline SVG（stroke 1.5、`currentColor`）。反例：`.mgrSearchOrder` 的 12.5px 文字箭头，
+  旁边是 51px 的「测试」，两套字形语言。
+- **一个色相一个含义**：同屏一个色相只承担一个语义。判据：FREE（价格）用中性描边 chip（透明底 +
+  `border-l2` + `label-secondary` 字），绿只给 Key 状态（已配置/无需 Key），琥珀只给缺 Key/冷却。
+  反例：FREE/无需 Key/已配置 三种语义共用 `state-success-tertiary` 绿底，右上角永远一团绿。
+- **盒子纪律**：非内容块不装盒；一个元素只用一个分界手段（描边或底色，不叠加）。判据：列表首屏内
+  与内容卡「同边框 + 同圆角 + 同底色」的工具块 = 0；抽任意卡片，`border` 与 `background` 只有一个
+  在分界。反例：渠道测试卡 95.6px，与渠道卡同款，是首屏第一个盒子。
+- **一条轴**：换行的控件簇必须共用左边或右边，不能一行左、一行右。判据：同一控件簇内所有元素的
+  `x` 或 `right` 相等（容许 1px 舍入）。反例：筛选区第 1 行输入框 + 复选框，第 2 行「全部可用渠道」
+  左起，两行右端差 109px。
+- **数字要有主次**：统计行至少两级字重/颜色，决定下一步的那个数是 600 + `label-primary`，其余
+  11.5 secondary。判据：统计行里同时出现两种字重（或两种文字色）。反例：「已启用 9/37 免费 16
+  已配置 8 缺 Key 15」四段同色同重，读起来是一串状态转储。
+- **反馈成对**：有 hover 就必须有 `:active`；按下用 `interactive-bg-active`，不做位移/缩放（密集
+  列表面板里位移会抖）。判据：`.mgrBtn` / `.mgrTab` / `.mgrSwitch` / `.mgrIconBtn` 各有 `:active`
+  规则。反例：目前只有 `skxBtn` 有按压态，mgr 一套没有。
+- **浏览器表面归设计管**：选中色、插入符、滚动条、focus ring、下划线偏移、数字等宽都要给值。判据：
+  `::selection`、`caret-color`、`scrollbar-color`、`:focus-visible`、`text-underline-offset` 各 ≥1
+  条规则。反例：选中和插入符还是浏览器默认蓝，`.mgrLinkBtn` 下划线贴字。
+- **克制**：不加进场动画、不加逐行 stagger、不加渐变/玻璃；动效只回应用户动作（hover/active/展开）。
+  判据：`@keyframes` 只有 `mgrSpin`。反例：无（守住）。
 
 ## 验证
 

@@ -2696,8 +2696,8 @@ function apply(ctx) {
 			'search.onlyEnabled': '只看已启用',
 			'search.filteredCount': '显示 {shown}/{total}',
 			'search.filteredEmpty': '没有匹配的渠道；换个关键词或取消筛选。',
-			'search.testTitle': '渠道测试',
 			'search.testHint': '用当前查询逐个测试已启用渠道；查询为空时用 DeepSeek Harness。',
+			'search.testCost': '会实际请求，消耗配额与冷却',
 			'search.filterScope': '屏蔽域名对面板搜索和 agent 的搜索工具同时生效；保存后会清空搜索缓存。',
 			'search.channel.enable': '启用',
 			'search.channel.configure': '配置',
@@ -3030,8 +3030,8 @@ function apply(ctx) {
 			'search.onlyEnabled': 'Enabled only',
 			'search.filteredCount': 'Showing {shown}/{total}',
 			'search.filteredEmpty': 'No channel matches; try another word or clear the filter.',
-			'search.testTitle': 'Channel check',
 			'search.testHint': 'Tests every enabled channel with the current query, or DeepSeek Harness when it is empty.',
+			'search.testCost': 'Runs real requests; uses quota and cooldowns',
 			'search.filterScope': 'The blocklist applies to panel searches and the agent search tools alike; saving it clears the search cache.',
 			'search.channel.enable': 'Enable',
 			'search.channel.configure': 'Configure',
@@ -3167,7 +3167,9 @@ function apply(ctx) {
 		//#region styles
 
 		var css = [
-			'.mgrRoot{position:relative;height:100%;display:flex;flex-direction:column;box-sizing:border-box;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font-family:var(--dsw-font-family);font-size:13px;line-height:1.5;-webkit-font-smoothing:antialiased}',
+			'.mgrRoot{position:relative;height:100%;display:flex;flex-direction:column;box-sizing:border-box;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font-family:var(--dsw-font-family);font-size:13px;line-height:1.5;-webkit-font-smoothing:antialiased;caret-color:var(--dsw-alias-state-business-primary)}',
+			'.mgrRoot::selection,.mgrRoot ::selection{background:color-mix(in srgb,var(--dsw-alias-state-business-primary) 28%,transparent);color:var(--dsw-alias-label-primary)}',
+			'.mgrRoot input[type=checkbox]{accent-color:var(--dsw-alias-state-business-primary)}',
 			'.mgrHead{display:flex;align-items:flex-start;gap:16px;padding:24px 28px 0;flex:none}',
 			'.mgrHeadMain{flex:1;min-width:0}',
 			'.mgrTitle{margin:0;font-size:18px;font-weight:600;line-height:26px;letter-spacing:-.01em}',
@@ -3179,8 +3181,9 @@ function apply(ctx) {
 			'.mgrTabs::-webkit-scrollbar{display:none}',
 			'.mgrTab{display:inline-flex;align-items:center;gap:6px;flex:none;height:30px;padding:0 12px;border:1px solid transparent;border-radius:var(--dsw-radius-md);background:transparent;color:var(--dsw-alias-label-secondary);font:inherit;font-size:13px;white-space:nowrap;cursor:pointer;transition:background .15s ease,color .15s ease,border-color .15s ease}',
 			'.mgrTab:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}',
+			'.mgrTab:active{background:var(--dsw-alias-interactive-bg-active)}',
 			'.mgrTab:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:1px}',
-			'.mgrTabActive{background:var(--dsw-alias-interactive-bg-active);color:var(--dsw-alias-label-primary);font-weight:500;border-color:var(--dsw-alias-border-l2)}',
+			'.mgrTabActive{background:var(--dsw-alias-interactive-bg-active);color:var(--dsw-alias-label-primary);font-weight:500;border-color:transparent}',
 			'.mgrTabCount{font-size:11.5px;color:var(--dsw-alias-label-secondary);font-variant-numeric:tabular-nums}',
 			'.mgrBody{flex:1;min-height:0;overflow:auto;padding:16px 28px 24px;scrollbar-width:thin;scrollbar-color:var(--dsw-alias-scrollbar-bg-l2) transparent}',
 			'.mgrBody::-webkit-scrollbar{width:10px;height:10px}',
@@ -3190,14 +3193,18 @@ function apply(ctx) {
 			'.mgrHint{font-size:11.5px;color:var(--dsw-alias-label-secondary);line-height:1.55;max-width:640px}',
 			'.mgrBtn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:30px;padding:0 12px;border:1px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-primary);font:inherit;font-size:12.5px;cursor:pointer;transition:background .15s ease,border-color .15s ease}',
 			'.mgrBtn:hover{background:var(--dsw-alias-interactive-bg-hover);border-color:var(--dsw-alias-border-l3)}',
+			'.mgrBtn:active{background:var(--dsw-alias-interactive-bg-active)}',
 			'.mgrBtn:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:1px}',
 			'.mgrBtn[disabled]{opacity:.5;cursor:default}',
 			'.mgrBtnPrimary{background:var(--dsw-alias-state-business-primary);border-color:var(--dsw-alias-state-business-primary);color:var(--dsw-alias-label-primary-foreground)}',
 			'.mgrBtnPrimary:hover{background:var(--dsw-alias-state-business-primary);filter:brightness(1.05)}',
+			'.mgrBtnPrimary:active{background:var(--dsw-alias-state-business-primary);filter:brightness(.95)}',
 			'.mgrBtnDanger{color:var(--dsw-alias-label-primary);border-color:var(--dsw-alias-state-error-primary)}',
 			'.mgrBtnDanger:hover{border-color:var(--dsw-alias-state-error-primary);background:transparent}',
-			'.mgrIconBtn{flex:none;width:30px;height:30px;padding:0;border:1px solid transparent;border-radius:var(--dsw-radius-md);background:transparent;color:var(--dsw-alias-label-secondary);font:inherit;font-size:16px;line-height:1;cursor:pointer}',
+			'.mgrBtnDanger:active{background:transparent;border-color:var(--dsw-alias-state-error-primary)}',
+			'.mgrIconBtn{flex:none;display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;padding:0;border:1px solid transparent;border-radius:var(--dsw-radius-md);background:transparent;color:var(--dsw-alias-label-secondary);font:inherit;font-size:16px;line-height:1;cursor:pointer}',
 			'.mgrIconBtn:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}',
+			'.mgrIconBtn:active{background:var(--dsw-alias-interactive-bg-active)}',
 			'.mgrInput,.mgrTextarea,.mgrSelect{width:100%;box-sizing:border-box;padding:7px 10px;border:1px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-primary);font:inherit;font-size:12.5px;line-height:1.5}',
 			'.mgrInput{height:30px}',
 			'.mgrInput:focus,.mgrTextarea:focus,.mgrSelect:focus{outline:none;border-color:var(--dsw-alias-state-business-primary)}',
@@ -3210,8 +3217,8 @@ function apply(ctx) {
 			'.mgrStats b{font-weight:600;color:var(--dsw-alias-label-secondary)}',
 			'.mgrCatalog{margin:-4px 0 12px}',
 			'.mgrRootPath{font-family:var(--dsw-font-mono,ui-monospace,SFMono-Regular,Menlo,monospace);font-size:11.5px;color:var(--dsw-alias-label-secondary)}',
-			'.mgrWarn{display:flex;align-items:flex-start;gap:8px;padding:9px 12px;margin-bottom:12px;border:1px solid var(--dsw-alias-border-l2);border-left:3px solid var(--dsw-alias-state-warn-primary);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-1);font-size:13px;color:var(--dsw-alias-label-secondary);line-height:1.6}',
-			'.mgrErrorBox{display:flex;align-items:flex-start;gap:8px;padding:9px 12px;margin-bottom:12px;border:1px solid var(--dsw-alias-border-l2);border-left:3px solid var(--dsw-alias-state-error-primary);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-1);font-size:13px;color:var(--dsw-alias-state-error-primary);line-height:1.6;word-break:break-word}',
+			'.mgrWarn{display:flex;align-items:flex-start;gap:8px;padding:9px 12px;margin-bottom:12px;border:1px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-md);background:color-mix(in srgb,var(--dsw-alias-state-warn-primary) 8%,var(--dsw-alias-bg-layer-1));font-size:13px;color:var(--dsw-alias-label-secondary);line-height:1.6}',
+			'.mgrErrorBox{display:flex;align-items:flex-start;gap:8px;padding:9px 12px;margin-bottom:12px;border:1px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-md);background:color-mix(in srgb,var(--dsw-alias-state-error-primary) 8%,var(--dsw-alias-bg-layer-1));font-size:13px;color:var(--dsw-alias-label-primary);line-height:1.6;word-break:break-word}',
 			'.mgrCat{border:1px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-lg);background:var(--dsw-alias-bg-layer-1);margin-bottom:10px;overflow:hidden}',
 			'.mgrCatHead{display:flex;align-items:center;gap:8px;padding:9px 12px;min-height:40px;box-sizing:border-box}',
 			'.mgrCatHead:hover{background:var(--dsw-alias-bg-layer-2)}',
@@ -3232,8 +3239,12 @@ function apply(ctx) {
 			'.mgrBadgeOk{background:var(--dsw-alias-state-success-tertiary);color:var(--dsw-alias-label-primary)}',
 			'.mgrBadgeWarn{background:var(--dsw-alias-state-warn-tertiary);color:var(--dsw-alias-label-primary)}',
 			'.mgrBadgeError{color:var(--dsw-alias-state-error-primary)}',
+			'.mgrBadgeFree{background:transparent;border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary)}',
 			'.mgrSwitch{position:relative;flex:none;width:34px;height:20px;padding:0;border:1px solid var(--dsw-alias-border-l2);border-radius:99px;background:var(--dsw-alias-bg-layer-3);cursor:pointer;transition:background .15s ease,border-color .15s ease}',
 			'.mgrSwitch:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}',
+			/* Pressed feedback is tone-only: a transform here would fight the
+			   knob translateX and make the switch jump. */
+			'.mgrSwitch:active{filter:brightness(.97)}',
 			'.mgrSwitchOn{background:var(--dsw-alias-state-business-primary);border-color:var(--dsw-alias-state-business-primary)}',
 			/* Off state only: the idling track plus a hairline ring, so the off switch
 			   reads on both themes. `.mgrSwitchOn` keeps its own paint untouched. */
@@ -3252,7 +3263,7 @@ function apply(ctx) {
 			'.mgrDot-error{background:var(--dsw-alias-state-error-primary)}',
 			'.mgrCommand{margin-top:6px;font-family:var(--dsw-font-mono,ui-monospace,SFMono-Regular,Menlo,monospace);font-size:11.5px;color:var(--dsw-alias-label-secondary);word-break:break-all}',
 			'.mgrMeta{margin-top:4px;font-size:11.5px;color:var(--dsw-alias-label-secondary);word-break:break-word}',
-			'.mgrServerError{margin-top:6px;font-size:11.5px;color:var(--dsw-alias-state-error-primary);line-height:1.5;word-break:break-word}',
+			'.mgrServerError{margin-top:6px;padding:4px 8px;border-radius:var(--dsw-radius-md);background:color-mix(in srgb,var(--dsw-alias-state-error-primary) 8%,var(--dsw-alias-bg-layer-1));font-size:11.5px;color:var(--dsw-alias-label-primary);line-height:1.5;word-break:break-word}',
 			'.mgrServerActions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px solid var(--dsw-alias-border-l1)}',
 			'.mgrToolList{margin-top:8px;border:1px solid var(--dsw-alias-border-l1);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-2);padding:6px 10px}',
 			'.mgrToolRow{padding:5px 0;border-top:1px solid var(--dsw-alias-border-l1)}',
@@ -3290,12 +3301,12 @@ function apply(ctx) {
 			'.mgrModalTitle{margin:0;font-size:14px;font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
 			'.mgrModalBody{flex:1;min-height:0;overflow:auto;padding:16px}',
 			'.mgrModalFoot{display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:12px 16px;border-top:1px solid var(--dsw-alias-border-l2);flex:none}',
-			'.mgrFormError{margin:0 0 10px;color:var(--dsw-alias-state-error-primary);font-size:13px;line-height:1.5}',
+			'.mgrFormError{margin:0 0 10px;padding:6px 8px;border-radius:var(--dsw-radius-md);background:color-mix(in srgb,var(--dsw-alias-state-error-primary) 8%,var(--dsw-alias-bg-layer-1));color:var(--dsw-alias-label-primary);font-size:13px;line-height:1.5}',
 			'.mgrDetailRow{display:flex;gap:12px;padding:5px 0;font-size:13px;line-height:1.6}',
 			'.mgrDetailKey{flex:none;width:76px;color:var(--dsw-alias-label-secondary)}',
 			'.mgrDetailValue{flex:1;min-width:0;color:var(--dsw-alias-label-secondary);word-break:break-word}',
 			'.mgrToast{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);z-index:60;display:flex;align-items:center;gap:10px;max-width:min(620px,84%);padding:9px 11px 9px 14px;border:1px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-2);box-shadow:var(--dsw-elevation-soft);font-size:12.5px;line-height:1.5;color:var(--dsw-alias-label-primary)}',
-			'.mgrToastError{color:var(--dsw-alias-state-error-primary);border-color:var(--dsw-alias-state-error-primary)}',
+			'.mgrToastError{color:var(--dsw-alias-label-primary);border-color:var(--dsw-alias-state-error-primary)}',
 			'.mgrToastText{white-space:pre-wrap;word-break:break-word}',
 			'.mgrToastClose{flex:none;border:0;background:transparent;color:inherit;cursor:pointer;font-size:16px;line-height:1;padding:0 2px}',
 			'.mgrLanCard{border:1px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-lg);background:var(--dsw-alias-bg-layer-1);padding:14px 16px;margin-bottom:12px}',
@@ -3317,22 +3328,6 @@ function apply(ctx) {
 			'.mgrLanRowSub{margin-top:12px;padding-top:12px;border-top:1px solid var(--dsw-alias-border-l1)}',
 			'.mgrLanTrust{margin-top:14px;padding-top:12px;border-top:1px solid var(--dsw-alias-border-l1)}',
 			'.mgrLanSteps{margin-top:6px;line-height:1.7}',
-			'.mgrModeIntro{margin-bottom:12px}',
-			'.mgrModeTag{display:inline-block;margin-left:8px;padding:0 6px;border:1px solid var(--dsw-alias-border-l2);border-radius:999px;font-size:10.5px;font-weight:400;line-height:16px;color:var(--dsw-alias-label-tertiary);vertical-align:1px}',
-			'.mgrModeMeta{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:11.5px;color:var(--dsw-alias-label-tertiary)}',
-			'.mgrModeState{color:var(--dsw-alias-label-secondary)}',
-			'.mgrModeStateBad{color:var(--dsw-alias-state-error-primary)}',
-			'.mgrModeDetails{margin-top:8px;padding-top:8px;border-top:1px solid var(--dsw-alias-border-l1)}',
-			'.mgrModeDetails summary{cursor:pointer;font-size:11.5px;color:var(--dsw-alias-label-secondary);list-style:none}',
-			'.mgrModeDetails summary::-webkit-details-marker{display:none}',
-			'.mgrModeDetails summary::before{content:"▸";display:inline-block;width:14px;color:var(--dsw-alias-label-tertiary)}',
-			'.mgrModeDetails[open] summary::before{content:"▾"}',
-			'.mgrModeRows{display:flex;flex-direction:column;gap:3px;margin-top:8px}',
-			'.mgrModeRow{display:flex;align-items:baseline;gap:10px;font-size:11.5px;line-height:1.7}',
-			'.mgrModeRowId{flex:none;width:128px;color:var(--dsw-alias-label-secondary)}',
-			'.mgrModeRowPlugin{flex:1;min-width:0;font-family:var(--dsw-font-mono,ui-monospace,SFMono-Regular,Menlo,monospace);font-size:11.5px;color:var(--dsw-alias-label-tertiary);word-break:break-all}',
-			'.mgrModeRowChild{flex:none;color:var(--dsw-alias-label-tertiary)}',
-			'.mgrModeRemoved{margin-top:10px}',
 			'.mgrSearchControls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:8px 0 12px}',
 			'.mgrSearchControls .mgrHint{flex:1;min-width:180px}',
 			'.mgrSearchTimeWrap{display:flex;align-items:center;gap:5px}',
@@ -3343,50 +3338,66 @@ function apply(ctx) {
 			'.mgrSearchBlockedInput{width:100%;min-height:54px;resize:vertical;font-family:inherit;font-size:12.5px;line-height:1.55}',
 			'.mgrSearchBlockedFoot{display:flex;justify-content:flex-end;margin-top:8px}',
 			'.mgrSearchOrder{display:flex;align-items:center;gap:4px}',
-			'.mgrSearchOrder .mgrBtn{padding:2px 6px;min-width:0;line-height:1.5}',
 			'.mgrSearchBar{display:flex;align-items:center;gap:8px;margin-bottom:12px}',
 			'.mgrSearchBar .mgrInput{flex:1;width:auto;min-width:0;height:30px;font-size:12.5px}',
 			'.mgrSearchGo{flex:none;height:30px;padding:0 16px}',
 			'.mgrSearchMeta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px}',
 			'.mgrSearchMeta .mgrHint{max-width:none}',
-			'.mgrLinkBtn{flex:none;padding:0;border:0;background:transparent;color:var(--dsw-alias-state-business-primary);font:inherit;font-size:11.5px;text-decoration:underline;cursor:pointer}',
+			'.mgrSubMetaGroup{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0}',
+			'.mgrLinkBtn{flex:none;padding:0;border:0;background:transparent;color:var(--dsw-alias-state-business-primary);font:inherit;font-size:11.5px;text-decoration:underline;text-underline-offset:3px;cursor:pointer}',
 			'.mgrLinkBtn:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}',
-			'.mgrSubTabs{display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin:0 0 12px}',
+			/* Text action: a secondary command that must not add a fourth framed
+			   button to a screen. The cost hint sits on its own line underneath. */
+			'.mgrTextAction{flex:none;display:inline-flex;align-items:center;height:26px;padding:0 4px;border:0;background:transparent;color:var(--dsw-alias-label-secondary);font:inherit;font-size:12.5px;line-height:1.5;cursor:pointer;text-decoration:underline;text-underline-offset:3px}',
+			'.mgrTextAction:hover{color:var(--dsw-alias-label-primary)}',
+			'.mgrTextAction:active{color:var(--dsw-alias-label-primary);text-decoration-thickness:2px}',
+			'.mgrTextAction[disabled]{opacity:.5;cursor:default;text-decoration:none}',
+			'.mgrTextAction:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}',
+			'.mgrSubTabsBar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 4px}',
+			'.mgrSubTabs{display:flex;align-items:center;gap:4px;flex-wrap:wrap;flex:1 1 auto;min-width:0;margin:0}',
 			'.mgrSubTabs .mgrTab{height:26px;padding:0 10px;border:0;border-radius:0;background:transparent;box-shadow:none;font-size:12px;border-bottom:2px solid transparent}',
 			'.mgrSubTabs .mgrTab:hover:not(.mgrTabActive){background:transparent;color:var(--dsw-alias-label-primary);border-bottom-color:transparent}',
-			'.mgrSubTabs .mgrTabActive{background:transparent;border:0;border-bottom:2px solid var(--dsw-alias-state-business-primary);border-radius:0;color:var(--dsw-alias-state-business-primary);font-weight:500}',
+			'.mgrSubTabs .mgrTab:active:not(.mgrTabActive){background:transparent}',
+			'.mgrSubTabs .mgrTabActive{background:transparent;border:0;border-bottom:2px solid var(--dsw-alias-state-business-primary);border-radius:0;color:var(--dsw-alias-label-primary);font-weight:500}',
 			'.mgrSubTabs .mgrTabCount{font-size:10.5px}',
+			'.mgrSubActions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-left:auto}',
+			'.mgrSubHint{margin:0 0 8px;text-align:right}',
 			'.mgrSearchCard{border:1px solid var(--dsw-alias-border-l2);border-radius:12px;background:var(--dsw-alias-bg-layer-1);padding:12px 14px;margin-bottom:12px}',
 			'.mgrSearchCardHead{display:flex;align-items:center;gap:8px;flex-wrap:wrap}',
-			'.mgrSearchCardHint{margin-top:4px;color:var(--dsw-alias-label-secondary)}',
 			'.mgrSearchCardTitle{font-size:14px;font-weight:600;color:var(--dsw-alias-label-primary)}',
-			'.mgrSearchCardHeadActions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}',
 			'.mgrSearchCard .mgrSearchControls{margin:9px 0 0}',
-			'.mgrSearchCard .mgrSearchChips{margin:9px 0 0}',
 			'.mgrSearchChannelFilter{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 8px}',
 			'.mgrSearchChannelFilter .mgrInput{flex:1;min-width:180px;max-width:320px;height:30px;font-size:12.5px}',
 			/* The bulk switch keeps its own line when the filter bar runs out of
 			   room: the label stays on one line instead of being clipped, and the
 			   switch keeps the size the channel rows use. */
-			'.mgrSearchBulk{display:flex;align-items:center;gap:6px;flex-wrap:nowrap;min-width:0}',
+			'.mgrSearchBulk{display:flex;align-items:center;gap:6px;flex-wrap:nowrap;min-width:0;margin-left:auto}',
 			'.mgrSearchBulk .mgrHint{max-width:none;white-space:nowrap}',
 			'.mgrSearchBulk .mgrSwitch{flex:0 0 auto}',
 			'.mgrSearchFilterCount{margin-bottom:8px}',
 			'.mgrSearchResults{margin-bottom:18px}',
 			'.mgrSearchList{display:flex;flex-direction:column;gap:10px}',
-			'.mgrSearchChannels{margin-top:24px;padding-top:16px;border-top:1px solid var(--dsw-alias-border-l1)}',
+			'.mgrSearchChannels{margin-top:12px;padding-top:8px;border-top:1px solid var(--dsw-alias-border-l1)}',
 			'.mgrSearchChannelsHead{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px}',
 			'.mgrSearchChannelsTitle{font-size:14px;font-weight:600;color:var(--dsw-alias-label-primary)}',
 			'.mgrSearchChannelStats{display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-width:0}',
 			'.mgrSearchStatWarn{color:var(--dsw-alias-label-secondary)}',
+			'.mgrSearchStatLead{font-weight:600}',
 			'.mgrSearchChannel{border:1px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-1);margin-bottom:8px;overflow:hidden}',
 			'.mgrSearchChannelHead{display:flex;align-items:flex-start;gap:0;flex-wrap:wrap;padding:12px 14px}',
 			'.mgrSearchChannelMain{flex:1 1 100%;min-width:0}',
 			'.mgrSearchChannelNameRow{display:flex;align-items:center;gap:8px}',
 			'.mgrSearchChannelName{flex:1 1 auto;min-width:64px;font-size:13px;font-weight:600;color:var(--dsw-alias-label-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+			/* State first: an off row recedes before the switch is even read. */
+			'.mgrSearchChannelOff .mgrSearchChannelName{color:var(--dsw-alias-label-secondary)}',
 			'.mgrSearchChannelDesc{margin-top:4px;font-size:11.5px;line-height:1.55;color:var(--dsw-alias-label-secondary);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:35.6px}',
 			'.mgrSearchChannelBadges{display:flex;align-items:center;gap:4px;flex-wrap:wrap;flex:0 1 auto;min-width:0}',
 			'.mgrSearchChannelActions{display:flex;align-items:center;gap:8px;flex:1 1 100%;flex-wrap:wrap;justify-content:flex-end;margin-top:8px}',
+			/* Secondary row actions carry no frame until pointed at, so the list
+			   reads as rows instead of a column of outlined buttons. */
+			'.mgrSearchChannelActions .mgrBtn{height:30px;padding:0 8px;border-color:transparent;background:transparent;color:var(--dsw-alias-label-secondary)}',
+			'.mgrSearchChannelActions .mgrBtn:hover{background:var(--dsw-alias-interactive-bg-hover);border-color:transparent;color:var(--dsw-alias-label-primary)}',
+			'.mgrSearchChannelActions .mgrBtn:active{background:var(--dsw-alias-interactive-bg-active);border-color:transparent}',
 			'.mgrSearchChannelBody{padding:12px 14px;border-top:1px solid var(--dsw-alias-border-l1)}',
 			'.mgrSearchChannelGrid{display:flex;gap:12px;flex-wrap:wrap}',
 			'.mgrSearchChannelField{flex:1;min-width:220px;margin-bottom:0}',
@@ -3399,7 +3410,7 @@ function apply(ctx) {
 			'.mgrSearchTestItem{margin-top:3px;color:var(--dsw-alias-label-secondary);word-break:break-word}',
 			'.mgrSearchChips{display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin:8px 0 12px}',
 			'.mgrSearchChip{display:inline-flex;align-items:center;padding:1px 7px;border:1px solid var(--dsw-alias-border-l1);border-radius:999px;background:var(--dsw-alias-bg-layer-2);font-size:10.5px;color:var(--dsw-alias-label-secondary)}',
-			'.mgrSearchChipError{color:var(--dsw-alias-state-error-primary);border-color:var(--dsw-alias-state-error-primary)}',
+			'.mgrSearchChipError{color:var(--dsw-alias-label-primary);border-color:var(--dsw-alias-state-error-primary)}',
 			'.mgrSearchChannelTag{flex:none;max-width:30%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10.5px;color:var(--dsw-alias-label-secondary)}',
 			'.mgrSearchSummary{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:11.5px;color:var(--dsw-alias-label-secondary);font-variant-numeric:tabular-nums}',
 			'.mgrSearchResult{border:1px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-1);padding:11px 13px;transition:border-color .15s ease}',
@@ -5123,7 +5134,7 @@ function apply(ctx) {
 			} else {
 				keyBadge = h(Badge, { tone: 'Ok' }, t('search.channel.keyless'));
 			}
-			var freeBadge = channel.free === true ? h(Badge, { tone: 'Ok' }, t('search.free')) : null;
+			var freeBadge = channel.free === true ? h(Badge, { tone: 'Free' }, t('search.free')) : null;
 			var cooldownBadge = Number(channel.cooldownMs) > 0
 				? h(Badge, { tone: 'Warn' }, t('search.cooldown', { s: Math.ceil(Number(channel.cooldownMs) / 1000) }))
 				: null;
@@ -5228,7 +5239,23 @@ function apply(ctx) {
 							: (channel.envName ? t('search.channel.envHint', { env: channel.envName }) + ' · ' + t('search.channel.apiKeyMulti') : t('search.channel.apiKeyMulti'))));
 			}
 
-			return h('div', { className: 'mgrSearchChannel' },
+			// 12x12 stroke glyphs instead of text arrows: row actions are one
+			// type system (12.5px labels) plus one icon language, not two.
+			function arrowIcon(d) {
+				return h('svg', {
+					width: 12,
+					height: 12,
+					viewBox: '0 0 12 12',
+					fill: 'none',
+					stroke: 'currentColor',
+					strokeWidth: 1.5,
+					strokeLinecap: 'round',
+					strokeLinejoin: 'round',
+					'aria-hidden': true,
+				}, h('path', { d: d }));
+			}
+
+			return h('div', { className: classes('mgrSearchChannel', channel.enabled !== true && 'mgrSearchChannelOff') },
 				h('div', { className: 'mgrSearchChannelHead' },
 					h('div', { className: 'mgrSearchChannelMain' },
 						// The switch rides the name row so the text column can take the
@@ -5247,20 +5274,20 @@ function apply(ctx) {
 						h('div', { className: 'mgrSearchOrder' },
 							h('button', {
 								type: 'button',
-								className: 'mgrBtn',
+								className: 'mgrIconBtn',
 								title: t('search.moveUp'),
 								'aria-label': t('search.moveUp'),
 								disabled: saving || props.canMoveUp !== true,
 								onClick: function () { void move('up'); },
-							}, '↑'),
+							}, arrowIcon('M6 10V2M2.5 5.5L6 2l3.5 3.5')),
 							h('button', {
 								type: 'button',
-								className: 'mgrBtn',
+								className: 'mgrIconBtn',
 								title: t('search.moveDown'),
 								'aria-label': t('search.moveDown'),
 								disabled: saving || props.canMoveDown !== true,
 								onClick: function () { void move('down'); },
-							}, '↓')),
+							}, arrowIcon('M6 2v8M2.5 6.5L6 10l3.5-3.5'))),
 						h('button', {
 							type: 'button',
 							className: 'mgrBtn',
@@ -5478,56 +5505,28 @@ function apply(ctx) {
 				visible.push(channel);
 			}
 			var filtering = needle !== '' || onlyEnabled === true;
-			var mode = props.mode;
 			var testAll = props.testAll === null || props.testAll === undefined ? null : props.testAll;
 
-			function modeButton(id, label) {
-				return h('button', {
-					type: 'button',
-					key: id,
-					className: classes('mgrBtn', mode === id && 'mgrBtnPrimary'),
-					onClick: function () { if (mode !== id) void props.onMode(id); },
-				}, label);
-			}
-
 			return h('div', null,
-				h('div', { className: 'mgrSearchCard' },
-					// The action sits on the title line, so the card is one row of
-					// controls plus one line of hint instead of three stacked rows.
-					h('div', { className: 'mgrSearchCardHead' },
-						h('span', { className: 'mgrSearchCardTitle' }, t('search.testTitle')),
-						h('span', { className: 'mgrSpacer' }),
-						h('div', { className: 'mgrSearchCardHeadActions' },
-							h('button', {
-								type: 'button',
-								className: 'mgrBtn',
-								disabled: props.available !== true || props.testAllBusy === true,
-								onClick: function () { void props.onTestAll(); },
-							}, props.testAllBusy === true ? t('search.testAllRunning') : t('search.testAll')),
-							props.hasCooldown === true
-								? h('button', {
-									type: 'button',
-									className: 'mgrBtn',
-									onClick: function () { void props.onResetCooldowns(); },
-								}, t('search.resetCooldowns'))
-								: null)),
-					h('div', { className: 'mgrHint mgrSearchCardHint' }, t('search.testHint')),
-					testAll === null ? null : h('div', { className: 'mgrSearchChips' },
-						h('span', { className: 'mgrHint' }, t('search.testAllSummary', { ok: testAll.ok, total: testAll.total })),
-						testAll.results.map(function (entry) {
-							return h('span', {
-								className: classes('mgrSearchChip', entry.ok !== true && 'mgrSearchChipError'),
-								key: entry.id,
-								title: entry.ok === true ? '' : entry.failure ? entry.failure.message : '',
-							}, entry.ok === true
-								? t('search.chipOk', { label: entry.label, n: entry.count })
-								: t('search.chipFail', { label: entry.label, code: entry.failure ? entry.failure.code : 'error' }));
-						}))),
+				// The action itself sits on the sub-tab row; its result stays here
+				// without a container of its own, so the first screen starts with
+				// the channel list instead of a framed tool block.
+				testAll === null ? null : h('div', { className: 'mgrSearchChips' },
+					h('span', { className: 'mgrHint' }, t('search.testAllSummary', { ok: testAll.ok, total: testAll.total })),
+					testAll.results.map(function (entry) {
+						return h('span', {
+							className: classes('mgrSearchChip', entry.ok !== true && 'mgrSearchChipError'),
+							key: entry.id,
+							title: entry.ok === true ? '' : entry.failure ? entry.failure.message : '',
+						}, entry.ok === true
+							? t('search.chipOk', { label: entry.label, n: entry.count })
+							: t('search.chipFail', { label: entry.label, code: entry.failure ? entry.failure.code : 'error' }));
+					})),
 				h('div', { className: 'mgrSearchChannels' },
 					h('div', { className: 'mgrSearchChannelsHead' },
 						h('span', { className: 'mgrSearchChannelsTitle' }, t('search.channels')),
 						h('div', { className: 'mgrSearchChannelStats' },
-							h('span', { className: 'mgrCount' }, t('search.channelsCount', { enabled: props.enabled, total: channels.length })),
+							h('span', { className: 'mgrCount mgrSearchStatLead' }, t('search.channelsCount', { enabled: props.enabled, total: channels.length })),
 							h('span', { className: 'mgrCount' }, t('search.statFree', { n: freeCount })),
 							h('span', { className: 'mgrCount' }, t('search.statKeyed', { n: keyedCount })),
 							h('span', {
@@ -5653,19 +5652,44 @@ function apply(ctx) {
 				// one tab instead of taking the top of the channel list.
 				{ id: 'settings', label: t('search.sub.settings'), count: blockedDomains.length === 0 ? '' : String(blockedDomains.length) },
 			];
-			var tabView = h('div', { className: 'mgrSubTabs', role: 'tablist', 'aria-label': t('search.subtabs') },
-				tabs.map(function (entry) {
-					return h('button', {
+			var tabView = h('div', { className: 'mgrSubTabsBar' },
+				h('div', { className: 'mgrSubTabs', role: 'tablist', 'aria-label': t('search.subtabs') },
+					tabs.map(function (entry) {
+						return h('button', {
+							type: 'button',
+							role: 'tab',
+							key: entry.id,
+							'aria-selected': sub === entry.id,
+							className: classes('mgrTab', sub === entry.id && 'mgrTabActive'),
+							onClick: function () { props.setSub(entry.id); },
+						},
+							entry.label,
+							entry.count === '' ? null : h('span', { className: 'mgrTabCount' }, entry.count));
+					})),
+				// The all-channel check is a secondary action, so it rides the
+				// sub-tab row as text instead of framing another card above the list.
+				// It only belongs to the channel pane: on the other panes a click
+				// would test something the reader cannot see.
+				sub === 'channels' ? h('div', { className: 'mgrSubActions' },
+					h('button', {
 						type: 'button',
-						role: 'tab',
-						key: entry.id,
-						'aria-selected': sub === entry.id,
-						className: classes('mgrTab', sub === entry.id && 'mgrTabActive'),
-						onClick: function () { props.setSub(entry.id); },
-					},
-						entry.label,
-						entry.count === '' ? null : h('span', { className: 'mgrTabCount' }, entry.count));
-				}));
+						className: 'mgrTextAction',
+						title: t('search.testHint'),
+						disabled: available !== true || props.testAllBusy === true,
+						onClick: function () { void props.onTestAll(); },
+					}, props.testAllBusy === true ? t('search.testAllRunning') : t('search.testAll')),
+					hasCooldown === true
+						? h('button', {
+							type: 'button',
+							className: 'mgrTextAction',
+							onClick: function () { void props.onResetCooldowns(); },
+						}, t('search.resetCooldowns'))
+						: null) : null);
+			// A real search costs quota and cooldown time; the cost stays visible
+			// instead of hiding in the action's title.
+			var testCostView = sub === 'channels'
+				? h('div', { className: 'mgrHint mgrSubHint' }, t('search.testCost'))
+				: null;
 
 			var barView = h('div', { className: 'mgrSearchBar' },
 				h('input', {
@@ -5695,6 +5719,8 @@ function apply(ctx) {
 					onClick: function () { props.setSub('settings'); },
 				}, t('search.modeJump')),
 				h('span', { className: 'mgrSpacer' }),
+				// Time and safe search wrap together, never one of them alone.
+				h('div', { className: 'mgrSubMetaGroup' },
 				h('label', { className: 'mgrSearchTimeWrap', title: t('search.timeTitle') },
 					h('span', { className: 'mgrHint' }, t('search.time')),
 					h('select', {
@@ -5714,7 +5740,7 @@ function apply(ctx) {
 						checked: safeSearch,
 						onChange: function (event) { void props.onSafeSearch(event.target.checked); },
 					}),
-					h('span', { className: 'mgrHint' }, t('search.safeSearch'))));
+					h('span', { className: 'mgrHint' }, t('search.safeSearch')))));
 
 			var panes = h('div', null,
 				h('div', { style: sub === 'results' ? undefined : { display: 'none' } },
@@ -5724,17 +5750,11 @@ function apply(ctx) {
 						t: t,
 						channels: channels,
 						enabled: enabled,
-						available: available,
 						query: props.query,
-						hasCooldown: hasCooldown,
 						testAll: props.testAll,
-						testAllBusy: props.testAllBusy,
-						onMode: props.onMode,
 						onSave: props.onSave,
 						onTest: props.onTest,
 						onMove: props.onMove,
-						onTestAll: props.onTestAll,
-						onResetCooldowns: props.onResetCooldowns,
 						bulkBusy: props.bulkBusy,
 						onSetChannels: props.onSetChannels,
 					})),
@@ -5782,7 +5802,7 @@ function apply(ctx) {
 							onClick: function () { props.setSub('channels'); },
 						}, t('search.enabledNoneAction')))
 					: null,
-				status === null ? h(Loading, { label: t('state.loading') }) : h('div', null, tabView, panes));
+				status === null ? h(Loading, { label: t('state.loading') }) : h('div', null, tabView, testCostView, panes));
 		}
 
 		//#endregion
