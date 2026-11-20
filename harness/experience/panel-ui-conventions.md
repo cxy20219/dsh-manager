@@ -136,6 +136,17 @@ summary: 面板结构、子页挂载约定、工具目录的单一来源、local
 - **对比度**：说明与计数这一层（`.mgrHint`、`.mgrCount`、`.mgrSearchChannelDesc`、`.mgrSubHint`、
   `.mgrVersion`、`.mgrSubtitle`、`.mgrTabCount`）统一 `label-secondary`（亮 5.80 / 暗 10.42–12.11）；
   `label-tertiary` 在亮色只有 3.71:1，别再用它写正文。
+- **对比度必须先把半透明底合成再算**：`color-mix()` / `rgba()` 的底不能跳过。量法是从 `.mgrRoot` 向下
+  逐层合成 `out = fg·a + bg·(1−a)`，再把文字色按自身 alpha 压上去；Chrome 的 computed 里
+  `color(srgb r g b / a)` 三个分量是 0–1，先 ×255 再套 WCAG 公式（当 0–255 直接算会得到假数）。
+  跳过半透明底会把结果算高：技能页统计 pill 实际是暗 5.22 / 亮 3.57，不是 6.75 / 4.23。
+- **技能页统计 pill 与提示**：`.skxStatLabel` / `.skxStatOn` / `.skxStatOf` 一律 `--skx-fg`（主色），
+  accent 只留在 `--skx-accent-soft` 底色和 38% 描边上（合成后亮 15.92 / 暗 11.63）；`.skxNote` 同理。
+  `.skxChipOn .skxSourceCount{color:inherit}`——计数必须跟 chip 前景色走，muted 色压在 accent 实底上
+  只有 1.37。
+- **选中底上的次级文字要跟着主色走**：激活页签本身有 10% 选中底色，`.mgrTabCount` 用 secondary 压上去
+  只有 5.21（未选中是 5.80），所以写 `.mgrTabActive .mgrTabCount{color:inherit}`（→ 16.97 / 14.13）。
+  同理，任何放在 `interactive-bg-active` / accent-soft 这类有色底上的计数，都按主色算，不要另开一档灰。
 - **徽章一个色相一个含义**：FREE（价格）用 `.mgrBadgeFree` 中性描边 chip（透明底 + `border-l2` +
   `label-secondary` 字，亮 5.80 / 暗 10.42），绿色只留给 Key 状态（已配置 / 无需 Key），琥珀只给
   缺 Key / 冷却。三种语义共用绿底时右上角永远一团绿，状态就不可扫读了。
