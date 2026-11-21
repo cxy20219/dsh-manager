@@ -453,8 +453,8 @@ async function createApp(options = {}) {
 	const slotEntries = new Map()
 	/** Pending timers, so a test can run the retries. */
 	const timers = []
-	/** Slots another client package has declared; the panel's own two are there from the start. */
-	const declaredSlots = new Set(['main', 'sidebar.panellist'])
+	/** Slots another client package has declared; the settings shell and the panel's own two are there from the start. */
+	const declaredSlots = new Set(['main', 'sidebar.panellist', 'settings.section', 'settings.section.icon'])
 	/** Injections waiting for their slot to be declared. */
 	const pendingInjections = []
 	const instances = new WeakMap()
@@ -609,7 +609,7 @@ async function createApp(options = {}) {
 		},
 		register(slot, component) {
 			if (slot.name === 'main') main = component
-			else slotRegistrations.set(slot.id ?? slot.name, { slot, component })
+			else slotRegistrations.set(`${slot.name}:${slot.id ?? ''}`, { slot, component })
 			return () => {}
 		},
 		entries(key) {
@@ -1878,4 +1878,53 @@ test('the list spans the page and one skill opens over it instead of beside it',
 	// Closing it puts the list back.
 	await app.click('×')
 	assert.equal(app.findVisible((node) => node.props?.role === 'dialog').length, 0)
+})
+
+test('the settings row is a door to the panel, not a page in the dialog', async () => {
+	const app = await createApp()
+	const section = app.slotRegistrations.get('settings.section:manager')
+	assert.ok(section !== undefined, 'the manager registers a settings.section row')
+	assert.equal(section.slot.id, 'manager')
+	assert.equal(section.slot.order, 50, 'it sits after the plugin market at 40')
+	assert.equal(section.slot.label(), 'panel', 'the row reuses the panel label')
+
+	const icon = app.slotRegistrations.get('settings.section.icon:manager')
+	assert.ok(icon !== undefined, 'the row carries the sidebar glyph instead of the fallback gear')
+	app.renderComponent(icon.component, { size: 12 })
+	await app.settle()
+	const [glyph] = app.findVisible((node) => node.type === 'svg')
+	assert.ok(glyph !== undefined, 'the icon renders an svg')
+	assert.equal(glyph.props.width, 12, 'the host requests the square edge')
+
+	const selected = []
+	const closed = []
+	app.renderComponent(section.component, {
+		ctx: { layout: { selectPanel(id) { selected.push(id) } } },
+		t: (key) => key,
+		close() { closed.push(true) },
+	})
+	await app.settle()
+	assert.deepEqual(selected, ['manager'], 'the row selects the registered main panel')
+	assert.equal(closed.length, 1, 'the dialog closes once the panel is selected')
+	assert.equal(app.text(), '', 'the row draws nothing of its own')
+})
+
+test('a settings row that cannot open the panel keeps the dialog open and says why', async () => {
+	const app = await createApp()
+	const section = app.slotRegistrations.get('settings.section:manager')
+	const closed = []
+	const originalWarn = app.sandbox.console.warn
+	app.sandbox.console.warn = () => {}
+	try {
+		app.renderComponent(section.component, {
+			ctx: { layout: { selectPanel() { throw new Error('main panel "manager" is not registered') } } },
+			t: (key) => key,
+			close() { closed.push(true) },
+		})
+		await app.settle()
+	} finally {
+		app.sandbox.console.warn = originalWarn
+	}
+	assert.equal(closed.length, 0, 'a failed jump must not close the dialog onto nothing')
+	assert.match(app.text(), /settings\.failed/, 'the row explains itself instead of staying blank')
 })

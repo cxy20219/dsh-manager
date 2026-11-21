@@ -25,6 +25,8 @@ window.__ModuleLoader__.load({
 		var NS = 'dsh-manager';
 		var PANEL_ID = 'manager';
 		var PANEL_ORDER = 20;
+		// After 插件市场 (dshmarket registers its settings row at 40).
+		var SETTINGS_ORDER = 50;
 		var API_PREFIX = '/api/manager';
 
 		/* rewind-client:start — vendored from dsh-rewind-plugin 0.22.2 (MIT, see rewind/NOTICE) */
@@ -2496,6 +2498,7 @@ function apply(ctx) {
 
 		var zh = {
 			'panel': '管理中枢',
+			'settings.failed': '设置页入口没能打开管理中枢面板，请刷新页面后再试。',
 			'subtitle': '技能分类、MCP 服务、联网搜索、偏好与局域网访问',
 			'tab.skills': '技能',
 			'tab.mcp': 'MCP',
@@ -2830,6 +2833,7 @@ function apply(ctx) {
 
 		var en = {
 			'panel': 'Control Hub',
+			'settings.failed': 'The settings entry could not open the Control Hub panel. Reload the page and try again.',
 			'subtitle': 'Skill categories, MCP servers, web search, preferences and LAN access',
 			'tab.skills': 'Skills',
 			'tab.mcp': 'MCP',
@@ -7233,7 +7237,7 @@ function apply(ctx) {
 
 		//#region plugin
 
-		var inject = ['slots', 'sessions', 'locale', 'commandUi', 'configForms', 'connection'];
+		var inject = ['slots', 'sessions', 'locale', 'commandUi', 'configForms', 'connection', 'layout'];
 
 		/**
 		 * Register the sidebar entry and the main panel.
@@ -7409,6 +7413,74 @@ function apply(ctx) {
 					});
 				});
 			}, 'dsh-manager: sidebar entry');
+
+			// The settings dialog lists one nav row per `settings.section`; ours is a
+			// door to the panel, not a page inside the dialog (see ManagerSettingsEntry).
+			ctx.effect(function () {
+				return guard('设置页入口', function () {
+					var offSection = ctx.slots.inject('settings.section', function () {
+						return ctx.slots.register({
+							name: 'settings.section',
+							id: PANEL_ID,
+							order: SETTINGS_ORDER,
+							locale: NS,
+							label: function () { return t('panel'); },
+							inject: function () { return { ctx: ctx, t: t }; },
+						}, ManagerSettingsEntry);
+					});
+					// The host paints this beside the label; a host without the seat
+					// keeps its own default glyph, so nothing here is required.
+					var offIcon = ctx.slots.inject('settings.section.icon', function () {
+						return ctx.slots.register({
+							name: 'settings.section.icon',
+							id: PANEL_ID,
+							order: SETTINGS_ORDER,
+							locale: NS,
+						}, function (owner) {
+							return h(ManagerIcon, { size: owner.size === undefined ? 16 : owner.size });
+						});
+					});
+					return function () {
+						if (typeof offSection === 'function') offSection();
+						if (typeof offIcon === 'function') offIcon();
+					};
+				});
+			}, 'dsh-manager: settings entry');
+		}
+
+		/**
+		 * The settings row opens the panel instead of rendering a page in place.
+		 *
+		 * The panel is a full-window workspace — its own header, seven top tabs and
+		 * its own scrolling body — while the settings content column is about 556px
+		 * wide. Embedding it would add a second layout to design and verify, plus a
+		 * second scroll container and a duplicate title; switching panels costs one
+		 * click and no layout at all, which is what the shell's `close` is for.
+		 *
+		 * When the panel cannot be selected the dialog stays open and says so: a row
+		 * that closes the dialog onto nothing would be worse than no row at all.
+		 *
+		 * @param {object} props - `ctx` and `t` from `inject`, `close` from the shell.
+		 * @returns {object|null} React node.
+		 */
+		function ManagerSettingsEntry(props) {
+			var [failed, setFailed] = useState(false);
+			useEffect(function () {
+				var layout = props.ctx === undefined ? undefined : props.ctx.layout;
+				try {
+					if (layout === undefined || typeof layout.selectPanel !== 'function') {
+						throw new Error('the layout service is not available');
+					}
+					layout.selectPanel(PANEL_ID);
+				} catch (error) {
+					console.warn('[dsh-manager] 设置页入口没有打开主面板', error);
+					setFailed(true);
+					return;
+				}
+				if (typeof props.close === 'function') props.close();
+			}, []);
+			if (!failed) return null;
+			return h('div', { className: 'mgrWarn' }, props.t('settings.failed'));
 		}
 
 		/**

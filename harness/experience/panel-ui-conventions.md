@@ -1,6 +1,6 @@
 ---
 title: 面板 UI 约定与验证方式
-summary: 面板结构、子页挂载约定、工具目录的单一来源、locale 死键判断与 client-render 测试入口
+summary: 面板结构、设置页入口、子页挂载约定、工具目录的单一来源、locale 死键判断与 client-render 测试入口
 ---
 # 面板 UI 约定
 
@@ -34,6 +34,12 @@ summary: 面板结构、子页挂载约定、工具目录的单一来源、local
 - 客户端模块要用的宿主服务（`sessions` / `commandUi` / `configForms`）必须写进模块 `inject` 列表，
   loader 才会把它们交给 `apply`；不写就拿不到，`ctx.get` 也未必找得到。缺了就用「浏览器上报挂载结果」
   的办法把原因显示出来，别让用户对着「按钮没出现」猜。
+- **设置页里那一行是入口，不是页面**：注册 `settings.section`（id `manager`、order **50**，排在插件市场的 40 之后），
+  `label` 复用 `t('panel')`，图标走 `settings.section.icon`（同一个 id，复用侧栏那三条滑块；没有这个位的老宿主
+  自动落默认齿轮，所以不依赖特殊图标）。组件收到宿主的 `close` 后先 `ctx.layout.selectPanel('manager')` 再 `close()`：
+  面板是全窗工作台（自带标题、7 个主标签、自己的滚动体），塞进约 556px 的设置内容列等于再养一套布局、
+  两层滚动加一行重复标题。**失败路径必须留着**：`selectPanel` 抛错时不关对话框、原地显示 `settings.failed`，
+  入口变成死点比不放这个入口更糟（`test/client-render.test.mjs` 两个方向都钉住了）。
 - 内置的浏览器 bundle 不能被普通脚本 import，所以它**内联在 `client.js` 的标记之间**
   （`rewind-client:start` / `rewind-client:end`），`scripts/check-vendored.mjs` 把这段区域的哈希也钉住，
   两份拷贝不会走散。宿主半边是 ESM，可以直接 import，但要**去掉 `@deepseek-ai/*` 依赖**，
