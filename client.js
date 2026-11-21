@@ -2498,7 +2498,6 @@ function apply(ctx) {
 
 		var zh = {
 			'panel': '管理中枢',
-			'settings.failed': '设置页入口没能打开管理中枢面板，请刷新页面后再试。',
 			'subtitle': '技能分类、MCP 服务、联网搜索、偏好与局域网访问',
 			'tab.skills': '技能',
 			'tab.mcp': 'MCP',
@@ -2833,7 +2832,6 @@ function apply(ctx) {
 
 		var en = {
 			'panel': 'Control Hub',
-			'settings.failed': 'The settings entry could not open the Control Hub panel. Reload the page and try again.',
 			'subtitle': 'Skill categories, MCP servers, web search, preferences and LAN access',
 			'tab.skills': 'Skills',
 			'tab.mcp': 'MCP',
@@ -3435,6 +3433,27 @@ function apply(ctx) {
 			'.mgrSearchAnswer{margin-bottom:14px;padding:10px 12px;border:1px solid var(--dsw-alias-border-l2);border-left:3px solid var(--dsw-alias-state-business-primary);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-1)}',
 			'.mgrSearchAnswerTitle{margin-bottom:4px;font-size:11.5px;font-weight:600;color:var(--dsw-alias-label-secondary)}',
 			'.mgrSearchAnswerBody{max-height:220px;overflow:auto;font-size:13px;line-height:1.65;color:var(--dsw-alias-label-secondary);white-space:pre-wrap;word-break:break-word}',
+
+			/* ---- embedded in the settings dialog ------------------------- */
+			/* The dialog already insets the column by 24 (484-564 wide), so the
+			   panel drops its own gutter (two gutters read as a foreign block)
+			   and lets the tab row wrap instead of scrolling under a fade.
+			   Everything here is opt-in through the marker class: the sidebar
+			   panel keeps its own padding and its scroll strip. */
+			'.mgrEmbedded{background:transparent}',
+			'.mgrEmbedded .mgrHead{padding:8px 0 0;align-items:center;gap:12px}',
+			'.mgrEmbedded .mgrTitle{font-size:13px;line-height:30px}',
+			'.mgrEmbedded .mgrVersion{font-size:11px;vertical-align:0}',
+			'.mgrEmbedded .mgrSubtitle{display:none}',
+			'.mgrEmbedded .mgrHeadActions{padding-top:0}',
+			'.mgrEmbedded .mgrHeadActions .mgrBtn{height:26px;padding:0 10px}',
+			'.mgrEmbedded .mgrTabs{padding:8px 0 0;gap:2px;flex-wrap:wrap;overflow:visible;mask-image:none;-webkit-mask-image:none}',
+			'.mgrEmbedded .mgrTabs .mgrTab{padding:0 10px}',
+			'.mgrEmbedded .mgrTabs .mgrTab:last-child{margin-right:0}',
+			'.mgrEmbedded .mgrBody{padding:12px 0 24px}',
+			/* The viewport breakpoint cannot see this container: at a wide window
+			   with a 516px column the discover preview stayed a 239px second column. */
+			'.mgrEmbedded .skxSplit{grid-template-columns:minmax(0,1fr)}',
 
 			/* ---- skill workspace: GitHub-flavoured, larger type ---------- */
 			'.skxRoot{--skx-line:var(--dsw-alias-border-l2);--skx-line-soft:var(--dsw-alias-border-l1);--skx-canvas:var(--dsw-alias-bg-base);--skx-surface:var(--dsw-alias-bg-layer-1);--skx-raised:var(--dsw-alias-bg-layer-2);--skx-fg:var(--dsw-alias-label-primary);--skx-fg-muted:var(--dsw-alias-label-secondary);--skx-fg-subtle:var(--dsw-alias-label-secondary);--skx-accent:var(--dsw-alias-state-business-primary);--skx-accent-soft:color-mix(in srgb,var(--dsw-alias-state-business-primary) 14%,transparent);--skx-green:var(--dsw-alias-state-success-primary);--skx-red:var(--dsw-alias-state-error-primary);--skx-amber:var(--dsw-alias-state-warn-primary);--skx-shadow:var(--dsw-shadow-lv2);--skx-shadow-sm:var(--dsw-shadow-lv1);display:flex;flex-direction:column;gap:14px;height:100%;min-height:0;color:var(--skx-fg);font-size:13px;line-height:1.6;font-family:var(--dsw-font-family);-webkit-font-smoothing:antialiased}',
@@ -7070,7 +7089,7 @@ function apply(ctx) {
 			var mcpCount = data === null ? 0 : data.mcp.servers.length;
 			var toolsCount = data === null || data.tools === undefined ? 0 : data.tools.total;
 			var uiCount = uiState === null || !Array.isArray(uiState.features) ? 0 : uiState.features.filter(function (feature) { return feature.enabled === true; }).length;
-			return h('div', { className: 'mgrRoot' },
+			return h('div', { className: classes('mgrRoot', props.embedded === true && 'mgrEmbedded') },
 				h('div', { className: 'mgrHead' },
 					h('div', { className: 'mgrHeadMain' },
 						h('h1', { className: 'mgrTitle' },
@@ -7237,7 +7256,7 @@ function apply(ctx) {
 
 		//#region plugin
 
-		var inject = ['slots', 'sessions', 'locale', 'commandUi', 'configForms', 'connection', 'layout'];
+		var inject = ['slots', 'sessions', 'locale', 'commandUi', 'configForms', 'connection'];
 
 		/**
 		 * Register the sidebar entry and the main panel.
@@ -7414,10 +7433,11 @@ function apply(ctx) {
 				});
 			}, 'dsh-manager: sidebar entry');
 
-			// The settings dialog lists one nav row per `settings.section`; ours is a
-			// door to the panel, not a page inside the dialog (see ManagerSettingsEntry).
+			// The settings dialog lists one nav row per `settings.section`; ours opens
+			// the same page inside the dialog content column, with the embedded marker
+			// that swaps the gutter and the tab strip for the host's.
 			ctx.effect(function () {
-				return guard('设置页入口', function () {
+				return guard('设置页', function () {
 					var offSection = ctx.slots.inject('settings.section', function () {
 						return ctx.slots.register({
 							name: 'settings.section',
@@ -7425,8 +7445,8 @@ function apply(ctx) {
 							order: SETTINGS_ORDER,
 							locale: NS,
 							label: function () { return t('panel'); },
-							inject: function () { return { ctx: ctx, t: t }; },
-						}, ManagerSettingsEntry);
+							inject: function () { return { ctx: ctx, t: t, embedded: true }; },
+						}, Panel);
 					});
 					// The host paints this beside the label; a host without the seat
 					// keeps its own default glyph, so nothing here is required.
@@ -7446,41 +7466,6 @@ function apply(ctx) {
 					};
 				});
 			}, 'dsh-manager: settings entry');
-		}
-
-		/**
-		 * The settings row opens the panel instead of rendering a page in place.
-		 *
-		 * The panel is a full-window workspace — its own header, seven top tabs and
-		 * its own scrolling body — while the settings content column is about 556px
-		 * wide. Embedding it would add a second layout to design and verify, plus a
-		 * second scroll container and a duplicate title; switching panels costs one
-		 * click and no layout at all, which is what the shell's `close` is for.
-		 *
-		 * When the panel cannot be selected the dialog stays open and says so: a row
-		 * that closes the dialog onto nothing would be worse than no row at all.
-		 *
-		 * @param {object} props - `ctx` and `t` from `inject`, `close` from the shell.
-		 * @returns {object|null} React node.
-		 */
-		function ManagerSettingsEntry(props) {
-			var [failed, setFailed] = useState(false);
-			useEffect(function () {
-				var layout = props.ctx === undefined ? undefined : props.ctx.layout;
-				try {
-					if (layout === undefined || typeof layout.selectPanel !== 'function') {
-						throw new Error('the layout service is not available');
-					}
-					layout.selectPanel(PANEL_ID);
-				} catch (error) {
-					console.warn('[dsh-manager] 设置页入口没有打开主面板', error);
-					setFailed(true);
-					return;
-				}
-				if (typeof props.close === 'function') props.close();
-			}, []);
-			if (!failed) return null;
-			return h('div', { className: 'mgrWarn' }, props.t('settings.failed'));
 		}
 
 		/**

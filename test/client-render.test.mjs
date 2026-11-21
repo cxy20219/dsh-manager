@@ -1880,13 +1880,17 @@ test('the list spans the page and one skill opens over it instead of beside it',
 	assert.equal(app.findVisible((node) => node.props?.role === 'dialog').length, 0)
 })
 
-test('the settings row is a door to the panel, not a page in the dialog', async () => {
+test('the settings row renders the panel in place, marked embedded', async () => {
 	const app = await createApp()
 	const section = app.slotRegistrations.get('settings.section:manager')
 	assert.ok(section !== undefined, 'the manager registers a settings.section row')
 	assert.equal(section.slot.id, 'manager')
 	assert.equal(section.slot.order, 50, 'it sits after the plugin market at 40')
 	assert.equal(section.slot.label(), 'panel', 'the row reuses the panel label')
+
+	const injected = section.slot.inject()
+	assert.equal(injected.embedded, true, 'the settings slot asks for the embedded variant')
+	assert.ok(injected.ctx !== undefined && typeof injected.t === 'function', 'the panel gets its own context and translator')
 
 	const icon = app.slotRegistrations.get('settings.section.icon:manager')
 	assert.ok(icon !== undefined, 'the row carries the sidebar glyph instead of the fallback gear')
@@ -1896,35 +1900,16 @@ test('the settings row is a door to the panel, not a page in the dialog', async 
 	assert.ok(glyph !== undefined, 'the icon renders an svg')
 	assert.equal(glyph.props.width, 12, 'the host requests the square edge')
 
-	const selected = []
-	const closed = []
-	app.renderComponent(section.component, {
-		ctx: { layout: { selectPanel(id) { selected.push(id) } } },
-		t: (key) => key,
-		close() { closed.push(true) },
-	})
+	// The shell hands every section a `close`; this one renders a page, so it must
+	// not use it — and it must not mark itself embedded unless asked to.
+	app.renderComponent(section.component, { ...injected, t: (key) => key, close() { throw new Error('the panel must not close the dialog') } })
 	await app.settle()
-	assert.deepEqual(selected, ['manager'], 'the row selects the registered main panel')
-	assert.equal(closed.length, 1, 'the dialog closes once the panel is selected')
-	assert.equal(app.text(), '', 'the row draws nothing of its own')
-})
+	const [root] = app.findVisible((node) => String(node.props?.className ?? '').includes('mgrRoot'))
+	assert.ok(root !== undefined, 'the panel drew itself inside the settings slot')
+	assert.match(root.props.className, /\bmgrEmbedded\b/, 'the embedded marker drives the narrow layout')
 
-test('a settings row that cannot open the panel keeps the dialog open and says why', async () => {
-	const app = await createApp()
-	const section = app.slotRegistrations.get('settings.section:manager')
-	const closed = []
-	const originalWarn = app.sandbox.console.warn
-	app.sandbox.console.warn = () => {}
-	try {
-		app.renderComponent(section.component, {
-			ctx: { layout: { selectPanel() { throw new Error('main panel "manager" is not registered') } } },
-			t: (key) => key,
-			close() { closed.push(true) },
-		})
-		await app.settle()
-	} finally {
-		app.sandbox.console.warn = originalWarn
-	}
-	assert.equal(closed.length, 0, 'a failed jump must not close the dialog onto nothing')
-	assert.match(app.text(), /settings\.failed/, 'the row explains itself instead of staying blank')
+	app.renderComponent(section.component, { ...injected, embedded: false, t: (key) => key })
+	await app.settle()
+	const [plain] = app.findVisible((node) => String(node.props?.className ?? '').includes('mgrRoot'))
+	assert.doesNotMatch(plain.props.className, /mgrEmbedded/, 'the sidebar panel keeps its own gutter and tab strip')
 })

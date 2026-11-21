@@ -1,6 +1,6 @@
 ---
 title: 面板 UI 约定与验证方式
-summary: 面板结构、设置页入口、子页挂载约定、工具目录的单一来源、locale 死键判断与 client-render 测试入口
+summary: 面板结构、设置页内嵌、子页挂载约定、工具目录的单一来源、locale 死键判断与 client-render 测试入口
 ---
 # 面板 UI 约定
 
@@ -34,12 +34,25 @@ summary: 面板结构、设置页入口、子页挂载约定、工具目录的�
 - 客户端模块要用的宿主服务（`sessions` / `commandUi` / `configForms`）必须写进模块 `inject` 列表，
   loader 才会把它们交给 `apply`；不写就拿不到，`ctx.get` 也未必找得到。缺了就用「浏览器上报挂载结果」
   的办法把原因显示出来，别让用户对着「按钮没出现」猜。
-- **设置页里那一行是入口，不是页面**：注册 `settings.section`（id `manager`、order **50**，排在插件市场的 40 之后），
-  `label` 复用 `t('panel')`，图标走 `settings.section.icon`（同一个 id，复用侧栏那三条滑块；没有这个位的老宿主
-  自动落默认齿轮，所以不依赖特殊图标）。组件收到宿主的 `close` 后先 `ctx.layout.selectPanel('manager')` 再 `close()`：
-  面板是全窗工作台（自带标题、7 个主标签、自己的滚动体），塞进约 556px 的设置内容列等于再养一套布局、
-  两层滚动加一行重复标题。**失败路径必须留着**：`selectPanel` 抛错时不关对话框、原地显示 `settings.failed`，
-  入口变成死点比不放这个入口更糟（`test/client-render.test.mjs` 两个方向都钉住了）。
+- **设置页里渲染的是面板本体，带 `embedded` 标记**：`settings.section` 注册（id `manager`、order **50**，排在插件市场
+  的 40 之后），`label` 复用 `t('panel')`，组件就是 `Panel`，注册时 `inject` 多给一个 `embedded: true`；图标走
+  `settings.section.icon`（同一个 id，复用侧栏那三条滑块；没有这个位的老宿主自动落默认齿轮）。`Panel` 按这个
+  prop 给根节点加 `mgrEmbedded`，嵌入规则全部写在该前缀下，侧栏一条都不受影响。
+  - 设置内容列（宿主 `.options`）只有 **564 / 516 / 484** 三档，而宿主已经给了 24 的内边距：嵌入时面板内边距
+    **归零**，否则 24+28=52 会像外来块、并且 516 下标签行放不下一行。宿主内边距若变，面板跟着变。
+  - 标签行在嵌入时 `flex-wrap:wrap` 且去掉 `overflow`/`mask`：中文三档都**一行**、溢出 0、末项余量 25.2–105.2；
+    英文折两行（70 高）但七项全可见。侧栏仍是单行横滚 + 16px 渐隐（420 宽实测溢出 147），这是预期。
+  - 头行从 70.3 压到 **39**：标题 18px→13px（读作节名，与对话框 16px 标题的层级理顺），副标题隐藏，
+    右侧「重新扫描」留在原位（它是全页唯一的 overview 入口，别为省高度再开一行）。
+  - `.skxSplit` 必须一并单列：它是**视口**媒体查询（`max-width:1100px`），1900 视口 + 516 容器下不触发，
+    实测会留下 274.9 / 239.1 两列、详情列读不了（嵌入后实测单列 514，上下排列）。这也是选标记类而不是
+    `@container` 的理由：宽度是已知常数，而「在对话框里」这件事容器查询表达不了。
+  - 高度不用动：宿主 `.options` 是定高网格项，`.mgrRoot{height:100%}` 实测 722，只有 `.mgrBody` 一层滚动
+    （client 645 / scroll 5113），外层 746/746 不出滚动条；`.mgrEmbedded` 只把根背景改透明，与对话框表面连续。
+  - **轮询在卸载时清掉**：两个实例可能同时存在（侧栏面板 + 设置页），MCP 4s、LAN 3s、工具 5s、toast 4s
+    四处 effect 都返回了 `clearInterval`/`clearTimeout`，加定时器时照这个写，否则翻倍。
+  - 组件会收到宿主的 `close`——这个槽是页面，不用它（`test/client-render.test.mjs` 里用一个会抛错的
+    `close` 钉住了这一点）。
 - 内置的浏览器 bundle 不能被普通脚本 import，所以它**内联在 `client.js` 的标记之间**
   （`rewind-client:start` / `rewind-client:end`），`scripts/check-vendored.mjs` 把这段区域的哈希也钉住，
   两份拷贝不会走散。宿主半边是 ESM，可以直接 import，但要**去掉 `@deepseek-ai/*` 依赖**，
